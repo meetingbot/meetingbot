@@ -14,7 +14,7 @@ const main = (async () => {
   //                TODO Define via API args
   //
   //
-  const url = "https://meet.google.com/uoa-ewak-iva";
+  const url = "https://meet.google.com/mmk-gyqy-ppb";
   const recordingPath = './recording.mp4'
   const botSettings = { name: 'Alex\'s Bot', recordingPath }
   //
@@ -45,11 +45,18 @@ const main = (async () => {
   //  Core
 
   //Join meeting
-  const join = await bot.joinMeeting();
+  let join = 1;
+  try{
+    join = await bot.joinMeeting();
+  } catch (error) {
+    if (bot.page) await bot.page.screenshot({path: './tmp/debug.png', fullPage: true});
+    throw error
+  }
 
   // Perform meeting actions if successfull
   if (join == 1) {
-    console.log('The bot could not join the meeting.')
+    await bot.page.screenshot({path: './tmp/debug.png', fullPage: true});
+    console.log('The bot could not join the meeting. Saved Screenshot to /tmp/debug.png');
     return 1;
   }
 
