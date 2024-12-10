@@ -19,6 +19,8 @@ const leaveButton = `//button[@aria-label="Leave call"]`
 const peopleButton = `//button[@aria-label="People"]`
 const onePersonRemainingField = '//span[.//div[text()="Contributors"]]//div[text()="1"]'
 
+const randomDelay = (amount: number) => (2*Math.random() - 1) * (amount/10) + amount;
+
 export class MeetingBot {
 
     browserArgs: string[];
@@ -81,6 +83,35 @@ export class MeetingBot {
 
         // Create Page, Go to
         this.page = await context.newPage();
+        await this.page.waitForTimeout(randomDelay(1000));
+        
+        // Inject anti-detection code using addInitScript
+        await this.page.addInitScript(() => {
+            // Disable navigator.webdriver to avoid detection
+            Object.defineProperty(navigator, 'webdriver', { get: () => undefined });
+
+            // Override navigator.plugins to simulate real plugins
+            Object.defineProperty(navigator, 'plugins', { get: () => [{ name: 'Chrome PDF Plugin' }, { name: 'Chrome PDF Viewer' }] });
+
+            // Override navigator.languages to simulate real languages
+            Object.defineProperty(navigator, 'languages', { get: () => ['en-US', 'en'] });
+
+            // Override other properties
+            Object.defineProperty(navigator, 'hardwareConcurrency', { get: () => 4 }); // Fake number of CPU cores
+            Object.defineProperty(navigator, 'deviceMemory', { get: () => 8 }); // Fake memory size
+            Object.defineProperty(window, 'innerWidth', { get: () => 1920 }); // Fake screen resolution
+            Object.defineProperty(window, 'innerHeight', { get: () => 1080 });
+            Object.defineProperty(window, 'outerWidth', { get: () => 1920 });
+            Object.defineProperty(window, 'outerHeight', { get: () => 1080 });
+        });
+        
+        await this.page.mouse.move(10, 672)
+        await this.page.mouse.move(102, 872)
+        await this.page.mouse.move(114, 1472)
+        await this.page.waitForTimeout(300);
+        await this.page.mouse.move(114, 100)
+        await this.page.mouse.click(100, 100);
+
         await this.page.goto(this.meetingURL, { waitUntil: 'networkidle' });
 
         const name = this.settings.name || 'MeetingBot';
@@ -89,7 +120,7 @@ export class MeetingBot {
         await this.page.waitForSelector(enterNameField);
 
         console.log('Waiting for 1 seconds...');
-        await this.page.waitForTimeout(1000);
+        await this.page.waitForTimeout(randomDelay(1000));
 
         console.log('Filling the input field with the name...');
         await this.page.fill(enterNameField, name);
