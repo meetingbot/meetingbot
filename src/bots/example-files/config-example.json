@@ -1,0 +1,19 @@
+{
+    "user_id": 12345,
+    "meeting_info": {
+      "meeting_id": "abc123",
+      "meeting_password": "password123",
+      "meeting_url": "https://example.com/meeting",
+      "organizer_id": "organizer789",
+      "tenant_id": "tenant456",
+      "message_id": "msg001",
+      "thread_id": "threadXYZ",
+      "platform": "Zoom"
+    },
+    "meeting_name": "Project Update Meeting",
+    "start_time": "2025-01-09T10:00:00Z",
+    "end_time": "2025-01-09T11:00:00Z",
+    "bot_display_name": "Meeting Assistant Bot",
+    "bot_image": "https://example.com/bot_image.png",
+    "heartbeat_interval": 10000
+  }
