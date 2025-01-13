@@ -7,20 +7,33 @@ import crypto from 'crypto';
 import path from 'path';
 import { trpc } from './trpc';
 
+// Load In Configs
+import config from '../config.json' assert { type: 'json' };
+import { url } from "inspector";
+console.log(config);
 dotenv.config()
+
+const recordingPath = './recording.mp4'
+
+const get_meeting_url = () => {
+
+  // Assertion
+  if (!config)
+      throw new Error('No Config Found')
+  if (!config.meeting_info)
+      throw new Error('No Meeting Info Found Within Config')
+  if (!config.meeting_info.meeting_id)
+      throw new Error('No Neeting Id Provided.')
+
+  return `https://meet.google.com/${config.meeting_info.meeting_id}`;
+
+}
+
 
 const main = (async () => {
 
-  // =======================================================
-  //                TODO Define via API args
-  //
-  //
-  const url = "https://meet.google.com/mmk-gyqy-ppb";
-  const recordingPath = './recording.mp4'
-  const botSettings = { name: 'Alex\'s Bot', recordingPath }
-  //
-  //
-  // =======================================================
+  // Generate the Meeting URL
+  const url = get_meeting_url();
 
   if (
     !process.env.AWS_ACCESS_KEY_ID ||
@@ -41,7 +54,7 @@ const main = (async () => {
   });
 
   // Create the bot with settings
-  const bot = new MeetingBot(url, botSettings);
+  const bot = new MeetingBot(url, config);
 
   //  Core
 
@@ -66,7 +79,6 @@ const main = (async () => {
 
 
   // Browser is now closed.
-
 
   // Upload recording to S3
   console.log("Uploading recording to S3...");

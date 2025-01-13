@@ -49,11 +49,8 @@ export class MeetingBot {
             ...(botSettings?.additionalBrowserSettings ?? [])
         ]
 
-        // Pull
-        const { name, viewport } = botSettings
-        this.settings = botSettings; //store all anyways
-
         // Set
+        this.settings = botSettings; 
         this.meetingURL = meetingURL;
     }
 
@@ -63,23 +60,22 @@ export class MeetingBot {
     //
     async joinMeeting() {
 
-
         // Launch the browser and open a new blank page
         this.browser = await chromium.launch({
             headless: false,
             args: this.browserArgs
         });
 
-        // Define Default View Port Dimensions
+        // Unpack Dimensions
         const vp = this.settings.viewport || { width: 1280, height: 720 };
+        const name = this.settings.bot_display_name || 'MeetingBot'; 
 
         // Create Browser Context
         const context = await this.browser.newContext({
             permissions: ['camera', 'microphone'],
             userAgent: userAgent,
             viewport: vp,
-        }
-        );
+        });
 
         // Create Page, Go to
         this.page = await context.newPage();
@@ -113,8 +109,6 @@ export class MeetingBot {
         await this.page.mouse.click(100, 100);
 
         await this.page.goto(this.meetingURL, { waitUntil: 'networkidle' });
-
-        const name = this.settings.name || 'MeetingBot';
 
         console.log('Waiting for the input field to be visible...');
         await this.page.waitForSelector(enterNameField);
