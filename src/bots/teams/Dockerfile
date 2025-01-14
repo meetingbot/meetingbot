@@ -14,8 +14,8 @@ USER $PPTRUSER_UID
 # Set working directory
 WORKDIR /home/pptruser
 
-# Copy package.json, pnpm-lock.yaml, .env file, and src/index.ts into the src directory
-COPY package.json pnpm-lock.yaml .env ./
+# Copy the required files into the src directory
+COPY package.json config.json pnpm-lock.yaml .env ./
 COPY src/index.ts ./src/
 
 # Install dependencies inside the container

@@ -5,20 +5,27 @@ import { S3Client, PutObjectCommand } from "@aws-sdk/client-s3";
 import crypto from "crypto";
 import dotenv from "dotenv";
 
+// Load environment variables
 dotenv.config();
+// load config.json
+const config = JSON.parse(fs.readFileSync("config.json", "utf8"));
 
-const url =
-  "https://teams.microsoft.com/l/meetup-join/19%3ameeting_MWUwMmNiNTMtMDlmMC00ZjFmLTk2OGYtODJjNmY1MWM3MTEw%40thread.v2/0?context=%7b%22Tid%22%3a%2244376307-b429-42ad-8c25-28cd496f4772%22%2c%22Oid%22%3a%22b20c6c81-06de-4c6f-9e22-160a16855a74%22%7d";
+const meetingId = config.meeting_info.meeting_id;
+const organizerId = config.meeting_info.organizer_id;
+const tenantId = config.meeting_info.tenant_id;
+const displayName = config.bot_display_name;
 
-const parseTeamsUrl = (input: string): string => {
-  const fullPath = input.replace("https://teams.microsoft.com", "");
+if (typeof meetingId !== "string") {
+  throw new Error("Invalid meeting ID in config.json");
+} else if (typeof organizerId !== "string") {
+  throw new Error("Invalid organizer ID in config.json");
+} else if (typeof tenantId !== "string") {
+  throw new Error("Invalid tenant ID in config.json");
+} else if (displayName != null && typeof displayName !== "string") {
+  throw new Error("Invalid display name in config.json");
+}
 
-  const [path, query] = fullPath.split("?");
-
-  return `https://teams.microsoft.com/v2/?meetingjoin=true#${decodeURIComponent(
-    path
-  )}?${query}&anon=true`;
-};
+const url = `https://teams.microsoft.com/v2/?meetingjoin=true#/l/meetup-join/19:meeting_${meetingId}@thread.v2/0?context=%7b%22Tid%22%3a%22${tenantId}%22%2c%22Oid%22%3a%22${organizerId}%22%7d&anon=true`;
 
 if (
   !process.env.AWS_ACCESS_KEY_ID ||
@@ -54,7 +61,7 @@ const leaveButtonSelector =
   });
 
   // Parse the URL
-  const urlObj = new URL(parseTeamsUrl(url));
+  const urlObj = new URL(url);
 
   // Override camera and microphone permissions
   const context = browser.defaultBrowserContext();
@@ -70,7 +77,7 @@ const leaveButtonSelector =
   // Fill in the display name
   await page
     .locator(`[data-tid="prejoin-display-name-input"]`)
-    .fill("Meeting Bot");
+    .fill(displayName ?? "Meeting Bot");
 
   // Mute microphone before joining
   await page.locator(`[data-tid="toggle-mute"]`).click();
