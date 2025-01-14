@@ -1,0 +1,30 @@
+# download VSCode REST Client https://marketplace.visualstudio.com/items?itemName=humao.rest-client
+
+
+###
+# Create a new user first
+POST http://127.0.0.1:3000/api/users
+content-type: application/json
+
+{
+  "username": "testuser",
+  "email": "test@example.com"
+}
+
+###
+POST http://127.0.0.1:3000/api/bots
+content-type: application/json
+
+{
+  "userId": 1,
+  "meetingName": "Weekly Team Sync",
+  "meetingInfo": {
+    "meetingLink": "https://teams.microsoft.com/l/meetup-join/19%3ameeting_MWUwMmNiNTMtMDlmMC00ZjFmLTk2OGYtODJjNmY1MWM3MTEw%40thread.v2/0?context=%7b%22Tid%22%3a%2244376307-b429-42ad-8c25-28cd496f4772%22%2c%22Oid%22%3a%22b20c6c81-06de-4c6f-9e22-160a16855a74%22%7d",
+    "meetingId": "123456789",
+    "passcode": "123456",
+    "platform": "teams"
+  },
+  "startTime": "2024-01-20T10:00:00.000Z",
+  "endTime": "2024-01-20T11:00:00.000Z"
+}
+

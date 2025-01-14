@@ -1,91 +1,56 @@
-# Meeting Bot Backend
+# MeetingBot Backend
 
 ## Getting Started
 
 ### Prerequisites
 
-- [Python 3.12+](https://www.python.org/downloads/)
-- [Rye](https://rye.astral.sh/)
+- [Node.js](https://nodejs.org/)
+- [pnpm](https://pnpm.io/)
 
 ### Project Initialization
 
-Clone the repository, then follow the steps below:
-
-1. Navigate to the backend directory
+1. Navigate to the backend folder:
 
    ```
    cd src/backend
    ```
 
-2. Install packages with Rye:
+2. Install dependencies using pnpm:
 
    ```
-   rye sync
+   pnpm install
    ```
 
-3. Configure the VSCode Python interpreter if necessary
-
-   1. Open the VSCode command palette (`Ctrl/Cmd + Shift + P`)
-   2. Enter `Python: Select Interpreter`
-   3. Press `Enter interpreter path`
-   4. Enter `./src/backend/.venv/bin/python`
-
-4. Duplicate the `.env.example` file and rename it to `.env`. Fill in the necessary environment variables.
+3. Configure environment variables:
+   - Copy `.env.example` to `.env`
+   - Update the values in `.env` with your configuration (`DATABASE_URL` in particular)
 
 ### Running the Server
 
-```
-rye run dev
-```
-
-The FastAPI app will run at `http://127.0.0.1:8000`.
-
-## Documentation
-
-After running the server, you can access interactive API docs:
-
-- Go to http://127.0.0.1:8000/redoc for ReDoc docs
-- Go to http://127.0.0.1:8000/docs for Swagger UI docs
-
-## Testing
-
-### pytest
-
-FastAPI tests are set up using pytest and httpx ([see FastAPI documenation](https://fastapi.tiangolo.com/advanced/async-tests/)).
-
-Run the test suite using the Rye script:
+To start the server, run:
 
 ```
-rye run test
+pnpm dev
 ```
 
-### http
+The Express app will run at `http://127.0.0.1:{env.PORT}`.
 
-You can also manually test http requests using `.http` files with the REST client VSCode extension.
+### Technology Stack
 
-## Docker
+- **Express**: Web framework for handling HTTP requests and middleware
+- **tRPC**: End-to-end typesafe API layer with automatic OpenAPI generation
+- **Drizzle ORM**: Typesafe SQL query builder and schema definition
+- **PostgreSQL**: Relational database for storing user and bot data
+- **Swagger UI**: Interactive API documentation viewer
 
-The backend can also be run using Docker. However, it makes development more difficult as VSCode cannot find the proper python interpreter. The only solution is to use the Dev Containers extension, but then you would need to get any development tools like git working inside the container.
+### API Documentation
 
-1. Build and start the Docker containers:
+After running the server, you can access the API documentation.
 
-   ```
-   docker-compose up -d --build
-   ```
+### Testing
 
-2. The FastAPI app will run at `http://localhost:8004`, and you can access interactive API docs:
+The test suite has not been implemented yet. This section will be updated once testing is set up.
 
-   - Go to http://localhost:8004/redoc for ReDoc docs
-   - Go to http://localhost:8004/docs for Swagger UI docs
+### Docker
 
-3. Run the test suite:
-
-   ```
-   docker-compose exec web pytest
-   ```
-
-4. To stop the containers:
-
-   ```
-   docker-compose down
-   ```
+Docker support has not been implemented yet. This section will be updated once Docker configuration is set up.
