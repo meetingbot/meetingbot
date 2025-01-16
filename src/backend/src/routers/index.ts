@@ -1,10 +1,10 @@
-import { Router } from 'express'
-import botsRouter from './bots'
-import usersRouter from './users'
+import { createTRPCRouter } from '../server/trpc.js'
+import { botsRouter } from './bots'
+import { usersRouter } from './users'
 
-const router = Router()
+export const appRouter = createTRPCRouter({
+  bots: botsRouter,
+  users: usersRouter,
+})
 
-router.use('/bots', botsRouter)
-router.use('/users', usersRouter)
-
-export default router
+export type AppRouter = typeof appRouter
