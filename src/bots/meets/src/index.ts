@@ -15,25 +15,13 @@ dotenv.config()
 
 const recordingPath = './recording.mp4'
 
-const get_meeting_url = () => {
-
-  // Assertion
-  if (!config)
-      throw new Error('No Config Found')
-  if (!config.meeting_info)
-      throw new Error('No Meeting Info Found Within Config')
-  if (!config.meeting_info.meeting_id)
-      throw new Error('No Neeting Id Provided.')
-
-  return `https://meet.google.com/${config.meeting_info.meeting_id}`;
-
-}
-
+// Create a constant bot with settings (allow for )
+let done = false; //when done is true, then we stop pinging the backend.
+const bot = new MeetingBot({...config, recordingPath});
 
 const main = (async () => {
 
   // Generate the Meeting URL
-  const url = get_meeting_url();
 
   if (
     !process.env.AWS_ACCESS_KEY_ID ||
@@ -53,11 +41,6 @@ const main = (async () => {
     },
   });
 
-  // Create the bot with settings
-  const bot = new MeetingBot(url, config);
-
-  //  Core
-
   //Join meeting
   let join = 1;
   try{
@@ -76,19 +59,17 @@ const main = (async () => {
 
   // Bot Meeting Actions  
   await bot.meetingActions();
-
-
   // Browser is now closed.
 
+
+  // 15 second delay
+  console.log('Wating 15 seconds before unlocking')
+  await setTimeout(15000);
+  
   // Upload recording to S3
   console.log("Uploading recording to S3...");
-
-  // 1 second delay
-  await setTimeout(5000);
-
   const filePath = path.resolve(__dirname, "recording.mp4");
-
-  const fileContent = await readFileSync(recordingPath);
+  const fileContent = readFileSync(recordingPath);
   const uuid = crypto.randomUUID();
   const key = `recordings/${uuid}-meets-recording.mp4`;
 
@@ -110,7 +91,21 @@ const main = (async () => {
   } catch (error) {
     console.error("Error uploading to S3:", error);
   }
+
+  // Stop Heartbeat
+  done = true;
 })
+
+async function heartbeatLoop() {
+  while (!done) {
+      console.log('Ping!')
+      bot.sendHeartbeat();
+      await setTimeout(config.heartbeat_frequency);
+
+      //Test
+  }
+}
+
 main();
 
 // trpc.bots.heartbeat
@@ -122,4 +117,4 @@ main();
 //     console.log(
 //       `[${new Date().toISOString()}] Heartbeat success: ${response.success}`
 //     );
-//   });
+//   });heartbeatLoop();

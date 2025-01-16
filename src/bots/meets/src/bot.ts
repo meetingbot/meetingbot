@@ -21,6 +21,22 @@ const onePersonRemainingField = '//span[.//div[text()="Contributors"]]//div[text
 
 const randomDelay = (amount: number) => (2*Math.random() - 1) * (amount/10) + amount;
 
+// Grab Meeting URl from Config
+const get_meeting_url = (config) => {
+
+    // Assertion
+    if (!config)
+        throw new Error('No Config Found')
+    if (!config.meeting_info)
+        throw new Error('No Meeting Info Found Within Config')
+    if (!config.meeting_info.meeting_id)
+        throw new Error('No Neeting Id Provided.')
+  
+    return `https://meet.google.com/${config.meeting_info.meeting_id}`;
+  
+  }
+  
+
 export class MeetingBot {
 
     browserArgs: string[];
@@ -31,13 +47,15 @@ export class MeetingBot {
     browser: Browser;
     page: Page;
     recorder: PageVideoCapture | undefined;
+    state: number;
+    state_message: string;
+    
 
-
     //
     //
     //
     //
-    constructor(meetingURL, botSettings: { [key: string]: any }) {
+    constructor (botSettings: { [key: string]: any }) {
 
         this.browserArgs = [
             '--incognito',
@@ -51,7 +69,19 @@ export class MeetingBot {
 
         // Set
         this.settings = botSettings; 
-        this.meetingURL = meetingURL;
+        this.meetingURL = get_meeting_url(botSettings);
+
+        // ...
+        this.state = 0;
+        this.state_message = 'Waiting for Setup';
+    }
+
+    // Send a Pulse to Server
+    async sendHeartbeat () {
+
+        // TODO: Replace with Send to Websocket connection
+        console.log(this.state, this.state_message);
+
     }
 
     //
@@ -138,7 +168,7 @@ export class MeetingBot {
         // Set Default Recording Options
         const recordingOptions: CaptureOptions = this.settings.recordingOptions ||
         {
-            followPopups: false,
+            followPopups: true,
             fps: 25,
         }
 
