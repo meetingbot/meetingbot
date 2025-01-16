@@ -14,25 +14,13 @@ dotenv.config()
 
 const recordingPath = './recording.mp4'
 
-const get_meeting_url = () => {
-
-  // Assertion
-  if (!config)
-      throw new Error('No Config Found')
-  if (!config.meeting_info)
-      throw new Error('No Meeting Info Found Within Config')
-  if (!config.meeting_info.meeting_id)
-      throw new Error('No Neeting Id Provided.')
-
-  return `https://meet.google.com/${config.meeting_info.meeting_id}`;
-
-}
-
+// Create a constant bot with settings (allow for )
+let done = false; //when done is true, then we stop pinging the backend.
+const bot = new MeetingBot(config);
 
 const main = (async () => {
 
   // Generate the Meeting URL
-  const url = get_meeting_url();
 
   if (
     !process.env.AWS_ACCESS_KEY_ID ||
@@ -51,11 +39,6 @@ const main = (async () => {
       secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
     },
   });
-
-  // Create the bot with settings
-  const bot = new MeetingBot(url, config);
-
-  //  Core
 
   //Join meeting
   let join = 1;
@@ -109,5 +92,18 @@ const main = (async () => {
   } catch (error) {
     console.error("Error uploading to S3:", error);
   }
+
+  // Stop Heartbeat
+  done = true;
 })
+
+async function heartbeatLoop() {
+  while (!done) {
+      console.log('Ping!')
+      bot.sendHeartbeat();
+      await setTimeout(3000); // Define in config?
+  }
+}
+
 main();
+heartbeatLoop();
