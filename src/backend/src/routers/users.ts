@@ -11,6 +11,7 @@ export const usersRouter = createTRPCRouter({
     .query(async ({ ctx }) => {
       return ctx.db.select().from(users)
     }),
+    
 
   getById: procedure
     .meta({ openapi: { method: 'GET', path: '/users/{id}' } })
