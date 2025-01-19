@@ -4,6 +4,7 @@ import { launch, getStream, wss } from "puppeteer-stream";
 import { S3Client, PutObjectCommand } from "@aws-sdk/client-s3";
 import crypto from "crypto";
 import dotenv from "dotenv";
+import { trpc } from "./trpc";
 
 // Load environment variables
 dotenv.config();
@@ -55,6 +56,20 @@ const leaveButtonSelector =
   'button[aria-label="Leave (Ctrl+Shift+H)"], button[aria-label="Leave (⌘+Shift+H)"]';
 
 (async () => {
+  // Get bot configuration from backend
+  const botId = parseInt(process.env.BOT_ID || "");
+  if (isNaN(botId)) {
+    throw new Error("Invalid or missing BOT_ID environment variable");
+  }
+
+  const bot = await trpc.bots.getBot.query({ id: botId });
+  const url = bot.meetingInfo.meetingLink;
+  if (!url) {
+    throw new Error("No meeting URL found for bot");
+  }
+
+  console.log("Joining meeting:", url);
+
   // Launch the browser and open a new blank page
   const browser = await launch({
     executablePath: puppeteer.executablePath(),
