@@ -4,6 +4,7 @@ import { launch, getStream, wss } from "puppeteer-stream";
 import { S3Client, PutObjectCommand } from "@aws-sdk/client-s3";
 import crypto from "crypto";
 import dotenv from "dotenv";
+import { trpc } from "./trpc";
 
 // Load environment variables
 dotenv.config();
@@ -16,7 +17,6 @@ const tenantId = config.meeting_info.tenant_id;
 const displayName = config.bot_display_name;
 const callbackUrl = config.callback_url;
 const heartbeatInterval = config.heartbeat_interval;
-
 
 if (typeof meetingId !== "string") {
   throw new Error("Invalid meeting ID in config.json");
@@ -61,6 +61,16 @@ const leaveButtonSelector =
 (async () => {
   const intervalId = setInterval(() => {
     console.log(`[${new Date().toISOString()}] Bot is running...`);
+    // trpc.bots.heartbeat
+    //   .mutate({
+    //     id: parseInt(process.env.BOT_ID || "0"),
+    //     events: [],
+    //   })
+    //   .then((response) => {
+    //     console.log(
+    //       `[${new Date().toISOString()}] Heartbeat success: ${response.success}`
+    //     );
+    //   });
   }, heartbeatInterval); // Logs every heartbeatInterval milliseconds
 
   try {
