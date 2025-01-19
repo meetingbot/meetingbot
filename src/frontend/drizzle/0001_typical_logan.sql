@@ -1,2 +1,0 @@
-ALTER TABLE "meetingbot-frontend_user" ALTER COLUMN "email" DROP NOT NULL;--> statement-breakpoint
-ALTER TABLE "meetingbot-frontend_user" ADD CONSTRAINT "meetingbot-frontend_user_email_unique" UNIQUE("email");
