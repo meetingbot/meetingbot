@@ -80,6 +80,44 @@ export const selectBotSchema = createSelectSchema(bots)
     deploymentStatus: deploymentStatus,
   })
 
+const silenceDetectionSchema = z.object({
+  timeout: z.number(),
+  activateAfter: z.number(),
+})
+const botDetectionSchema = z.object({
+  usingParticipantEvents: z.object({
+    timeout: z.number(),
+    activateAfter: z.number(),
+  }),
+  usingParticipantNames: z.object({
+    timeout: z.number(),
+    activateAfter: z.number(),
+  }),
+})
+const automaticLeaveSchema = z.object({
+  silenceDetection: silenceDetectionSchema,
+  botDetection: botDetectionSchema,
+  waitingRoomTimeout: z.number(),
+  noOneJoinedTimeout: z.number(),
+  everyoneLeftTimeout: z.number(),
+})
+
+export const botConfigSchema = insertBotSchema
+  .pick({
+    userId: true,
+    meetingInfo: true,
+    meetingTitle: true,
+    startTime: true,
+    endTime: true,
+  })
+  .extend({
+    botDisplayName: z.string(),
+    botImage: z.string().url(),
+    callbackUrl: z.string().url(),
+    heartbeatInterval: z.number(),
+    automaticLeave: automaticLeaveSchema,
+  })
+
 const EVENT_DESCRIPTIONS = {
   PARTICIPANT_JOIN:
     'A participant has joined the call. The data.participantId will contain the id of the participant.',
