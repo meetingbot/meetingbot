@@ -5,22 +5,27 @@ import { S3Client, PutObjectCommand } from "@aws-sdk/client-s3";
 import crypto from "crypto";
 import dotenv from "dotenv";
 
+// Load environment variables
 dotenv.config();
 
-// Url from Zoom meeting
-const url =
-    "https://us05web.zoom.us/j/87363005197?pwd=PiCHwemSxPbCy8G2NCduOootSWiVmd.1";
+// Read the config.json file
+const config = JSON.parse(fs.readFileSync("config.json", "utf8"));
 
-// Parse the url to get the web meeting url
-const parseZoomUrl = (input: string): string => {
-  const urlObj = new URL(input);
-  const meetingId = urlObj.pathname.split('/')[2];
-  const params = new URLSearchParams(urlObj.search);
-  const pwd = params.get('pwd');
-  return `https://app.zoom.us/wc/${meetingId}/join?fromPWA=1&pwd=${pwd}`;
-};
+const meetingID = config.meeting_info.meeting_id;
+const meetingPassword = config.meeting_info.meeting_password;
+const displayName = config.bot_display_name;
 
-console.log(parseZoomUrl(url));
+if (typeof meetingID !== "string") {
+    throw new Error("Invalid meeting ID in config.json");
+} else if (typeof meetingPassword !== "string") {
+    throw new Error("Invalid meeting password in config.json");
+} else if (typeof displayName !== "string") {
+    throw new Error("Invalid display name in config.json");
+}
+
+const url = `https://app.zoom.us/wc/${meetingID}/join?fromPWA=1&pwd=${meetingPassword}`;
+
+console.log(url);
 
 if (
     !process.env.AWS_ACCESS_KEY_ID ||
@@ -55,7 +60,9 @@ if (
         // "--use-fake-ui-for-media-stream"
     ],
   });
-  const urlObj = new URL(parseZoomUrl(url));
+
+  // Create a URL object from the url
+  const urlObj = new URL(url);
 
   const context = browser.defaultBrowserContext();
   context.clearPermissionOverrides();
@@ -87,9 +94,9 @@ if (
     await frame.click('button[aria-label="Stop Video"]');
     console.log("Stopped video");
     
-    // Waits for the input field and types the name
+    // Waits for the input field and types the name from the config
     await frame.waitForSelector("#input-for-name");
-    await frame.type("#input-for-name", "Meeting Bot");
+    await frame.type("#input-for-name", displayName);
     console.log("Typed name");
     
     
@@ -129,7 +136,7 @@ if (
       file.close();
       console.log("Recording saved");
 
-      // Upload recording to S3
+  // Upload recording to S3
   console.log("Uploading recording to S3...");
   const fileContent = await fs.promises.readFile(recordingPath);
   const uuid = crypto.randomUUID();
@@ -151,7 +158,6 @@ if (
   } catch (error) {
     console.error("Error uploading to S3:", error);
   }
-
 
       // Close the browser
       await browser.close();
