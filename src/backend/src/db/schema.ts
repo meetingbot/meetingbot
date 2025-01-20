@@ -212,3 +212,8 @@ export const selectEventSchema = createSelectSchema(events).extend({
   data: eventData.nullable(),
   eventType: eventCode,
 })
+
+export const heartbeatSchema = z.object({
+  id: z.number(),
+  events: z.array(insertEventSchema.omit({ botId: true })),
+})

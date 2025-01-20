@@ -2,9 +2,11 @@ import { z } from 'zod'
 import { createTRPCRouter, procedure } from '../server/trpc'
 import {
   bots,
+  events,
   insertBotSchema,
   selectBotSchema,
   deployBotInputSchema,
+  heartbeatSchema,
 } from '../db/schema'
 import { eq, sql } from 'drizzle-orm'
 
@@ -121,6 +123,40 @@ export const botsRouter = createTRPCRouter({
         throw new Error('Bot not found')
       }
       return { recording: result[0].recording }
+    }),
+
+  heartbeat: procedure
+    .meta({
+      openapi: {
+        method: 'POST',
+        path: '/bots/{id}/heartbeat',
+      },
+    })
+    .input(heartbeatSchema)
+    .output(z.object({ success: z.boolean() }))
+    .mutation(async ({ input, ctx }) => {
+      // Update bot's last heartbeat
+      const botUpdate = await ctx.db
+        .update(bots)
+        .set({ lastHeartbeat: new Date() })
+        .where(eq(bots.id, input.id))
+        .returning()
+
+      if (!botUpdate[0]) {
+        throw new Error('Bot not found')
+      }
+
+      // Insert any new events
+      if (input.events.length > 0) {
+        await ctx.db.insert(events).values(
+          input.events.map((event) => ({
+            ...event,
+            botId: input.id,
+          }))
+        )
+      }
+
+      return { success: true }
     }),
 
   deployBot: procedure
