@@ -15,8 +15,8 @@ const meetingId = config.meeting_info.meeting_id;
 const organizerId = config.meeting_info.organizer_id;
 const tenantId = config.meeting_info.tenant_id;
 const displayName = config.bot_display_name;
-const callbackUrl = config.callback_url;
 const heartbeatInterval = config.heartbeat_interval;
+const waitingRoomTimeout = config.automatic_leave?.waiting_room_timeout ?? 20 * 60 * 1000; // default to 20 min
 
 if (typeof meetingId !== "string") {
   throw new Error("Invalid meeting ID in config.json");
@@ -26,10 +26,10 @@ if (typeof meetingId !== "string") {
   throw new Error("Invalid tenant ID in config.json");
 } else if (displayName != null && typeof displayName !== "string") {
   throw new Error("Invalid display name in config.json");
-} else if (callbackUrl != null && typeof callbackUrl !== "string") {
-  throw new Error("Invalid callback URL in config.json");
 } else if (typeof heartbeatInterval !== "number") {
   throw new Error("Invalid heartbeat interval in config.json");
+} else if (waitingRoomTimeout != null && typeof waitingRoomTimeout !== "number") {
+  throw new Error("Invalid waiting room timeout in config.json");
 }
 
 const url = `https://teams.microsoft.com/v2/?meetingjoin=true#/l/meetup-join/19:meeting_${meetingId}@thread.v2/0?context=%7b%22Tid%22%3a%22${tenantId}%22%2c%22Oid%22%3a%22${organizerId}%22%7d&anon=true`;
@@ -129,13 +129,15 @@ const leaveButtonSelector =
       joinButton &&
       (await joinButton.evaluate((button) => button.hasAttribute("disabled")));
 
-    let timeout = 30000;
+    let timeout = 30000; // if not in the waiting room, wait 30 seconds to join the meeting
     if (isWaitingRoom) {
-      console.log("Joined waiting room");
-      timeout = 0; // wait indefinitely in the waiting room
+      console.log(`Joined waiting room, will wait for ${waitingRoomTimeout > 60 * 1000 ? `${waitingRoomTimeout / 60 / 1000} minute(s)` : `${waitingRoomTimeout / 1000} second(s)`}`);
+
+      // if in the waiting room, wait for the waiting room timeout
+      timeout = waitingRoomTimeout; // in milliseconds
     }
 
-    // First wait for the leave button to appear (meaning we've joined the meeting)
+    // wait for the leave button to appear (meaning we've joined the meeting)
     await page.waitForSelector(leaveButtonSelector, {
       timeout: timeout,
     });
@@ -188,14 +190,6 @@ const leaveButtonSelector =
     // Close the browser
     await browser.close();
     (await wss).close();
-
-    // call callback url if it exists
-    if (callbackUrl) {
-      await fetch(callbackUrl, {
-        method: "POST",
-        body: JSON.stringify({ key }),
-      });
-    }
 
     // Clean up interval before exiting
     clearInterval(intervalId);
