@@ -58,16 +58,19 @@ const file = fs.createWriteStream(recordingPath);
 const leaveButtonSelector =
   'button[aria-label="Leave (Ctrl+Shift+H)"], button[aria-label="Leave (⌘+Shift+H)"]';
 
+//initialize global variable
+let participants: string[] = [];
+
 (async () => {
   const intervalId = setInterval(() => {
-    console.log(`[${new Date().toISOString()}] Bot is running...`);
+    console.log(`[${new Date().toISOString()}] Bot is running, participants: ${participants.join(', ')}`);
   }, heartbeatInterval); // Logs every heartbeatInterval milliseconds
 
   try {
     // Launch the browser and open a new blank page
     const browser = await launch({
       executablePath: puppeteer.executablePath(),
-      headless: "new",
+      //headless: "new",
       // args: ["--use-fake-ui-for-media-stream"],
       args: ["--no-sandbox"],
     });
@@ -97,12 +100,6 @@ const leaveButtonSelector =
     // Join the meeting
     await page.locator(`[data-tid="prejoin-join-button"]`).click();
 
-    // Listen for changes to the people in the meeting
-    page.locator(`aria-label="People"`).on("DOMSubtreeModified", async (e) => {
-      console.log("People changed");
-      console.log(e);
-    });
-
     // Wait until join button is disabled or disappears
     await page.waitForFunction(
       (selector) => {
@@ -121,7 +118,9 @@ const leaveButtonSelector =
 
     let timeout = 30000;
     if (isWaitingRoom) {
-      console.log(`Joined waiting room, will wait for ${waitingRoomTimeout} seconds`);
+      console.log(
+        `Joined waiting room, will wait for ${waitingRoomTimeout} seconds`
+      );
 
       timeout = waitingRoomTimeout * 1000; // convert to milliseconds
     }
@@ -131,6 +130,43 @@ const leaveButtonSelector =
       timeout: timeout,
     });
     console.log("Successfully joined meeting");
+
+    // Click the people button
+    console.log("Opening the participants list");
+    await page.locator('[aria-label="People"]').click();
+
+    // Wait for the attendees tree to appear
+    console.log("Waiting for the attendees tree to appear");
+    await page.waitForSelector('[role="tree"]');
+
+    // Set up mutation observer to track participant changes
+    console.log("Setting up mutation observer to track participant changes");
+    await page.evaluate(() => {
+      const participantsList = document.querySelector('[role="tree"]');
+      if (!participantsList) {
+        throw new Error("No participants list found");
+      }
+
+      const observer = new MutationObserver((mutations) => {
+        const currentParticipants = Array.from(
+          participantsList.querySelectorAll('[data-tid^="participantsInCall-"]')
+        )
+          .map((el) => {
+            const nameSpan = el.querySelector('span[dir="auto"][title]');
+            return nameSpan?.getAttribute("title") || "";
+          })
+          .filter((name) => name);
+
+        participants = currentParticipants;
+      });
+
+      observer.observe(participantsList, {
+        childList: true,
+        subtree: true,
+        attributes: false,
+        characterData: false,
+      });
+    });
 
     // Get the stream
     const stream = await getStream(page, { audio: true, video: true });
