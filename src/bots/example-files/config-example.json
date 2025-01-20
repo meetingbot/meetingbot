@@ -1,20 +1,38 @@
 {
-    "user_id": 12345,
-    "meeting_info": {
-      "meeting_id": "abc123",
-      "meeting_password": "password123",
-      "meeting_url": "https://example.com/meeting",
-      "organizer_id": "organizer789",
-      "tenant_id": "tenant456",
-      "message_id": "msg001",
-      "thread_id": "threadXYZ",
-      "platform": "Zoom"
+  "user_id": 12345,
+  "meeting_info": {
+    "meeting_id": "abc123",
+    "meeting_password": "password123",
+    "meeting_url": "https://example.com/meeting",
+    "organizer_id": "organizer789",
+    "tenant_id": "tenant456",
+    "message_id": "msg001",
+    "thread_id": "threadXYZ",
+    "platform": "zoom"
+  },
+  "meeting_name": "Project Update Meeting",
+  "start_time": "2025-01-09T10:00:00Z",
+  "end_time": "2025-01-09T11:00:00Z",
+  "bot_display_name": "Meeting Assistant Bot",
+  "bot_image": "https://example.com/bot_image.png",
+  "heartbeat_interval": 10000,
+  "automatic_leave": {
+    "silence_detection": {
+      "timeout": 3600000,
+      "activate_after": 1200000
     },
-    "meeting_name": "Project Update Meeting",
-    "start_time": "2025-01-09T10:00:00Z",
-    "end_time": "2025-01-09T11:00:00Z",
-    "bot_display_name": "Meeting Assistant Bot",
-    "bot_image": "https://example.com/bot_image.png",
-    "callback_url": "https://example.com/callback",
-    "heartbeat_interval": 10000
+    "bot_detection": {
+      "using_participant_events": {
+        "timeout": 600000,
+        "activate_after": 1200000
+      },
+      "using_participant_names": {
+        "timeout": 3600000,
+        "activate_after": 1200000
+      }
+    },
+    "waiting_room_timeout": 1200000,
+    "noone_joined_timeout": 1200000,
+    "everyone_left_timeout": 2000
   }
+}
