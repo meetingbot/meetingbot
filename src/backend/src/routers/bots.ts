@@ -9,11 +9,7 @@ export const botsRouter = createTRPCRouter({
     .input(z.object({}))
     .output(z.array(selectBotSchema))
     .query(async ({ ctx }) => {
-      const result = await ctx.db.select().from(bots)
-      return result.map((bot) => ({
-        ...bot,
-        meetingInfo: bot.meetingInfo ?? {},
-      }))
+      return await ctx.db.select().from(bots)
     }),
 
   getBot: procedure
@@ -28,10 +24,7 @@ export const botsRouter = createTRPCRouter({
       if (!result[0]) {
         throw new Error('Bot not found')
       }
-      return {
-        ...result[0],
-        meetingInfo: result[0].meetingInfo ?? {},
-      }
+      return result[0]
     }),
 
   createBot: procedure
@@ -59,10 +52,7 @@ export const botsRouter = createTRPCRouter({
           throw new Error('Bot creation failed - no result returned')
         }
 
-        return {
-          ...result[0],
-          meetingInfo: result[0].meetingInfo ?? {},
-        }
+        return result[0]
       } catch (error) {
         console.error('Error creating bot:', error)
         throw error
@@ -88,10 +78,7 @@ export const botsRouter = createTRPCRouter({
       if (!result[0]) {
         throw new Error('Bot not found')
       }
-      return {
-        ...result[0],
-        meetingInfo: result[0].meetingInfo ?? {},
-      }
+      return result[0]
     }),
 
   deleteBot: procedure
@@ -108,5 +95,26 @@ export const botsRouter = createTRPCRouter({
         throw new Error('Bot not found')
       }
       return { message: 'Bot deleted successfully' }
+    }),
+
+  getRecording: procedure
+    .meta({
+      openapi: {
+        method: 'GET',
+        path: '/bots/{id}/recording',
+      },
+    })
+    .input(z.object({ id: z.number() }))
+    .output(z.object({ recording: z.string().nullable() }))
+    .query(async ({ input, ctx }) => {
+      const result = await ctx.db
+        .select({ recording: bots.recording })
+        .from(bots)
+        .where(eq(bots.id, input.id))
+
+      if (!result[0]) {
+        throw new Error('Bot not found')
+      }
+      return { recording: result[0].recording }
     }),
 })
