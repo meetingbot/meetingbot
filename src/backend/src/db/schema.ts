@@ -80,18 +80,92 @@ export const selectBotSchema = createSelectSchema(bots)
     deploymentStatus: deploymentStatus,
   })
 
+const EVENT_DESCRIPTIONS = {
+  PARTICIPANT_JOIN:
+    'A participant has joined the call. The data.participantId will contain the id of the participant.',
+  PARTICIPANT_LEAVE:
+    'A participant has left the call. The data.participantId will contain the id of the participant.',
+  READY:
+    'Resources have been provisioned and the bot is ready internally to join a meeting.',
+  JOINING_CALL:
+    'The bot has acknowledged the request to join the call, and is in the process of connecting.',
+  IN_WAITING_ROOM: 'The bot is in the waiting room of the meeting.',
+  IN_CALL: 'The bot is in the meeting, and is currently recording audio.',
+  CALL_ENDED:
+    'The bot has left the call. The data.sub_code and data.description will contain the reason for why the call ended.',
+  DONE: 'The bot has shut down.',
+  FATAL:
+    'The bot has encountered an error. The data.sub_code and data.description will contain the reason for the failure.',
+  LOG: "Catch-all for any logs that were produced that don't fit any other event type. The data.message will contain the log contents.",
+} as const
+
+export const eventCode = z
+  .enum([
+    'PARTICIPANT_JOIN',
+    'PARTICIPANT_LEAVE',
+    'READY',
+    'JOINING_CALL',
+    'IN_WAITING_ROOM',
+    'IN_CALL',
+    'CALL_ENDED',
+    'DONE',
+    'FATAL',
+    'LOG',
+  ])
+  .describe('Event type code')
+  .superRefine((val, ctx) => {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      message: EVENT_DESCRIPTIONS[val as keyof typeof EVENT_DESCRIPTIONS],
+      fatal: false,
+    })
+  })
+export type EventCode = z.infer<typeof eventCode>
+
+const participantJoinData = z.object({
+  participantId: z.string(),
+})
+const participantLeaveData = z.object({
+  participantId: z.string(),
+})
+const logData = z.object({
+  message: z.string(),
+})
+const statusData = z.object({
+  sub_code: z.string().optional(),
+  description: z.string().optional(),
+})
+
+export const eventData = z.union([
+  participantJoinData,
+  participantLeaveData,
+  logData,
+  statusData,
+])
+export type EventData = z.infer<typeof eventData>
+
 export const events = pgTable('events', {
   id: serial('id').primaryKey(),
   botId: integer('bot_id')
     .references(() => bots.id)
     .notNull(),
-  eventType: varchar('event_type', { length: 255 }).notNull(),
+  eventType: varchar('event_type', { length: 255 })
+    .$type<EventCode>()
+    .notNull(),
   eventTime: timestamp('event_time').notNull(),
-  details: json('details'),
+  data: json('details').$type<EventData | null>(),
   createdAt: timestamp('created_at').defaultNow(),
 })
-export const insertEventSchema = createInsertSchema(events).omit({
-  id: true,
-  createdAt: true,
+export const insertEventSchema = createInsertSchema(events)
+  .omit({
+    id: true,
+    createdAt: true,
+  })
+  .extend({
+    data: eventData.nullable(),
+    eventType: eventCode,
+  })
+export const selectEventSchema = createSelectSchema(events).extend({
+  data: eventData.nullable(),
+  eventType: eventCode,
 })
-export const selectEventSchema = createSelectSchema(events)
