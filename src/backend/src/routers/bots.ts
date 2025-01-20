@@ -12,7 +12,13 @@ import { eq, sql } from 'drizzle-orm'
 
 export const botsRouter = createTRPCRouter({
   getBots: procedure
-    .meta({ openapi: { method: 'GET', path: '/bots' } })
+    .meta({
+      openapi: {
+        method: 'GET',
+        path: '/bots',
+        description: 'Retrieve a list of all bots',
+      },
+    })
     .input(z.object({}))
     .output(z.array(selectBotSchema))
     .query(async ({ ctx }) => {
@@ -20,7 +26,13 @@ export const botsRouter = createTRPCRouter({
     }),
 
   getBot: procedure
-    .meta({ openapi: { method: 'GET', path: '/bots/{id}' } })
+    .meta({
+      openapi: {
+        method: 'GET',
+        path: '/bots/{id}',
+        description: 'Get a specific bot by its ID',
+      },
+    })
     .input(z.object({ id: z.number() }))
     .output(selectBotSchema)
     .query(async ({ input, ctx }) => {
@@ -39,7 +51,7 @@ export const botsRouter = createTRPCRouter({
       openapi: {
         method: 'POST',
         path: '/bots',
-        description: 'Create a new bot',
+        description: 'Create a new bot with the specified configuration',
       },
     })
     .input(insertBotSchema)
@@ -67,7 +79,13 @@ export const botsRouter = createTRPCRouter({
     }),
 
   updateBot: procedure
-    .meta({ openapi: { method: 'PATCH', path: '/bots/{id}' } })
+    .meta({
+      openapi: {
+        method: 'PATCH',
+        path: '/bots/{id}',
+        description: "Update an existing bot's configuration",
+      },
+    })
     .input(
       z.object({
         id: z.number(),
@@ -89,7 +107,13 @@ export const botsRouter = createTRPCRouter({
     }),
 
   deleteBot: procedure
-    .meta({ openapi: { method: 'DELETE', path: '/bots/{id}' } })
+    .meta({
+      openapi: {
+        method: 'DELETE',
+        path: '/bots/{id}',
+        description: 'Delete a bot by its ID',
+      },
+    })
     .input(z.object({ id: z.number() }))
     .output(z.object({ message: z.string() }))
     .mutation(async ({ input, ctx }) => {
@@ -109,6 +133,7 @@ export const botsRouter = createTRPCRouter({
       openapi: {
         method: 'GET',
         path: '/bots/{id}/recording',
+        description: 'Retrieve the recording associated with a specific bot',
       },
     })
     .input(z.object({ id: z.number() }))
@@ -130,6 +155,8 @@ export const botsRouter = createTRPCRouter({
       openapi: {
         method: 'POST',
         path: '/bots/{id}/heartbeat',
+        description:
+          'Called every few seconds by bot scripts to indicate that the bot is still running, and to record any events that have occurred',
       },
     })
     .input(heartbeatSchema)
@@ -164,6 +191,8 @@ export const botsRouter = createTRPCRouter({
       openapi: {
         method: 'POST',
         path: '/bots/{id}/deploy',
+        description:
+          'Deploy a bot by provisioning necessary resources and starting it up',
       },
     })
     .input(deployBotInputSchema)

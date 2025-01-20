@@ -9,6 +9,7 @@ export const eventsRouter = createTRPCRouter({
       openapi: {
         method: 'GET',
         path: '/events',
+        description: 'Retrieve a list of all events',
       },
     })
     .input(z.object({}))
@@ -22,6 +23,7 @@ export const eventsRouter = createTRPCRouter({
       openapi: {
         method: 'GET',
         path: '/events/bot/{botId}',
+        description: 'Get all events associated with a specific bot',
       },
     })
     .input(z.object({ botId: z.number() }))
@@ -38,6 +40,7 @@ export const eventsRouter = createTRPCRouter({
       openapi: {
         method: 'GET',
         path: '/events/{id}',
+        description: 'Get a specific event by its ID',
       },
     })
     .input(z.object({ id: z.number() }))
@@ -59,6 +62,7 @@ export const eventsRouter = createTRPCRouter({
       openapi: {
         method: 'POST',
         path: '/events',
+        description: 'Create a new event',
       },
     })
     .input(insertEventSchema)
@@ -73,6 +77,7 @@ export const eventsRouter = createTRPCRouter({
       openapi: {
         method: 'PATCH',
         path: '/events/{id}',
+        description: "Update an existing event's information",
       },
     })
     .input(
@@ -100,6 +105,7 @@ export const eventsRouter = createTRPCRouter({
       openapi: {
         method: 'DELETE',
         path: '/events/{id}',
+        description: 'Delete an event by its ID',
       },
     })
     .input(z.object({ id: z.number() }))
