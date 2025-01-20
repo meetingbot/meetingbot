@@ -118,6 +118,11 @@ export const botConfigSchema = insertBotSchema
     automaticLeave: automaticLeaveSchema,
   })
 
+export const deployBotInputSchema = z.object({
+  id: z.number(),
+  botConfig: botConfigSchema,
+})
+
 const EVENT_DESCRIPTIONS = {
   PARTICIPANT_JOIN:
     'A participant has joined the call. The data.participantId will contain the id of the participant.',

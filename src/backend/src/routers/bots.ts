@@ -1,6 +1,11 @@
 import { z } from 'zod'
 import { createTRPCRouter, procedure } from '../server/trpc'
-import { bots, insertBotSchema, selectBotSchema } from '../db/schema'
+import {
+  bots,
+  insertBotSchema,
+  selectBotSchema,
+  deployBotInputSchema,
+} from '../db/schema'
 import { eq, sql } from 'drizzle-orm'
 
 export const botsRouter = createTRPCRouter({
@@ -116,5 +121,59 @@ export const botsRouter = createTRPCRouter({
         throw new Error('Bot not found')
       }
       return { recording: result[0].recording }
+    }),
+
+  deployBot: procedure
+    .meta({
+      openapi: {
+        method: 'POST',
+        path: '/bots/{id}/deploy',
+      },
+    })
+    .input(deployBotInputSchema)
+    .output(selectBotSchema)
+    .mutation(async ({ input, ctx }) => {
+      // First, update bot status to deploying
+      await ctx.db
+        .update(bots)
+        .set({ deploymentStatus: 'DEPLOYING' })
+        .where(eq(bots.id, input.id))
+
+      try {
+        // const botConfig = input.botConfig
+
+        // Here you would add the actual deployment logic:
+        // 1. Provision cloud resources
+        // 2. Start the bot process
+        // 3. Update status and return the bot
+
+        // For now, we'll simulate success
+        const result = await ctx.db
+          .update(bots)
+          .set({
+            deploymentStatus: 'DEPLOYED',
+            deploymentError: null,
+          })
+          .where(eq(bots.id, input.id))
+          .returning()
+
+        if (!result[0]) {
+          throw new Error('Bot not found')
+        }
+
+        return result[0]
+      } catch (error) {
+        // Update status to failed and store error message
+        await ctx.db
+          .update(bots)
+          .set({
+            deploymentStatus: 'FAILED',
+            deploymentError:
+              error instanceof Error ? error.message : 'Unknown error',
+          })
+          .where(eq(bots.id, input.id))
+
+        throw error
+      }
     }),
 })
