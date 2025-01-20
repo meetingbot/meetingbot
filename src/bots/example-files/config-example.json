@@ -15,5 +15,6 @@
     "end_time": "2025-01-09T11:00:00Z",
     "bot_display_name": "Meeting Assistant Bot",
     "bot_image": "https://example.com/bot_image.png",
+    "callback_url": "https://example.com/callback",
     "heartbeat_interval": 10000
   }
