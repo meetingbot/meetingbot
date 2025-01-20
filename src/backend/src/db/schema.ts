@@ -81,25 +81,25 @@ export const selectBotSchema = createSelectSchema(bots)
   })
 
 const silenceDetectionSchema = z.object({
-  timeout: z.number(),
-  activateAfter: z.number(),
+  timeout: z.number(), // the milliseconds of silence before the bot leaves
+  activateAfter: z.number(), // the milliseconds the bot waits before it begins to detect silence
 })
 const botDetectionSchema = z.object({
-  usingParticipantEvents: z.object({
-    timeout: z.number(),
-    activateAfter: z.number(),
+  usingParticipantEvents: z.object({ // when participant events are used to detect other bots in the meeting
+    timeout: z.number(), // the milliseconds before the bot leaves the meeting if it detects another bot
+    activateAfter: z.number(), // the milliseconds the bot waits before it begins to detect other bots
   }),
-  usingParticipantNames: z.object({
-    timeout: z.number(),
-    activateAfter: z.number(),
+  usingParticipantNames: z.object({ // when participant names are used to detect other bots in the meeting
+    timeout: z.number(), // the milliseconds before the bot leaves the meeting if it detects another bot
+    activateAfter: z.number(), // the milliseconds the bot waits before it begins to detect other bots
   }),
 })
 const automaticLeaveSchema = z.object({
   silenceDetection: silenceDetectionSchema,
   botDetection: botDetectionSchema,
-  waitingRoomTimeout: z.number(),
-  noOneJoinedTimeout: z.number(),
-  everyoneLeftTimeout: z.number(),
+  waitingRoomTimeout: z.number(), // the milliseconds before the bot leaves the meeting if it is in the waiting room
+  noOneJoinedTimeout: z.number(), // the milliseconds before the bot leaves the meeting if no one has joined
+  everyoneLeftTimeout: z.number(), // the milliseconds before the bot leaves the meeting if everyone has left
 })
 
 export const botConfigSchema = insertBotSchema
@@ -111,10 +111,9 @@ export const botConfigSchema = insertBotSchema
     endTime: true,
   })
   .extend({
-    botDisplayName: z.string(),
-    botImage: z.string().url(),
-    callbackUrl: z.string().url(),
-    heartbeatInterval: z.number(),
+    botDisplayName: z.string(), // the display name of the bot
+    botImage: z.string().url(), // the display image of the bot
+    heartbeatInterval: z.number(), // the milliseconds between heartbeats
     automaticLeave: automaticLeaveSchema,
   })
 export type BotConfig = z.infer<typeof botConfigSchema>
