@@ -14,8 +14,8 @@ const meetingId = config.meeting_info.meeting_id;
 const organizerId = config.meeting_info.organizer_id;
 const tenantId = config.meeting_info.tenant_id;
 const displayName = config.bot_display_name;
-const callbackUrl = config.callback_url;
 const heartbeatInterval = config.heartbeat_interval;
+const waitingRoomTimeout = config.automatic_leave?.waiting_room_timeout/1000 ?? 1200; // default to 20 min
 
 
 if (typeof meetingId !== "string") {
@@ -26,10 +26,10 @@ if (typeof meetingId !== "string") {
   throw new Error("Invalid tenant ID in config.json");
 } else if (displayName != null && typeof displayName !== "string") {
   throw new Error("Invalid display name in config.json");
-} else if (callbackUrl != null && typeof callbackUrl !== "string") {
-  throw new Error("Invalid callback URL in config.json");
 } else if (typeof heartbeatInterval !== "number") {
   throw new Error("Invalid heartbeat interval in config.json");
+} else if (waitingRoomTimeout != null && typeof waitingRoomTimeout !== "number") {
+  throw new Error("Invalid waiting room timeout in config.json");
 }
 
 const url = `https://teams.microsoft.com/v2/?meetingjoin=true#/l/meetup-join/19:meeting_${meetingId}@thread.v2/0?context=%7b%22Tid%22%3a%22${tenantId}%22%2c%22Oid%22%3a%22${organizerId}%22%7d&anon=true`;
@@ -121,8 +121,9 @@ const leaveButtonSelector =
 
     let timeout = 30000;
     if (isWaitingRoom) {
-      console.log("Joined waiting room");
-      timeout = 0; // wait indefinitely in the waiting room
+      console.log(`Joined waiting room, will wait for ${waitingRoomTimeout} seconds`);
+
+      timeout = waitingRoomTimeout * 1000; // convert to milliseconds
     }
 
     // First wait for the leave button to appear (meaning we've joined the meeting)
@@ -178,14 +179,6 @@ const leaveButtonSelector =
     // Close the browser
     await browser.close();
     (await wss).close();
-
-    // call callback url if it exists
-    if (callbackUrl) {
-      await fetch(callbackUrl, {
-        method: "POST",
-        body: JSON.stringify({ key }),
-      });
-    }
 
     // Clean up interval before exiting
     clearInterval(intervalId);
