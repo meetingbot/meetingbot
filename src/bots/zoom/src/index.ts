@@ -9,7 +9,7 @@ dotenv.config();
 
 // Url from Zoom meeting
 const url =
-    "";
+    "https://us05web.zoom.us/j/87363005197?pwd=PiCHwemSxPbCy8G2NCduOootSWiVmd.1";
 
 // Parse the url to get the web meeting url
 const parseZoomUrl = (input: string): string => {
@@ -50,7 +50,9 @@ if (
     headless: "new",
     args: [
         "--no-sandbox",
-        "--disable-setuid-sandbox"
+        "--disable-setuid-sandbox",
+        "--use-fake-device-for-media-stream",
+        // "--use-fake-ui-for-media-stream"
     ],
   });
   const urlObj = new URL(parseZoomUrl(url));
@@ -70,28 +72,31 @@ if (
   const frame = await iframe?.contentFrame();
 
   if (frame) {
+    // Wait for things to load
+    await new Promise(resolve => setTimeout(resolve, 1500));
+    
+    // Waits for mute button to be clickable and clicks it
+    await new Promise(resolve => setTimeout(resolve, 700)); // TODO: remove this line later
+    await frame.waitForSelector('button[aria-label="Mute"]');
+    await frame.click('button[aria-label="Mute"]');
+    console.log("Muted");
+    
+    // Waits for the stop video button to be clickable and clicks it
+    await new Promise(resolve => setTimeout(resolve, 700)); // TODO: remove this line later
+    await frame.waitForSelector('button[aria-label="Stop Video"]');
+    await frame.click('button[aria-label="Stop Video"]');
+    console.log("Stopped video");
+    
     // Waits for the input field and types the name
     await frame.waitForSelector("#input-for-name");
     await frame.type("#input-for-name", "Meeting Bot");
     console.log("Typed name");
-
-    // Wait for join button to be clickable
-    await new Promise(resolve => setTimeout(resolve, 700));
-
-    // Clicks the join audio button
-    await frame.waitForSelector('button[aria-label="Join Audio"]');
-    await frame.click('button[aria-label="Join Audio"]')
-    console.log("Joined audio");
-
-    // Waits for mute button to be clickable and clicks it
-    await new Promise(resolve => setTimeout(resolve, 700));
-    await frame.waitForSelector('button[aria-label="Mute"]');
-    await frame.click('button[aria-label="Mute"]');
-    console.log("Muted");
-
+    
+    
     // Clicks the join button
     await frame.waitForSelector("button.zm-btn.preview-join-button");
     await frame.click("button.zm-btn.preview-join-button");
+    console.log("Joined the meeting");
     
     // Wait for the leave button to appear and be properly labeled before starting recording
     await new Promise(resolve => setTimeout(resolve, 700)); // Needed to wait for the aria-label to be properly attached
