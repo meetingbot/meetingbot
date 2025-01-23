@@ -117,6 +117,7 @@ export const botConfigSchema = insertBotSchema
     heartbeatInterval: z.number(),
     automaticLeave: automaticLeaveSchema,
   })
+export type BotConfig = z.infer<typeof botConfigSchema>
 
 export const deployBotInputSchema = z.object({
   id: z.number(),
