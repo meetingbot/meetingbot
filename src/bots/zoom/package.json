@@ -14,9 +14,12 @@
   "license": "ISC",
   "dependencies": {
     "@aws-sdk/client-s3": "^3.696.0",
+    "@trpc/client": "^10.45.2",
+    "@trpc/server": "^10.45.2",
     "dotenv": "^16.4.5",
     "puppeteer": "^23.9.0",
-    "puppeteer-stream": "^3.0.19"
+    "puppeteer-stream": "^3.0.19",
+    "superjson": "^2.2.1"
   },
   "devDependencies": {
     "tsx": "^4.19.0",

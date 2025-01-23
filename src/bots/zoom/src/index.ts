@@ -4,6 +4,7 @@ import { launch, getStream, wss } from "puppeteer-stream";
 import { S3Client, PutObjectCommand } from "@aws-sdk/client-s3";
 import crypto from "crypto";
 import dotenv from "dotenv";
+import { trpc } from "./trpc";
 
 // Load environment variables
 dotenv.config();
@@ -170,3 +171,14 @@ if (
   // Start the meeting end check
   checkMeetingEnd();
 })();
+
+// trpc.bots.heartbeat
+//   .mutate({
+//     id: parseInt(process.env.BOT_ID || "0"),
+//     events: [],
+//   })
+//   .then((response) => {
+//     console.log(
+//       `[${new Date().toISOString()}] Heartbeat success: ${response.success}`
+//     );
+//   });
