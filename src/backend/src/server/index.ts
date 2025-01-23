@@ -7,7 +7,7 @@ import { createTRPCContext } from './trpc.js'
 import { openApiDocument } from './openapi.js'
 import { appRouter } from '../routers/index.js'
 
-const port = process.env.PORT || 3000
+const port = process.env.PORT || 3001
 
 const app = express()
 

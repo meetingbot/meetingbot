@@ -1,0 +1,24 @@
+services:
+  backend:
+    build: .
+    ports:
+      - '3001:3001'
+    environment:
+      - NODE_ENV=production
+      - NODE_TLS_REJECT_UNAUTHORIZED=0
+    env_file:
+      - .env
+
+  backend-dev:
+    build: .
+    ports:
+      - '3001:3001'
+    environment:
+      - NODE_ENV=development
+      - NODE_TLS_REJECT_UNAUTHORIZED=0
+    command: pnpm dev
+    volumes:
+      - .:/app
+      - /app/node_modules
+    env_file:
+      - .env

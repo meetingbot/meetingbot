@@ -21,12 +21,10 @@ const globalForDb = globalThis as unknown as {
 const connectionString = process.env.DATABASE_URL!
 
 const client = postgres(connectionString, {
-  ssl:
-    process.env.NODE_ENV === 'production'
-      ? true
-      : {
-          rejectUnauthorized: false,
-        },
+  ssl: {
+    rejectUnauthorized: false,
+  },
+  max: 1,
 })
 
 if (process.env.NODE_ENV !== 'production') globalForDb.conn = client
