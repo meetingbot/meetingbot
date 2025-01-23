@@ -5,6 +5,7 @@ import dotenv from 'dotenv';
 import { setTimeout } from 'timers/promises';
 import crypto from 'crypto';
 import path from 'path';
+import { trpc } from './trpc';
 
 dotenv.config()
 
@@ -99,3 +100,14 @@ const main = (async () => {
   }
 })
 main();
+
+// trpc.bots.heartbeat
+//   .mutate({
+//     id: parseInt(process.env.BOT_ID || "0"),
+//     events: [],
+//   })
+//   .then((response) => {
+//     console.log(
+//       `[${new Date().toISOString()}] Heartbeat success: ${response.success}`
+//     );
+//   });
