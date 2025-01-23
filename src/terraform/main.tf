@@ -5,7 +5,7 @@ provider "aws" {
     tags = {
       app-id      = "meetingbot"
       app-purpose = "meeting bot"
-      environment = "${terraform.workspace == "default" ? "prod" : terraform.workspace}"
+      environment = terraform.workspace
       pii         = "yes"
     }
   }
@@ -14,10 +14,9 @@ provider "aws" {
 data "aws_availability_zones" "available" {}
 
 locals {
-  name = "meetingbot"
+  name = "meetingbot-${terraform.workspace}"
 
-  vpc_cidr = "10.0.0.0/16"
-  azs      = slice(data.aws_availability_zones.available.names, 0, 3)
+  azs = slice(data.aws_availability_zones.available.names, 0, 3)
 }
 
 terraform {
@@ -31,14 +30,23 @@ module "vpc" {
   version = "~> 5.0"
 
   name = local.name
-  cidr = local.vpc_cidr
+  cidr = "10.0.0.0/16"
 
-  azs             = local.azs
-  private_subnets = [for k, v in local.azs : cidrsubnet(local.vpc_cidr, 4, k)]
-  public_subnets  = [for k, v in local.azs : cidrsubnet(local.vpc_cidr, 8, k + 48)]
+  azs              = local.azs
+  private_subnets  = ["10.0.1.0/24", "10.0.2.0/24", "10.0.3.0/24"]
+  public_subnets   = ["10.0.101.0/24", "10.0.102.0/24", "10.0.103.0/24"]
+  database_subnets = ["10.0.21.0/24", "10.0.22.0/24"]
 
-  #   enable_nat_gateway = true
-  #   single_nat_gateway = true
+  enable_nat_gateway = true
+  single_nat_gateway = terraform.workspace == "prod" ? false : true
+
+
+  create_database_subnet_group           = true
+  create_database_subnet_route_table     = true
+  create_database_internet_gateway_route = true
+
+  enable_dns_hostnames = true
+  enable_dns_support   = true
 }
 
 module "api_gateway" {
@@ -101,7 +109,7 @@ module "alb" {
   name = local.name
 
   vpc_id  = module.vpc.vpc_id
-  subnets = module.vpc.private_subnets
+  subnets = module.vpc.public_subnets
 
   # Disable for example
   enable_deletion_protection = false
@@ -171,7 +179,7 @@ module "db" {
 
   multi_az               = true
   db_subnet_group_name   = module.vpc.database_subnet_group
-  vpc_security_group_ids = [module.security_group.security_group_id]
+  vpc_security_group_ids = [module.db_security_group.security_group_id]
 
   maintenance_window              = "Mon:00:00-Mon:03:00"
   backup_window                   = "03:00-06:00"
@@ -200,8 +208,6 @@ module "db" {
       value = "utf8"
     }
   ]
-
-  tags = local.tags
   db_option_group_tags = {
     "Sensitive" = "low"
   }
@@ -211,4 +217,15 @@ module "db" {
   cloudwatch_log_group_tags = {
     "Sensitive" = "high"
   }
+}
+
+module "db_security_group" {
+  source  = "terraform-aws-modules/security-group/aws//modules/postgresql"
+  version = "~> 5.0"
+
+  name        = "${local.name}-db"
+  description = "Database group for example usage"
+  vpc_id      = module.vpc.vpc_id
+
+  ingress_cidr_blocks = ["0.0.0.0/0"]
 }
