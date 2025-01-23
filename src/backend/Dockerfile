@@ -12,6 +12,10 @@ COPY . .
 
 RUN pnpm build
 
+
+ENV NODE_ENV production
+
+
 EXPOSE 3001
 
 CMD ["pnpm", "start"]
