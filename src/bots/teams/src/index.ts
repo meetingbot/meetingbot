@@ -58,9 +58,13 @@ const file = fs.createWriteStream(recordingPath);
 const leaveButtonSelector =
   'button[aria-label="Leave (Ctrl+Shift+H)"], button[aria-label="Leave (⌘+Shift+H)"]';
 
+//initialize global variable
+let participants: string[] = [];
+let participantsIntervalId: NodeJS.Timeout;
+
 (async () => {
   const intervalId = setInterval(() => {
-    console.log(`[${new Date().toISOString()}] Bot is running...`);
+    console.log(`[${new Date().toISOString()}] Bot is running, participants: ${participants.join(', ')}`);
     // trpc.bots.heartbeat
     //   .mutate({
     //     id: parseInt(process.env.BOT_ID || "0"),
@@ -94,6 +98,9 @@ const leaveButtonSelector =
     // Open a new page
     const page = await browser.newPage();
 
+    // Log all console messages
+    page.on("console", (msg) => console.log("\x1b[36m[BROWSER CONSOLE]\x1b[0m", msg.text()));
+
     // Navigate the page to a URL
     await page.goto(urlObj.href);
 
@@ -107,12 +114,6 @@ const leaveButtonSelector =
 
     // Join the meeting
     await page.locator(`[data-tid="prejoin-join-button"]`).click();
-
-    // Listen for changes to the people in the meeting
-    page.locator(`aria-label="People"`).on("DOMSubtreeModified", async (e) => {
-      console.log("People changed");
-      console.log(e);
-    });
 
     // Wait until join button is disabled or disappears
     await page.waitForFunction(
@@ -144,6 +145,50 @@ const leaveButtonSelector =
     });
     console.log("Successfully joined meeting");
 
+    // Click the people button
+    console.log("Opening the participants list");
+    await page.locator('[aria-label="People"]').click();
+
+    // Wait for the attendees tree to appear
+    console.log("Waiting for the attendees tree to appear");
+    const tree = await page.waitForSelector('[role="tree"]');
+    console.log("Attendees tree found");
+
+    const updateParticipants = async () => {
+      try {
+        const currentParticipants = await page.evaluate(() => {
+          const participantsList = document.querySelector('[role="tree"]');
+          if (!participantsList) {
+            console.log("No participants list found");
+            return [];
+          }
+
+          const currentElements = Array.from(
+            participantsList.querySelectorAll(
+              '[data-tid^="participantsInCall-"]'
+            )
+          );
+
+          return currentElements
+            .map((el) => {
+              const nameSpan = el.querySelector('span[title]');
+              return nameSpan?.getAttribute("title") || nameSpan?.textContent?.trim() || "";
+            })
+            .filter((name) => name);
+        });
+
+        participants = currentParticipants;
+      } catch (error) {
+        console.log("Error getting participants:", error);
+      }
+    }
+
+    // Get initial participants list
+    await updateParticipants();
+    
+    // Then check for participants every heartbeatInterval milliseconds
+    participantsIntervalId = setInterval(updateParticipants, heartbeatInterval);
+
     // Get the stream
     const stream = await getStream(page, { audio: true, video: true });
 
@@ -158,6 +203,9 @@ const leaveButtonSelector =
       leaveButtonSelector
     );
     console.log("Meeting ended");
+
+    // Clear the participants checking interval
+    clearInterval(participantsIntervalId);
 
     // Stop recording
     await stream.destroy();
