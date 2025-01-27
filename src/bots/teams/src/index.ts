@@ -153,7 +153,7 @@ const leaveButtonSelector =
     // Then wait for meeting to end by watching for the "Leave" button to disappear
     await page.waitForFunction(
       (selector) => !document.querySelector(selector),
-      {},
+      { timeout: 0 }, // wait indefinitely
       leaveButtonSelector
     );
     console.log("Meeting ended");
