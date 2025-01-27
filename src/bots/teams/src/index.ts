@@ -80,6 +80,7 @@ const leaveButtonSelector =
       headless: "new",
       // args: ["--use-fake-ui-for-media-stream"],
       args: ["--no-sandbox"],
+      protocolTimeout: 0,
     });
 
     // Parse the URL
