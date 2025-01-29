@@ -16,6 +16,7 @@ const meetingID = config.meeting_info.meeting_id;
 const meetingPassword = config.meeting_info.meeting_password;
 const displayName = config.bot_display_name;
 const heartbeatInterval = config.heartbeat_interval;
+const waitingRoomTimeout = config.automatic_leave?.waiting_room_timeout ?? 20 * 60 * 1000; // default to 20 min
 
 if (typeof meetingID !== "string") {
     throw new Error("Invalid meeting ID in config.json");
@@ -25,6 +26,8 @@ if (typeof meetingID !== "string") {
     throw new Error("Invalid display name in config.json");
 } else if (typeof heartbeatInterval !== "number") {
     throw new Error("Invalid heartbeat interval in config.json");
+} else if (waitingRoomTimeout != null && typeof waitingRoomTimeout !== "number") {
+    throw new Error("Invalid waiting room timeout in config.json");
 }
 
 const url = `https://app.zoom.us/wc/${meetingID}/join?fromPWA=1&pwd=${meetingPassword}`;
@@ -107,7 +110,6 @@ if (
       await frame.waitForSelector("#input-for-name");
       await frame.type("#input-for-name", displayName);
       console.log("Typed name");
-      
       
       // Clicks the join button
       await frame.waitForSelector("button.zm-btn.preview-join-button");
