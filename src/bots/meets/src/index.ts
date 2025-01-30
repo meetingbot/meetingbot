@@ -103,6 +103,11 @@ const main = (async () => {
 
   // Browser is now closed.
 
+
+  // 15 second delay
+  console.log('Waiting 3 seconds before proceeding')
+  await setTimeout(3000);
+  
   // Upload recording to S3
   console.log("Uploading recording to S3...");
   const filePath = path.resolve(__dirname, "recording.mp4");
