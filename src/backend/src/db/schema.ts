@@ -9,7 +9,7 @@ import {
 } from 'drizzle-orm/pg-core'
 import { createInsertSchema, createSelectSchema } from 'drizzle-zod'
 
-const pgTable = pgTableCreator((name) => `backend_${name}`)
+const pgTable = pgTableCreator((name) => name)
 
 export const users = pgTable('users', {
   id: serial('id').primaryKey(),
@@ -23,6 +23,28 @@ export const insertUserSchema = createInsertSchema(users).omit({
 })
 export const selectUserSchema = createSelectSchema(users)
 
+const silenceDetectionSchema = z.object({
+  timeout: z.number().optional(), // the milliseconds of silence before the bot leaves
+  activateAfter: z.number().optional(), // the milliseconds the bot waits before it begins to detect silence
+})
+const botDetectionSchema = z.object({
+  usingParticipantEvents: z.object({
+    timeout: z.number().optional(), // the milliseconds before the bot leaves the meeting if it detects another bot
+    activateAfter: z.number().optional(), // the milliseconds the bot waits before it begins to detect other bots
+  }).optional(),
+  usingParticipantNames: z.object({
+    timeout: z.number().optional(), // the milliseconds before the bot leaves the meeting if it detects another bot
+    activateAfter: z.number().optional(), // the milliseconds the bot waits before it begins to detect other bots
+  }).optional(),
+})
+const automaticLeaveSchema = z.object({
+  silenceDetection: silenceDetectionSchema.optional(),
+  botDetection: botDetectionSchema.optional(),
+  waitingRoomTimeout: z.number().optional(), // the milliseconds before the bot leaves the meeting if it is in the waiting room
+  noOneJoinedTimeout: z.number().optional(), // the milliseconds before the bot leaves the meeting if no one has joined
+  everyoneLeftTimeout: z.number().optional(), // the milliseconds before the bot leaves the meeting if everyone has left
+})
+
 export const meetingInfoSchema = z.object({
   meetingId: z.string().optional().describe('Meeting ID'),
   meetingPassword: z.string().optional().describe('Meeting password'),
@@ -35,101 +57,37 @@ export const meetingInfoSchema = z.object({
 })
 export type MeetingInfo = z.infer<typeof meetingInfoSchema>
 
-export const deploymentStatus = z.enum([
-  'PENDING',
+// Define base status codes
+export const status = z.enum([
+  'READY_TO_DEPLOY',
   'DEPLOYING',
-  'DEPLOYED',
-  'FAILED',
+  'JOINING_CALL',
+  'IN_WAITING_ROOM',
+  'IN_CALL',
+  'CALL_ENDED',
+  'DONE',
+  'FATAL',
 ])
-export type DeploymentStatus = z.infer<typeof deploymentStatus>
+export type Status = z.infer<typeof status>
 
-export const bots = pgTable('bots', {
-  id: serial('id').primaryKey(),
-  userId: integer('user_id')
-    .references(() => users.id)
-    .notNull(),
-  meetingTitle: varchar('meeting_name', { length: 255 }),
-  meetingInfo: json('meeting_info').$type<MeetingInfo>().notNull(),
-  startTime: timestamp('start_time').notNull(),
-  endTime: timestamp('end_time').notNull(),
-  recording: varchar('recording', { length: 255 }),
-  lastHeartbeat: timestamp('last_heartbeat'),
-  createdAt: timestamp('created_at').defaultNow(),
-  deploymentStatus: varchar('deployment_status', { length: 255 })
-    .$type<DeploymentStatus>()
-    .notNull()
-    .default('PENDING'),
-  deploymentError: varchar('deployment_error', { length: 255 }),
-})
-export const insertBotSchema = createInsertSchema(bots)
-  .omit({
-    id: true,
-    createdAt: true,
-    recording: true,
-  })
-  .extend({
-    meetingInfo: meetingInfoSchema,
-    deploymentStatus: deploymentStatus,
-  })
-export const selectBotSchema = createSelectSchema(bots)
-  .omit({
-    recording: true,
-  })
-  .extend({
-    meetingInfo: meetingInfoSchema,
-    deploymentStatus: deploymentStatus,
-  })
+// Event codes include all status codes plus additional event-only codes
+const allEventCodes = [
+  ...status.options,
+  'PARTICIPANT_JOIN',
+  'PARTICIPANT_LEAVE',
+  'LOG',
+] as const
 
-const silenceDetectionSchema = z.object({
-  timeout: z.number(), // the milliseconds of silence before the bot leaves
-  activateAfter: z.number(), // the milliseconds the bot waits before it begins to detect silence
-})
-const botDetectionSchema = z.object({
-  usingParticipantEvents: z.object({ // when participant events are used to detect other bots in the meeting
-    timeout: z.number(), // the milliseconds before the bot leaves the meeting if it detects another bot
-    activateAfter: z.number(), // the milliseconds the bot waits before it begins to detect other bots
-  }),
-  usingParticipantNames: z.object({ // when participant names are used to detect other bots in the meeting
-    timeout: z.number(), // the milliseconds before the bot leaves the meeting if it detects another bot
-    activateAfter: z.number(), // the milliseconds the bot waits before it begins to detect other bots
-  }),
-})
-const automaticLeaveSchema = z.object({
-  silenceDetection: silenceDetectionSchema,
-  botDetection: botDetectionSchema,
-  waitingRoomTimeout: z.number(), // the milliseconds before the bot leaves the meeting if it is in the waiting room
-  noOneJoinedTimeout: z.number(), // the milliseconds before the bot leaves the meeting if no one has joined
-  everyoneLeftTimeout: z.number(), // the milliseconds before the bot leaves the meeting if everyone has left
-})
-
-export const botConfigSchema = insertBotSchema
-  .pick({
-    userId: true,
-    meetingInfo: true,
-    meetingTitle: true,
-    startTime: true,
-    endTime: true,
-  })
-  .extend({
-    botDisplayName: z.string(), // the display name of the bot
-    botImage: z.string().url(), // the display image of the bot
-    heartbeatInterval: z.number(), // the milliseconds between heartbeats
-    automaticLeave: automaticLeaveSchema,
-  })
-export type BotConfig = z.infer<typeof botConfigSchema>
-
-export const deployBotInputSchema = z.object({
-  id: z.number(),
-  botConfig: botConfigSchema,
-})
-
-const EVENT_DESCRIPTIONS = {
+// Define descriptions for all event types
+export const EVENT_DESCRIPTIONS = {
   PARTICIPANT_JOIN:
     'A participant has joined the call. The data.participantId will contain the id of the participant.',
   PARTICIPANT_LEAVE:
     'A participant has left the call. The data.participantId will contain the id of the participant.',
-  READY:
+  READY_TO_DEPLOY:
     'Resources have been provisioned and the bot is ready internally to join a meeting.',
+  DEPLOYING:
+    'The bot is in the process of being deployed with the specified configuration.',
   JOINING_CALL:
     'The bot has acknowledged the request to join the call, and is in the process of connecting.',
   IN_WAITING_ROOM: 'The bot is in the waiting room of the meeting.',
@@ -142,28 +100,87 @@ const EVENT_DESCRIPTIONS = {
   LOG: "Catch-all for any logs that were produced that don't fit any other event type. The data.message will contain the log contents.",
 } as const
 
-export const eventCode = z
-  .enum([
-    'PARTICIPANT_JOIN',
-    'PARTICIPANT_LEAVE',
-    'READY',
-    'JOINING_CALL',
-    'IN_WAITING_ROOM',
-    'IN_CALL',
-    'CALL_ENDED',
-    'DONE',
-    'FATAL',
-    'LOG',
-  ])
-  .describe('Event type code')
-  .superRefine((val, ctx) => {
-    ctx.addIssue({
-      code: z.ZodIssueCode.custom,
-      message: EVENT_DESCRIPTIONS[val as keyof typeof EVENT_DESCRIPTIONS],
-      fatal: false,
-    })
-  })
+// Define event codes with descriptions
+export const eventCode = z.enum(allEventCodes).describe('Event type code')
 export type EventCode = z.infer<typeof eventCode>
+
+export const bots = pgTable('bots', {
+  id: serial('id').primaryKey(),
+  userId: integer('user_id')
+    .references(() => users.id)
+    .notNull(),
+  meetingTitle: varchar('meeting_name', { length: 255 }),
+  meetingInfo: json('meeting_info').$type<MeetingInfo>().notNull(),
+  startTime: timestamp('start_time'),
+  endTime: timestamp('end_time'),
+  recording: varchar('recording', { length: 255 }),
+  lastHeartbeat: timestamp('last_heartbeat'),
+  createdAt: timestamp('created_at').defaultNow(),
+  status: varchar('status', { length: 255 })
+    .$type<Status>()
+    .notNull()
+    .default('READY_TO_DEPLOY'),
+  deploymentError: varchar('deployment_error', { length: 255 }),
+})
+export const insertBotSchema = createInsertSchema(bots)
+  .pick({
+    userId: true,
+    meetingTitle: true,
+    meetingInfo: true,
+    startTime: true,
+    endTime: true,
+    lastHeartbeat: true,
+    status: true,
+    deploymentError: true,
+  })
+  .extend({
+    meetingInfo: meetingInfoSchema,
+    status: status.optional(),
+    startTime: z.date().optional(),
+    endTime: z.date().optional(),
+    botDisplayName: z.string().optional(),
+    botImage: z.string().url().optional(),
+    heartbeatInterval: z.number().optional(),
+    automaticLeave: automaticLeaveSchema.optional(),
+  })
+export const selectBotSchema = createSelectSchema(bots)
+  .pick({
+    id: true,
+    userId: true,
+    meetingTitle: true,
+    meetingInfo: true,
+    startTime: true,
+    endTime: true,
+    lastHeartbeat: true,
+    createdAt: true,
+    status: true,
+    deploymentError: true,
+  })
+  .extend({
+    meetingInfo: meetingInfoSchema,
+    status: status,
+  })
+
+export const botConfigSchema = insertBotSchema
+  .pick({
+    userId: true,
+    meetingInfo: true,
+    meetingTitle: true,
+    startTime: true,
+    endTime: true,
+  })
+  .extend({
+    botDisplayName: z.string().optional(), // the display name of the bot
+    botImage: z.string().url().optional(), // the display image of the bot
+    heartbeatInterval: z.number().optional(), // the milliseconds between heartbeats
+    automaticLeave: automaticLeaveSchema.optional(),
+  })
+export type BotConfig = z.infer<typeof botConfigSchema>
+
+export const deployBotInputSchema = z.object({
+  id: z.number(),
+  botConfig: botConfigSchema,
+})
 
 const participantJoinData = z.object({
   participantId: z.string(),
@@ -211,9 +228,4 @@ export const insertEventSchema = createInsertSchema(events)
 export const selectEventSchema = createSelectSchema(events).extend({
   data: eventData.nullable(),
   eventType: eventCode,
-})
-
-export const heartbeatSchema = z.object({
-  id: z.number(),
-  events: z.array(insertEventSchema.omit({ botId: true })),
 })

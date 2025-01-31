@@ -1,6 +1,6 @@
 {
-  "id": "76b904f5-c2cd-4732-821e-9116d4aa0bc6",
-  "prevId": "00000000-0000-0000-0000-000000000000",
+  "id": "65902935-978e-48f9-90fc-f4a1eeb5a308",
+  "prevId": "76b904f5-c2cd-4732-821e-9116d4aa0bc6",
   "version": "7",
   "dialect": "postgresql",
   "tables": {
@@ -63,12 +63,12 @@
           "notNull": false,
           "default": "now()"
         },
-        "deployment_status": {
-          "name": "deployment_status",
+        "status": {
+          "name": "status",
           "type": "varchar(255)",
           "primaryKey": false,
-          "notNull": true,
-          "default": "'PENDING'"
+          "notNull": false,
+          "default": "'READY_TO_DEPLOY'"
         },
         "deployment_error": {
           "name": "deployment_error",

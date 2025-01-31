@@ -1,6 +1,11 @@
 import { z } from 'zod'
 import { createTRPCRouter, procedure } from '../server/trpc'
-import { events, insertEventSchema, selectEventSchema } from '../db/schema'
+import {
+  events,
+  insertEventSchema,
+  selectEventSchema,
+  EVENT_DESCRIPTIONS,
+} from '../db/schema'
 import { eq } from 'drizzle-orm'
 
 export const eventsRouter = createTRPCRouter({
@@ -9,7 +14,11 @@ export const eventsRouter = createTRPCRouter({
       openapi: {
         method: 'GET',
         path: '/events',
-        description: 'Retrieve a list of all events',
+        description:
+          'Retrieve a list of all events. Each event includes an eventType which can be one of several types, each with specific meanings:\n' +
+          Object.entries(EVENT_DESCRIPTIONS)
+            .map(([type, desc]) => `- ${type}: ${desc}`)
+            .join('\n'),
       },
     })
     .input(z.object({}))
@@ -23,7 +32,11 @@ export const eventsRouter = createTRPCRouter({
       openapi: {
         method: 'GET',
         path: '/events/bot/{botId}',
-        description: 'Get all events associated with a specific bot',
+        description:
+          'Get all events associated with a specific bot. Each event includes an eventType which can be one of several types, each with specific meanings:\n' +
+          Object.entries(EVENT_DESCRIPTIONS)
+            .map(([type, desc]) => `- ${type}: ${desc}`)
+            .join('\n'),
       },
     })
     .input(z.object({ botId: z.number() }))

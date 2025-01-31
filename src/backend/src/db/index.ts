@@ -16,6 +16,7 @@ if (!process.env.DATABASE_URL) {
  */
 const globalForDb = globalThis as unknown as {
   conn: postgres.Sql | undefined
+  migrated: boolean | undefined
 }
 
 const connectionString = process.env.DATABASE_URL!
@@ -32,14 +33,25 @@ if (process.env.NODE_ENV !== 'production') globalForDb.conn = client
 export const db = drizzle(client, { schema })
 
 // Create tables if they don't exist
-async function createTables() {
+async function setupDatabase() {
+  // Skip if we've already run migrations in this process (for development HMR)
+  if (process.env.NODE_ENV !== 'production' && globalForDb.migrated) {
+    return
+  }
+
   try {
     await migrate(db, { migrationsFolder: './src/db/migrations' })
-    console.log('Tables created successfully')
+    console.log('Database setup completed successfully')
+    if (process.env.NODE_ENV !== 'production') {
+      globalForDb.migrated = true
+    }
   } catch (error) {
-    console.error('Error creating tables:', error)
+    // Only log the error if it's not about existing tables
+    if (error instanceof Error && !error.message?.includes('already exists')) {
+      console.error('Error setting up database:', error)
+    }
   }
 }
 
-// Run migration on startup
-createTables().catch(console.error)
+// Run setup on startup
+setupDatabase().catch(console.error)

@@ -6,9 +6,11 @@ import {
   insertBotSchema,
   selectBotSchema,
   deployBotInputSchema,
-  heartbeatSchema,
+  insertEventSchema,
+  status,
 } from '../db/schema'
 import { eq, sql } from 'drizzle-orm'
+import { deployBot, shouldDeployImmediately } from '../services/botDeployment'
 
 export const botsRouter = createTRPCRouter({
   getBots: procedure
@@ -63,12 +65,30 @@ export const botsRouter = createTRPCRouter({
         await ctx.db.execute(sql`SELECT 1`)
         console.log('Database connection successful')
 
-        console.log('Inserting bot with input:', input)
-        const result = await ctx.db.insert(bots).values(input).returning()
-        console.log('Insert successful, result:', result)
+        // Extract database fields from input
+        const dbInput = {
+          userId: input.userId,
+          meetingTitle: input.meetingTitle,
+          meetingInfo: input.meetingInfo,
+          startTime: input.startTime,
+          endTime: input.endTime,
+          status: status.enum.READY_TO_DEPLOY,
+        }
+
+        const result = await ctx.db.insert(bots).values(dbInput).returning()
 
         if (!result[0]) {
           throw new Error('Bot creation failed - no result returned')
+        }
+
+        // Check if we should deploy immediately
+        if (await shouldDeployImmediately(input.startTime)) {
+          console.log('Deploying bot immediately...')
+          return await deployBot({
+            botId: result[0].id,
+            botConfig: input,
+            db: ctx.db,
+          })
         }
 
         return result[0]
@@ -156,10 +176,10 @@ export const botsRouter = createTRPCRouter({
         method: 'POST',
         path: '/bots/{id}/heartbeat',
         description:
-          'Called every few seconds by bot scripts to indicate that the bot is still running, and to record any events that have occurred',
+          'Called every few seconds by bot scripts to indicate that the bot is still running',
       },
     })
-    .input(heartbeatSchema)
+    .input(z.object({ id: z.number() }))
     .output(z.object({ success: z.boolean() }))
     .mutation(async ({ input, ctx }) => {
       // Update bot's last heartbeat
@@ -173,15 +193,31 @@ export const botsRouter = createTRPCRouter({
         throw new Error('Bot not found')
       }
 
-      // Insert any new events
-      if (input.events.length > 0) {
-        await ctx.db.insert(events).values(
-          input.events.map((event) => ({
-            ...event,
-            botId: input.id,
-          }))
-        )
-      }
+      return { success: true }
+    }),
+
+  reportEvent: procedure
+    .meta({
+      openapi: {
+        method: 'POST',
+        path: '/bots/{id}/events',
+        description:
+          'Called whenever an event occurs during the bot session to record it immediately',
+      },
+    })
+    .input(
+      z.object({
+        id: z.number(),
+        event: insertEventSchema.omit({ botId: true }),
+      })
+    )
+    .output(z.object({ success: z.boolean() }))
+    .mutation(async ({ input, ctx }) => {
+      // Insert the event
+      await ctx.db.insert(events).values({
+        ...input.event,
+        botId: input.id,
+      })
 
       return { success: true }
     }),
@@ -198,47 +234,10 @@ export const botsRouter = createTRPCRouter({
     .input(deployBotInputSchema)
     .output(selectBotSchema)
     .mutation(async ({ input, ctx }) => {
-      // First, update bot status to deploying
-      await ctx.db
-        .update(bots)
-        .set({ deploymentStatus: 'DEPLOYING' })
-        .where(eq(bots.id, input.id))
-
-      try {
-        // const botConfig = input.botConfig
-
-        // Here you would add the actual deployment logic:
-        // 1. Provision cloud resources
-        // 2. Start the bot process
-        // 3. Update status and return the bot
-
-        // For now, we'll simulate success
-        const result = await ctx.db
-          .update(bots)
-          .set({
-            deploymentStatus: 'DEPLOYED',
-            deploymentError: null,
-          })
-          .where(eq(bots.id, input.id))
-          .returning()
-
-        if (!result[0]) {
-          throw new Error('Bot not found')
-        }
-
-        return result[0]
-      } catch (error) {
-        // Update status to failed and store error message
-        await ctx.db
-          .update(bots)
-          .set({
-            deploymentStatus: 'FAILED',
-            deploymentError:
-              error instanceof Error ? error.message : 'Unknown error',
-          })
-          .where(eq(bots.id, input.id))
-
-        throw error
-      }
+      return await deployBot({
+        botId: input.id,
+        botConfig: input.botConfig,
+        db: ctx.db,
+      })
     }),
 })

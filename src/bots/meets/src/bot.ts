@@ -4,6 +4,7 @@ import { saveVideo, PageVideoCapture } from 'playwright-video';
 import { CaptureOptions } from 'playwright-video/build/PageVideoCapture';
 import StealthPlugin from 'puppeteer-extra-plugin-stealth';
 import fs from 'fs-extra';
+import { EventCode } from '../../../backend/src/db/schema';
 
 // Use Stealth
 const stealthPlugin = StealthPlugin();
@@ -42,6 +43,7 @@ export class MeetingBot {
     browserArgs: string[];
     meetingURL: string;
     readonly settings: { [key: string]: any }
+    onEvent?: (eventType: EventCode, data?: any) => Promise<void>;
 
     // Ssves
     browser: Browser;
@@ -55,7 +57,7 @@ export class MeetingBot {
     //
     //
     //
-    constructor (botSettings: { [key: string]: any }) {
+    constructor(meetingURL: string, botSettings: { [key: string]: any }, onEvent?: (eventType: EventCode, data?: any) => Promise<void>) {
 
         this.browserArgs = [
             '--incognito',
@@ -67,21 +69,9 @@ export class MeetingBot {
             ...(botSettings?.additionalBrowserSettings ?? [])
         ]
 
-        // Set
-        this.settings = botSettings; 
-        this.meetingURL = get_meeting_url(botSettings);
-
-        // ...
-        this.state = 0;
-        this.state_message = 'Waiting for Setup';
-    }
-
-    // Send a Pulse to Server
-    async sendHeartbeat () {
-
-        // TODO: Replace with Send to Websocket connection
-        console.log(this.state, this.state_message);
-
+        this.settings = botSettings;
+        this.meetingURL = meetingURL;
+        this.onEvent = onEvent;
     }
 
     //
@@ -98,7 +88,6 @@ export class MeetingBot {
 
         // Unpack Dimensions
         const vp = this.settings.viewport || { width: 1280, height: 720 };
-        const name = this.settings.bot_display_name || 'MeetingBot'; 
 
         // Create Browser Context
         const context = await this.browser.newContext({
@@ -139,6 +128,8 @@ export class MeetingBot {
         await this.page.mouse.click(100, 100);
 
         await this.page.goto(this.meetingURL, { waitUntil: 'networkidle' });
+
+        const name = this.settings.name || 'MeetingBot';
 
         console.log('Waiting for the input field to be visible...');
         await this.page.waitForSelector(enterNameField);
@@ -200,16 +191,72 @@ export class MeetingBot {
         await this.page.waitForSelector(peopleButton)
         await this.page.click(peopleButton);
 
+        // Wait for the people panel to be visible
+        await this.page.waitForSelector('[aria-label="Participants"]', { state: 'visible' });
+
         // Start Recording, Yes by default
         if (this.settings.recordMeeting || true)
             this.startRecording();
 
+        // Set up participant monitoring
+        if (this.onEvent) {
+            // Monitor for participants joining
+            await this.page.exposeFunction('onParticipantJoin', async (participantId: string) => {
+                if (this.onEvent) {
+                    await this.onEvent('PARTICIPANT_JOIN', { participantId });
+                }
+            });
+
+            // Monitor for participants leaving
+            await this.page.exposeFunction('onParticipantLeave', async (participantId: string) => {
+                if (this.onEvent) {
+                    await this.onEvent('PARTICIPANT_LEAVE', { participantId });
+                }
+            });
+
+            // Add mutation observer for participant list
+            await this.page.evaluate(() => {
+                const peopleList = document.querySelector('[aria-label="Participants"]');
+                if (!peopleList) {
+                    console.error('Could not find participants list element');
+                    return;
+                }
+                console.log('Setting up mutation observer on participants list');
+                const observer = new MutationObserver((mutations) => {
+                    mutations.forEach((mutation) => {
+                        if (mutation.type === 'childList') {
+                            mutation.addedNodes.forEach((node: any) => {
+                                if (node.getAttribute && node.getAttribute('data-participant-id')) {
+                                    console.log('Participant joined:', node.getAttribute('data-participant-id'));
+                                    // @ts-ignore
+                                    window.onParticipantJoin(node.getAttribute('data-participant-id'));
+                                }
+                            });
+                            mutation.removedNodes.forEach((node: any) => {
+                                if (node.getAttribute && node.getAttribute('data-participant-id')) {
+                                    console.log('Participant left:', node.getAttribute('data-participant-id'));
+                                    // @ts-ignore
+                                    window.onParticipantLeave(node.getAttribute('data-participant-id'));
+                                }
+                            });
+                        }
+                    });
+                });
+                observer.observe(peopleList, { childList: true, subtree: true });
+            });
+        }
+
         // Define Exit Condition(s)
-        const onlyMeInMeeting = this.page.locator(onePersonRemainingField).waitFor()
+        const onlyMeInMeeting = this.page
+            .locator(onePersonRemainingField)
+            .waitFor({ timeout: 0 });
         // const exitCondition2 = this.page.waitForFunction(() => document.title.includes('Success'));
 
         // Chill Until an Exit Condition is met
-        const result = await Promise.race([onlyMeInMeeting, ]);
+        const result = await Promise.race([
+            onlyMeInMeeting,
+            // Add more conditions here later
+        ]);
 
         // Exit
         await this.leaveMeeting();
