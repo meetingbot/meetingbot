@@ -7,10 +7,29 @@ import path from 'path'
 import { fileURLToPath } from 'url'
 import { DEFAULT_BOT_CONFIG } from '../constants'
 import { merge } from 'lodash-es'
+import {
+  ECSClient,
+  ECSClientConfig,
+  RunTaskCommand,
+  RunTaskRequest,
+} from '@aws-sdk/client-ecs'
 
 // Get the directory path using import.meta.url
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
+
+const config: ECSClientConfig = {
+  region: process.env.AWS_REGION,
+}
+
+if (process.env.AWS_ACCESS_KEY_ID && process.env.AWS_SECRET_ACCESS_KEY) {
+  config.credentials = {
+    accessKeyId: process.env.AWS_ACCESS_KEY_ID,
+    secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
+  }
+}
+
+const client = new ECSClient(config)
 
 export class BotDeploymentError extends Error {
   constructor(message: string) {
@@ -28,6 +47,8 @@ export async function deployBot({
   botConfig: BotConfig
   db: PostgresJsDatabase<typeof schema>
 }) {
+  const dev = process.env.NODE_ENV === 'development'
+
   // First, update bot status to deploying
   await db.update(bots).set({ status: 'DEPLOYING' }).where(eq(bots.id, botId))
 
@@ -53,25 +74,50 @@ export async function deployBot({
       automaticLeave: mergedConfig.automaticLeave,
     }
 
-    // Spawn the bot process
-    const botProcess = spawn('pnpm', ['dev'], {
-      cwd: meetsDir,
-      env: {
-        ...process.env,
-        BOT_DATA: JSON.stringify(botData),
-      },
-    })
+    if (dev) {
+      // Spawn the bot process
+      const botProcess = spawn('pnpm', ['dev'], {
+        cwd: meetsDir,
+        env: {
+          ...process.env,
+          BOT_DATA: JSON.stringify(botData),
+        },
+      })
 
-    // Log output for debugging
-    botProcess.stdout.on('data', (data) => {
-      console.log(`Bot ${botId} stdout: ${data}`)
-    })
-    botProcess.stderr.on('data', (data) => {
-      console.error(`Bot ${botId} stderr: ${data}`)
-    })
-    botProcess.on('error', (error) => {
-      console.error(`Bot ${botId} process error:`, error)
-    })
+      // Log output for debugging
+      botProcess.stdout.on('data', (data) => {
+        console.log(`Bot ${botId} stdout: ${data}`)
+      })
+      botProcess.stderr.on('data', (data) => {
+        console.error(`Bot ${botId} stderr: ${data}`)
+      })
+      botProcess.on('error', (error) => {
+        console.error(`Bot ${botId} process error:`, error)
+      })
+    } else {
+      // todo: i'm not sure if this works as intended
+      const input: RunTaskRequest = {
+        cluster: 'meetingbot-dev',
+        taskDefinition: 'meetingbot-dev-meets-bot',
+        launchType: 'FARGATE',
+        overrides: {
+          containerOverrides: [
+            {
+              name: 'meets-bot',
+              environment: [
+                {
+                  name: 'BOT_DATA',
+                  value: JSON.stringify(botData),
+                },
+              ],
+            },
+          ],
+        },
+      }
+
+      const command = new RunTaskCommand(input)
+      const result = await client.send(command)
+    }
 
     // Update status to joining call
     const result = await db

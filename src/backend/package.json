@@ -20,6 +20,7 @@
   "keywords": [],
   "author": "",
   "dependencies": {
+    "@aws-sdk/client-ecs": "^3.738.0",
     "@trpc/server": "^10.45.2",
     "@types/lodash-es": "^4.17.12",
     "aws-sdk": "^2.1692.0",
