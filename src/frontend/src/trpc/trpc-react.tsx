@@ -21,14 +21,6 @@ function getQueryClient() {
   // Browser: use singleton pattern to keep the same query client
   return (clientQueryClientSingleton ??= makeQueryClient());
 }
-function getUrl() {
-  const base = (() => {
-    if (typeof window !== "undefined") return "";
-    if (process.env.BACKEND_URL) return `https://${process.env.BACKEND_URL}`;
-    return "http://127.0.0.1:8000/api/trpc";
-  })();
-  return `${base}/api/trpc`;
-}
 export function TRPCProvider(
   props: Readonly<{
     children: React.ReactNode;
@@ -44,7 +36,7 @@ export function TRPCProvider(
       transformer: superjson,
       links: [
         httpBatchLink({
-          url: getUrl(),
+          url: process.env.BACKEND_URL ?? "http://127.0.0.1:3001/api/trpc",
         }),
       ],
     }),

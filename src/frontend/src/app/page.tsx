@@ -3,9 +3,7 @@ import Link from "next/link";
 import { trpcVanilla } from "~/trpc/trpc-vanilla";
 
 export default async function Home() {
-  const bot = await trpcVanilla.bots.getBot.query({
-    id: 2,
-  });
+  const bots = await trpcVanilla.bots.getBots.query({});
 
   return (
     <>
@@ -39,9 +37,9 @@ export default async function Home() {
             </Link>
           </div>
           <div className="flex flex-col items-center gap-2">
-            {bot ? (
+            {bots[0] ? (
               <pre className="whitespace-pre-wrap rounded-lg bg-white/10 p-4">
-                {JSON.stringify(bot, null, 2)}
+                {JSON.stringify(bots[0], null, 2)}
               </pre>
             ) : (
               "Loading tRPC query..."
