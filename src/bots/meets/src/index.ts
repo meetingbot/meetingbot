@@ -112,19 +112,18 @@ const main = (async () => {
   console.log('Waiting 1 second before proceeding (ensure recording is unlocked)')
   await setTimeout(1000);
   
-  // Upload recording to S3
+  // Upload recording to S3 in the correct format
   console.log("Uploading recording to S3...");
-  const filePath = path.resolve(__dirname, "recording.mp4");
   const fileContent = readFileSync(recordingPath);
   const uuid = crypto.randomUUID();
-  const key = `recordings/${uuid}-meets-recording.mp4`;
+  const key = `recordings/${uuid}-meet.webm`;
 
   try {
     const commandObjects = {
       Bucket: awsBucketName,
       Key: key,
       Body: fileContent,
-      ContentType: 'video/mp4',
+      ContentType: 'video/webm',
     };
 
     const putCommand = new PutObjectCommand(commandObjects);

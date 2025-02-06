@@ -53,15 +53,27 @@ export async function deployBot({
       automaticLeave: bot.automaticLeave,
     }
 
-    // Spawn the bot process
-    const botProcess = spawn('pnpm', ['dev'], {
-      cwd: meetsDir,
-      env: {
-        ...process.env,
-        BOT_DATA: JSON.stringify(config),
-      },
-    })
 
+    let botProcess = null;
+    // Windows Process
+    if (/^win/.test(process.platform) ) {
+      botProcess = botProcess = spawn('cmd', ['/c', 'pnpm', 'dev'], {
+        cwd: meetsDir,
+        env: {
+          ...process.env,
+          BOT_DATA: JSON.stringify(config),
+        },
+      });
+    // UNIX Process
+    } else {
+      botProcess = spawn('pnpm', ['dev'], {
+        cwd: meetsDir,
+        env: {
+          ...process.env,
+          BOT_DATA: JSON.stringify(config),
+        },
+      });
+    }
     // Log output for debugging
     botProcess.stdout.on('data', (data) => {
       console.log(`Bot ${botId} stdout: ${data}`)

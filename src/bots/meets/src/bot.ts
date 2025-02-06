@@ -210,6 +210,7 @@ export class MeetingBot {
 
         // Expose Function to Stop Recording & Save as File
         await this.page.exposeFunction('stopRecording', async () => {
+            console.log('Recording Stop Initiated with recorder.stop().')
             await this.saveRecording();
         });
 
@@ -383,15 +384,34 @@ export class MeetingBot {
         console.log('Waiting until a leave condition is fulfilled..')
         while (true) {
 
-            console.log('Checking Conditions ...')
-
+            
             // Check if it's only me in the meeting
-            if (await this.page.locator(onePersonRemainingField).count() > 0) break;
-
-            // Got kicked
-            if (await this.page.locator(gotKickedDetector).count() > 0) {
+            console.log('Checking if 1 Person Remaining ...')
+            if (await this.page.locator(onePersonRemainingField).count().catch(() => 0) > 0) break;
+            
+            // Got kicked -- no longer in the meeting
+            console.log('Checking for Return to Home ...')
+            if (await this.page.locator(gotKickedDetector).count().catch(() => 0) > 0) {
                 this.kicked = true;
-                console.log('Kicked');
+                console.log('Kicked 0');
+                break;
+            }
+            console.log('Checking for lack of leave button ...')
+            if ((await this.page.locator(leaveButton).count().catch(() => 0)) == 0) {
+                this.kicked = true;
+                console.log('Kicked 1');
+                break;
+            }
+            console.log('Checking for hidden leave button ...')
+            if (await this.page.locator(leaveButton).isHidden({ timeout: 500 }).catch(() => true)) {
+                this.kicked = true;
+                console.log('Kicked 2');
+                break;
+            }
+            console.log('Checking for removed from meeting text ...')
+            if (await this.page.locator('text="You\'ve been removed from the meeting"').isVisible({ timeout: 500 }).catch(() => false)) {
+                this.kicked = true;
+                console.log('Kicked 3');
                 break;
             }
 
@@ -401,7 +421,7 @@ export class MeetingBot {
 
 
         // Exit
-        console.log('Starting End Life Actions ...')
+        console.log('Starting End Life Actions ... No longer checking the end conditions.')
         await this.leaveMeeting();
         return 0;
     }
@@ -415,10 +435,12 @@ export class MeetingBot {
         console.log('Done.')
 
         // Try and Find the leave button, press. Otherwise, just delete the browser.
-        if (await this.page.locator(leaveButton).count() > 0) {
+        try {
             console.log("Trying to leave the call ...")
             await this.page.click(leaveButton);
             console.log('Left Call.')
+        } catch (e) {
+            console.log('Attempted to Leave Call - couldn\'t (probably aleready left).')
         }
 
         await this.browser.close();
