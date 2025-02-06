@@ -32,34 +32,37 @@ export async function deployBot({
   await db.update(bots).set({ status: 'DEPLOYING' }).where(eq(bots.id, botId))
 
   try {
-    // Ensure it's a Google Meet URL
-    if (!botConfig.meetingInfo.meetingUrl?.includes('meet.google.com')) {
-      throw new BotDeploymentError(
-        'Only Google Meet URLs are supported at this time'
-      )
+    // determine the bot directory based on the platform
+    let botPath = null
+    switch (botConfig.meetingInfo.platform) {
+      case 'google':
+        botPath = '../../../bots/meets'
+        break
+      case 'teams':
+        botPath = '../../../bots/teams'
+        break
+      case 'zoom':
+        botPath = '../../../bots/zoom'
+        break
+      default:
+        throw new BotDeploymentError('Unsupported platform')
     }
-
-    // Get the absolute path to the meets bot directory
-    const meetsDir = path.resolve(__dirname, '../../../bots/meets')
+    // Get the absolute path to the bot directory
+    const botDir = path.resolve(__dirname, botPath)
 
     // Merge default config with user provided config
     const mergedConfig = merge({}, DEFAULT_BOT_CONFIG, botConfig)
 
-    const botData = {
-      botId,
-      meetingUrl: mergedConfig.meetingInfo.meetingUrl,
-      name: mergedConfig.botDisplayName,
-      recordingPath: './recording.mp4',
-      automaticLeave: mergedConfig.automaticLeave,
-    }
+    // this parsing also stringifies the bot data
+    const env = schema.envSchema.parse({
+      ...process.env,
+      BOT_DATA: mergedConfig,
+    })
 
     // Spawn the bot process
     const botProcess = spawn('pnpm', ['dev'], {
-      cwd: meetsDir,
-      env: {
-        ...process.env,
-        BOT_DATA: JSON.stringify(botData),
-      },
+      cwd: botDir,
+      env,
     })
 
     // Log output for debugging

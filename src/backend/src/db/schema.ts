@@ -229,3 +229,13 @@ export const selectEventSchema = createSelectSchema(events).extend({
   data: eventData.nullable(),
   eventType: eventCode,
 })
+
+export const envSchema = z.object({
+  AWS_ACCESS_KEY_ID: z.string(),
+  AWS_SECRET_ACCESS_KEY: z.string(),
+  AWS_BUCKET_NAME: z.string(),
+  AWS_REGION: z.string(),
+  BOT_DATA: botConfigSchema.transform((data) => JSON.stringify(data)),
+})
+
+export type Env = z.infer<typeof envSchema>
