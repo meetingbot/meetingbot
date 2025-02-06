@@ -24,7 +24,6 @@
     "playwright": "^1.49.1",
     "playwright-extra": "^4.3.6",
     "playwright-extra-plugin-stealth": "^0.0.1",
-    "playwright-video": "^2.4.0",
     "puppeteer": "^23.7.0",
     "puppeteer-extra": "^3.3.6",
     "puppeteer-extra-plugin-stealth": "^2.11.2",
