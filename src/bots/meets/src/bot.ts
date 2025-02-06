@@ -66,6 +66,9 @@ export class MeetingBot {
             '--disable-features=IsolateOrigins,site-per-process',
             '--disable-infobars',
             "--use-fake-device-for-media-stream",
+            "--use-fake-ui-for-media-stream",
+            "--use-file-for-fake-video-capture=/dev/null",
+            "--use-file-for-fake-audio-capture=/dev/null",
             ...(botSettings?.additionalBrowserSettings ?? [])
         ]
 
@@ -266,7 +269,7 @@ export class MeetingBot {
     async leaveMeeting() {
 
         // Ensure
-        this.stopRecording();
+        await this.stopRecording();
 
         // Try and Find the leave button, press. Otherwise, just delete the browser.
         await this.page.click(leaveButton);
