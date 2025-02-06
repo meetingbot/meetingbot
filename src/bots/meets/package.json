@@ -15,6 +15,8 @@
   "dependencies": {
     "@aws-sdk/client-s3": "^3.697.0",
     "@ffmpeg-installer/ffmpeg": "^1.1.0",
+    "@ffmpeg/core": "^0.12.10",
+    "@ffmpeg/ffmpeg": "^0.12.15",
     "@trpc/client": "^10.45.2",
     "@trpc/server": "^10.45.2",
     "dotenv": "^16.4.5",

@@ -7,6 +7,10 @@ import crypto from 'crypto';
 import path from 'path';
 import { startHeartbeat, reportEvent } from './monitoring';
 import { BotConfig } from "../../../backend/src/db/schema";
+import FFmpeg from '@ffmpeg/ffmpeg';
+
+// Output
+console.log(FFmpeg)
 
 // Load In Configs
 dotenv.config()
@@ -105,8 +109,8 @@ const main = (async () => {
 
 
   // 15 second delay
-  console.log('Waiting 3 seconds before proceeding')
-  await setTimeout(3000);
+  console.log('Waiting 1 second before proceeding (ensure recording is unlocked)')
+  await setTimeout(1000);
   
   // Upload recording to S3
   console.log("Uploading recording to S3...");
