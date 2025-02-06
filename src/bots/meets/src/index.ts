@@ -37,7 +37,7 @@ const main = (async () => {
   console.log('Received bot data:', botData)
   const botId = botData.id;
   const url = botData.meetingInfo.meetingUrl!;
-  const recordingPath = "./recording.mp4";
+  const recordingPath = path.resolve("./recording.mp4");
   const awsAccessKeyId = process.env.AWS_ACCESS_KEY_ID!
   const awsSecretAccessKey = process.env.AWS_SECRET_ACCESS_KEY!
   const awsBucketName = process.env.AWS_BUCKET_NAME!
