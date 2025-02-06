@@ -1,0 +1,106 @@
+diff --git a/build/VideoWriter.js b/build/VideoWriter.js
+index 5c07e1f97feb5b789104d905e08601d8829afb42..80a14bd9748a34d5dbacbbf94a9d0142084c729c 100644
+--- a/build/VideoWriter.js
++++ b/build/VideoWriter.js
+@@ -19,50 +19,75 @@ class VideoWriter extends events_1.EventEmitter {
+         this._receivedFrame = false;
+         this._stopped = false;
+         this._stream = new stream_1.PassThrough();
++        this._width = options?.width || 1280;
++        this._height = options?.height || 720;
++        this._bitrate = options?.bitrate || '1000k';
+         utils_1.ensureFfmpegPath();
+-        if (options && options.fps) {
++        if (options?.fps) {
+             this._framesPerSecond = options.fps;
+         }
+-        this._writeVideo(savePath);
++        this._writeVideo(savePath).catch(err => {
++            this.emit('error', err);
++        });
+     }
+     static async create(savePath, options) {
+-        await fs_extra_1.ensureDir(path_1.dirname(savePath));
+-        return new VideoWriter(savePath, options);
++        try {
++            await fs_extra_1.ensureDir(path_1.dirname(savePath));
++            return new VideoWriter(savePath, options);
++        } catch (err) {
++            throw new Error(`Failed to create video writer: ${err.message}`);
++        }
+     }
+-    _writeVideo(savePath) {
++    async _writeVideo(savePath) {
+         debug(`write video to ${savePath}`);
+         this._endedPromise = new Promise((resolve, reject) => {
+-            fluent_ffmpeg_1.default({ source: this._stream, priority: 20 })
+-                .videoCodec('libx264')
+-                .inputFormat('image2pipe')
+-                .inputFPS(this._framesPerSecond)
+-                .outputOptions('-preset ultrafast')
+-                .outputOptions('-pix_fmt yuv420p')
++            try {
++                const ffmpeg = fluent_ffmpeg_1.default({ source: this._stream, priority: 20 })
++                    .videoCodec('libx264')
++                    .inputFormat('image2pipe')
++                    .inputFPS(this._framesPerSecond)
++                    .size(`${this._width}x${this._height}`)
++                    .videoBitrate(this._bitrate)
++                    .outputOptions([
++                        '-preset ultrafast',
++                        '-pix_fmt yuv420p'
++                    ]);
++                ffmpeg.on('start', (commandLine) => {
++                    debug(`Spawned Ffmpeg with command: ${commandLine}`);
++                })
+                 .on('error', (e) => {
+-                this.emit('ffmpegerror', e.message);
+-                // do not reject as a result of not having frames
+-                if (!this._receivedFrame &&
+-                    e.message.includes('pipe:0: End of file')) {
+-                    resolve();
+-                    return;
+-                }
+-                reject(`pw-video: error capturing video: ${e.message}`);
+-            })
++                    this.emit('ffmpegerror', e.message);
++                    if (!this._receivedFrame && e.message.includes('pipe:0: End of file')) {
++                        resolve();
++                        return;
++                    }
++                    reject(new Error(`pw-video: error capturing video: ${e.message}`));
++                })
+                 .on('end', () => {
+-                resolve();
+-            })
+-                .save(savePath);
++                    resolve();
++                });
++                ffmpeg.save(savePath);
++            } catch (err) {
++                reject(new Error(`Failed to initialize ffmpeg: ${err.message}`));
++            }
+         });
+     }
+-    stop() {
++    async stop() {
+         if (this._stopped) {
+             return this._endedPromise;
+         }
+         this._stopped = true;
+-        this._stream.end();
+-        return this._endedPromise;
++        try {
++            this._stream.end();
++            await this._endedPromise;
++        } catch (err) {
++            throw new Error(`Failed to stop video writer: ${err.message}`);
++        }
+     }
+     write(data, durationSeconds = 1) {
++        if (this._stopped) {
++            throw new Error('Cannot write to stopped video writer');
++        }
+         this._receivedFrame = true;
+         const numFrames = Math.max(Math.round(durationSeconds * this._framesPerSecond), 1);
+         debug(`write ${numFrames} frames for duration ${durationSeconds}s`);

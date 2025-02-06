@@ -31,5 +31,10 @@
   "devDependencies": {
     "tsx": "^4.19.0",
     "typescript": "^5.6.2"
+  },
+  "pnpm": {
+    "patchedDependencies": {
+      "playwright-video": "patches/playwright-video.patch"
+    }
   }
 }
