@@ -82,6 +82,9 @@ export const eventsRouter = createTRPCRouter({
     .output(selectEventSchema)
     .mutation(async ({ ctx, input }) => {
       const result = await ctx.db.insert(events).values(input).returning()
+      if (!result[0]) {
+        throw new Error('Failed to create event')
+      }
       return result[0]
     }),
 

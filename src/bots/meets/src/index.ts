@@ -81,7 +81,7 @@ const main = (async () => {
     join = await bot.joinMeeting();
   } catch (error) {
     if (bot.page) await bot.page.screenshot({path: './tmp/debug.png', fullPage: true});
-    await reportEvent(botId, 'FATAL', { description: error.message });
+    await reportEvent(botId, 'FATAL', { description: (error as Error).message });
     throw error
   }
 

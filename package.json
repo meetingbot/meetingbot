@@ -1,0 +1,11 @@
+{
+  "name": "meetingbot",
+  "private": true,
+  "version": "0.0.0",
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "scripts": {
+    "typecheck": "pnpm --recursive run typecheck"
+  }
+} 

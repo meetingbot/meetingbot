@@ -7,7 +7,8 @@
     "start": "tsx src/index.ts",
     "dev": "tsx src/index.ts",
     "test": "echo \"Error: no test specified\" && exit 1",
-    "preinstall": "pnpm dlx puppeteer browsers install chrome"
+    "preinstall": "pnpm dlx puppeteer browsers install chrome",
+    "typecheck": "tsc --noEmit"
   },
   "keywords": [],
   "author": "",

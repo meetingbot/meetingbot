@@ -6,7 +6,8 @@
   "scripts": {
     "dev": "tsx src/index.ts",
     "test": "echo \"Error: no test specified\" && exit 1",
-    "preinstall": "pnpm dlx playwright install"
+    "preinstall": "pnpm dlx playwright install",
+    "typecheck": "tsc --noEmit"
   },
   "keywords": [],
   "author": "",
