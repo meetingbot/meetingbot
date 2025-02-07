@@ -5,8 +5,6 @@ import * as schema from '../db/schema'
 import { spawn } from 'child_process'
 import path from 'path'
 import { fileURLToPath } from 'url'
-import { DEFAULT_BOT_CONFIG } from '../constants'
-import { merge } from 'lodash-es'
 
 // Get the directory path using import.meta.url
 const __filename = fileURLToPath(import.meta.url)
@@ -21,36 +19,38 @@ export class BotDeploymentError extends Error {
 
 export async function deployBot({
   botId,
-  botConfig,
   db,
 }: {
   botId: number
-  botConfig: BotConfig
   db: PostgresJsDatabase<typeof schema>
 }) {
+  const botResult = await db.select().from(bots).where(eq(bots.id, botId))
+  if (!botResult[0]) {
+    throw new Error('Bot not found')
+  }
+  const bot = botResult[0]
+
   // First, update bot status to deploying
   await db.update(bots).set({ status: 'DEPLOYING' }).where(eq(bots.id, botId))
 
   try {
-    // Ensure it's a Google Meet URL
-    if (!botConfig.meetingInfo.meetingUrl?.includes('meet.google.com')) {
-      throw new BotDeploymentError(
-        'Only Google Meet URLs are supported at this time'
-      )
-    }
-
     // Get the absolute path to the meets bot directory
     const meetsDir = path.resolve(__dirname, '../../../bots/meets')
 
     // Merge default config with user provided config
-    const mergedConfig = merge({}, DEFAULT_BOT_CONFIG, botConfig)
+    // const mergedConfig: BotConfig = merge({}, DEFAULT_BOT_CONFIG, botConfig)
 
-    const botData = {
-      botId,
-      meetingUrl: mergedConfig.meetingInfo.meetingUrl,
-      name: mergedConfig.botDisplayName,
-      recordingPath: './recording.mp4',
-      automaticLeave: mergedConfig.automaticLeave,
+    const config: BotConfig = {
+      id: botId,
+      userId: bot.userId,
+      meetingTitle: bot.meetingTitle,
+      meetingInfo: bot.meetingInfo,
+      startTime: bot.startTime,
+      endTime: bot.endTime,
+      botDisplayName: bot.botDisplayName,
+      botImage: bot.botImage ?? undefined,
+      heartbeatInterval: bot.heartbeatInterval,
+      automaticLeave: bot.automaticLeave,
     }
 
     // Spawn the bot process
@@ -58,7 +58,7 @@ export async function deployBot({
       cwd: meetsDir,
       env: {
         ...process.env,
-        BOT_DATA: JSON.stringify(botData),
+        BOT_DATA: JSON.stringify(config),
       },
     })
 

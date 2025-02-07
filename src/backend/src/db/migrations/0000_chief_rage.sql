@@ -1,15 +1,19 @@
 CREATE TABLE "bots" (
 	"id" serial PRIMARY KEY NOT NULL,
+	"bot_display_name" varchar(255) NOT NULL,
+	"bot_image" varchar(255),
 	"user_id" integer NOT NULL,
-	"meeting_name" varchar(255),
+	"meeting_name" varchar(255) NOT NULL,
 	"meeting_info" json NOT NULL,
-	"start_time" timestamp,
-	"end_time" timestamp,
+	"start_time" timestamp NOT NULL,
+	"end_time" timestamp NOT NULL,
 	"recording" varchar(255),
 	"last_heartbeat" timestamp,
-	"created_at" timestamp DEFAULT now(),
-	"deployment_status" varchar(255) DEFAULT 'PENDING' NOT NULL,
-	"deployment_error" varchar(255)
+	"status" varchar(255) DEFAULT 'READY_TO_DEPLOY' NOT NULL,
+	"deployment_error" varchar(1024),
+	"heartbeat_interval" integer NOT NULL,
+	"automatic_leave" json NOT NULL,
+	"created_at" timestamp DEFAULT now()
 );
 --> statement-breakpoint
 CREATE TABLE "events" (

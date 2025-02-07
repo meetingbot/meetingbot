@@ -1,1 +1,0 @@
-ALTER TABLE "bots" RENAME COLUMN "deployment_status" TO "status";

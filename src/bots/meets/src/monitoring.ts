@@ -33,10 +33,10 @@ export const reportEvent = async (botId: number, eventType: EventCode, eventData
 
     // Update bot status if this event type is a valid status
     if (eventType in status.enum) {
-      await trpc.bots.updateBot.mutate({
+      await trpc.bots.updateBotStatus.mutate({
         id: botId,
-        data: { status: eventType as Status }
-      });
+        status: eventType as Status
+      }); 
     }
 
     console.log(`[${new Date().toISOString()}] Event reported: ${eventType}`);
