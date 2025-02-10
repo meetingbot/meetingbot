@@ -1,2 +1,3 @@
 packages:
-  - 'src/**' 
+  # Exclude everything from this workspace (global package.json is only used for typecheck)
+  - "!src/**"
