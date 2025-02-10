@@ -4,51 +4,40 @@ import { launch, getStream, wss } from "puppeteer-stream";
 import { S3Client, PutObjectCommand } from "@aws-sdk/client-s3";
 import crypto from "crypto";
 import dotenv from "dotenv";
-import { trpc } from "./trpc";
-
+import { BotConfig } from "../../../backend/src/db/schema";
 // Load environment variables
 dotenv.config();
-// load config.json
-const config = JSON.parse(fs.readFileSync("config.json", "utf8"));
 
-const meetingId = config.meeting_info.meeting_id;
-const organizerId = config.meeting_info.organizer_id;
-const tenantId = config.meeting_info.tenant_id;
-const displayName = config.bot_display_name;
-const heartbeatInterval = config.heartbeat_interval;
-const waitingRoomTimeout = config.automatic_leave?.waiting_room_timeout ?? 20 * 60 * 1000; // default to 20 min
+const requiredEnvVars = [
+  "BOT_DATA",
+  "AWS_ACCESS_KEY_ID",
+  "AWS_SECRET_ACCESS_KEY",
+  "AWS_BUCKET_NAME",
+  "AWS_REGION",
+] as const;
 
-if (typeof meetingId !== "string") {
-  throw new Error("Invalid meeting ID in config.json");
-} else if (typeof organizerId !== "string") {
-  throw new Error("Invalid organizer ID in config.json");
-} else if (typeof tenantId !== "string") {
-  throw new Error("Invalid tenant ID in config.json");
-} else if (displayName != null && typeof displayName !== "string") {
-  throw new Error("Invalid display name in config.json");
-} else if (typeof heartbeatInterval !== "number") {
-  throw new Error("Invalid heartbeat interval in config.json");
-} else if (waitingRoomTimeout != null && typeof waitingRoomTimeout !== "number") {
-  throw new Error("Invalid waiting room timeout in config.json");
+// Check all required environment variables are present
+for (const envVar of requiredEnvVars) {
+  if (!process.env[envVar]) {
+    throw new Error(`Missing required environment variable: ${envVar}`);
+  }
 }
+
+// load config.json
+const botData: BotConfig = JSON.parse(process.env.BOT_DATA!);
+const { meetingInfo, botDisplayName, heartbeatInterval, automaticLeave } =
+  botData;
+const { meetingId, organizerId, tenantId } = meetingInfo;
+const { waitingRoomTimeout } = automaticLeave;
 
 const url = `https://teams.microsoft.com/v2/?meetingjoin=true#/l/meetup-join/19:meeting_${meetingId}@thread.v2/0?context=%7b%22Tid%22%3a%22${tenantId}%22%2c%22Oid%22%3a%22${organizerId}%22%7d&anon=true`;
 
-if (
-  !process.env.AWS_ACCESS_KEY_ID ||
-  !process.env.AWS_SECRET_ACCESS_KEY ||
-  !process.env.AWS_BUCKET_NAME ||
-  !process.env.AWS_REGION
-) {
-  throw new Error("Missing environment variables");
-}
-
 // Initialize S3 client
 const s3Client = new S3Client({
-  region: process.env.AWS_REGION,
+  region: process.env.AWS_REGION!,
   credentials: {
-    accessKeyId: process.env.AWS_ACCESS_KEY_ID,
-    secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
+    accessKeyId: process.env.AWS_ACCESS_KEY_ID!,
+    secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY!,
   },
 });
 
@@ -64,7 +53,11 @@ let participantsIntervalId: NodeJS.Timeout;
 
 (async () => {
   const intervalId = setInterval(() => {
-    console.log(`[${new Date().toISOString()}] Bot is running, participants: ${participants.join(', ')}`);
+    console.log(
+      `[${new Date().toISOString()}] Bot is running, participants: ${participants.join(
+        ", "
+      )}`
+    );
     // trpc.bots.heartbeat
     //   .mutate({
     //     id: parseInt(process.env.BOT_ID || "0"),
@@ -99,7 +92,9 @@ let participantsIntervalId: NodeJS.Timeout;
     const page = await browser.newPage();
 
     // Log all console messages
-    page.on("console", (msg) => console.log("\x1b[36m[BROWSER CONSOLE]\x1b[0m", msg.text()));
+    page.on("console", (msg) =>
+      console.log("\x1b[36m[BROWSER CONSOLE]\x1b[0m", msg.text())
+    );
 
     // Navigate the page to a URL
     await page.goto(urlObj.href);
@@ -107,7 +102,7 @@ let participantsIntervalId: NodeJS.Timeout;
     // Fill in the display name
     await page
       .locator(`[data-tid="prejoin-display-name-input"]`)
-      .fill(displayName ?? "Meeting Bot");
+      .fill(botDisplayName ?? "Meeting Bot");
 
     // Mute microphone before joining
     await page.locator(`[data-tid="toggle-mute"]`).click();
@@ -133,7 +128,13 @@ let participantsIntervalId: NodeJS.Timeout;
 
     let timeout = 30000; // if not in the waiting room, wait 30 seconds to join the meeting
     if (isWaitingRoom) {
-      console.log(`Joined waiting room, will wait for ${waitingRoomTimeout > 60 * 1000 ? `${waitingRoomTimeout / 60 / 1000} minute(s)` : `${waitingRoomTimeout / 1000} second(s)`}`);
+      console.log(
+        `Joined waiting room, will wait for ${
+          waitingRoomTimeout > 60 * 1000
+            ? `${waitingRoomTimeout / 60 / 1000} minute(s)`
+            : `${waitingRoomTimeout / 1000} second(s)`
+        }`
+      );
 
       // if in the waiting room, wait for the waiting room timeout
       timeout = waitingRoomTimeout; // in milliseconds
@@ -171,8 +172,12 @@ let participantsIntervalId: NodeJS.Timeout;
 
           return currentElements
             .map((el) => {
-              const nameSpan = el.querySelector('span[title]');
-              return nameSpan?.getAttribute("title") || nameSpan?.textContent?.trim() || "";
+              const nameSpan = el.querySelector("span[title]");
+              return (
+                nameSpan?.getAttribute("title") ||
+                nameSpan?.textContent?.trim() ||
+                ""
+              );
             })
             .filter((name) => name);
         });
@@ -181,11 +186,11 @@ let participantsIntervalId: NodeJS.Timeout;
       } catch (error) {
         console.log("Error getting participants:", error);
       }
-    }
+    };
 
     // Get initial participants list
     await updateParticipants();
-    
+
     // Then check for participants every heartbeatInterval milliseconds
     participantsIntervalId = setInterval(updateParticipants, heartbeatInterval);
 
