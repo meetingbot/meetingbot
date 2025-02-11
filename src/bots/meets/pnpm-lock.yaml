@@ -4,6 +4,11 @@ settings:
   autoInstallPeers: true
   excludeLinksFromLockfile: false
 
+patchedDependencies:
+  playwright-video:
+    hash: 261195e1a3fb629b6a272434dbbfd588bf29e2b394584b29058f139e7ccbd1c5
+    path: patches/playwright-video.patch
+
 importers:
 
   .:
@@ -37,7 +42,7 @@ importers:
         version: 0.0.1
       playwright-video:
         specifier: ^2.4.0
-        version: 2.4.0
+        version: 2.4.0(patch_hash=261195e1a3fb629b6a272434dbbfd588bf29e2b394584b29058f139e7ccbd1c5)
       puppeteer:
         specifier: ^23.7.0
         version: 23.9.0(typescript@5.6.2)
@@ -2931,7 +2936,7 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
-  playwright-video@2.4.0:
+  playwright-video@2.4.0(patch_hash=261195e1a3fb629b6a272434dbbfd588bf29e2b394584b29058f139e7ccbd1c5):
     dependencies:
       debug: 4.3.7
       fluent-ffmpeg: 2.1.3
