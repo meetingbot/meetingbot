@@ -97,12 +97,12 @@ export async function deployBot({
       // todo: i'm not sure if this works as intended
       const input: RunTaskRequest = {
         cluster: 'meetingbot-dev',
-        taskDefinition: 'meetingbot-dev-meets-bot',
+        taskDefinition: 'meetingbot-dev-meet-bot',
         launchType: 'FARGATE',
         overrides: {
           containerOverrides: [
             {
-              name: 'meets-bot',
+              name: 'meet-bot',
               environment: [
                 {
                   name: 'BOT_DATA',
