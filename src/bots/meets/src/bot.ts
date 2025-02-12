@@ -3,6 +3,7 @@ import { Browser, Page } from 'playwright';
 import { saveVideo, PageVideoCapture } from 'playwright-video';
 import { CaptureOptions } from 'playwright-video/build/PageVideoCapture';
 import StealthPlugin from 'puppeteer-extra-plugin-stealth';
+import { setTimeout } from 'timers/promises';
 import { EventCode } from '../../../backend/src/db/schema';
 
 // Use Stealth
@@ -15,6 +16,7 @@ const userAgent = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 
 
 const enterNameField = 'input[type="text"][aria-label="Your name"]';
 const askToJoinButton = '//button[.//span[text()="Ask to join"]]';
+const gotKickedDetector = '//button[.//span[text()="Return to home screen"]]';
 const leaveButton = `//button[@aria-label="Leave call"]`
 const peopleButton = `//button[@aria-label="People"]`
 const onePersonRemainingField = '//span[.//div[text()="Contributors"]]//div[text()="1"]'
@@ -36,6 +38,8 @@ export class MeetingBot {
     recorder: PageVideoCapture | undefined;
     state: number = 0;
     state_message: string = '';
+
+    kicked: boolean = false;
     
 
     //
@@ -60,6 +64,23 @@ export class MeetingBot {
         this.settings = botSettings;
         this.meetingURL = meetingURL;
         this.onEvent = onEvent;
+        // Set
+        this.settings = botSettings; 
+        this.meetingURL = meetingURL;
+
+        // ...
+        this.state = 0;
+        this.state_message = 'Waiting for Setup';
+
+        this.kicked = false;
+    }
+
+    // Send a Pulse to Server
+    async sendHeartbeat () {
+
+        // TODO: Replace with Send to Websocket connection
+        console.log(this.state, this.state_message);
+
     }
 
     //
@@ -183,6 +204,7 @@ export class MeetingBot {
         await this.page.waitForSelector('[aria-label="Participants"]', { state: 'visible' });
 
         // Start Recording, Yes by default
+        console.log('Starting Recording')
         if (this.settings.recordMeeting || true)
             this.startRecording();
 
@@ -234,31 +256,45 @@ export class MeetingBot {
             });
         }
 
-        // Define Exit Condition(s)
-        const onlyMeInMeeting = this.page
-            .locator(onePersonRemainingField)
-            .waitFor({ timeout: 0 });
-        // const exitCondition2 = this.page.waitForFunction(() => document.title.includes('Success'));
+        // Loop -- check for end meeting conditions every second
+        console.log('Waiting until a leave condition is fulfilled..')
+        while (true) {
 
-        // Chill Until an Exit Condition is met
-        const result = await Promise.race([
-            onlyMeInMeeting,
-            // Add more conditions here later
-        ]);
+            // Check if it's only me in the meeting
+            if (await this.page.locator(onePersonRemainingField).count() > 0) break;
+            
+            // Got kicked
+            if (await this.page.locator(gotKickedDetector).count() > 0) {
+                this.kicked = true;
+                console.log('Kicked');
+                break;
+            }
+            
+            // Reset Loop
+            await setTimeout(1000); //1 second loop
+        }
+    
 
         // Exit
+        console.log('Starting End Life Actions ...')
         await this.leaveMeeting();
         return 0;
     }
 
+
     async leaveMeeting() {
 
         // Ensure
+        console.log('Stopping Recording ...')
         await this.stopRecording();
+        console.log('Done.')
 
         // Try and Find the leave button, press. Otherwise, just delete the browser.
-        await this.page.click(leaveButton);
-        console.log('Left Call.')
+        if (await this.page.locator(leaveButton).count() > 0) {
+            console.log("Trying to leave the call ...")
+            await this.page.click(leaveButton);
+            console.log('Left Call.')
+        }
 
         await this.browser.close();
         console.log('Closed Browser.')
