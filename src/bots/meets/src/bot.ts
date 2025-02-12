@@ -21,7 +21,7 @@ const leaveButton = `//button[@aria-label="Leave call"]`
 const peopleButton = `//button[@aria-label="People"]`
 const onePersonRemainingField = '//span[.//div[text()="Contributors"]]//div[text()="1"]'
 
-const randomDelay = (amount: number) => (2*Math.random() - 1) * (amount/10) + amount;
+const randomDelay = (amount: number) => (2*Math.random() - 1) * (amount/10) + amount;  
 
 
 
@@ -284,7 +284,7 @@ export class MeetingBot {
 
     async leaveMeeting() {
 
-        // Ensure
+        // Ensure Recording is done
         console.log('Stopping Recording ...')
         await this.stopRecording();
         console.log('Done.')
