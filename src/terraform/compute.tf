@@ -39,7 +39,7 @@ module "ecs_service" {
   container_definitions = {
     "${local.name}-backend" = {
       essential = true
-      image     = "ghcr.io/meetingbot/backend:pr-105"
+      image     = "ghcr.io/meetingbot/backend:${local.current_commit_sha}"
       port_mappings = [
         {
           name          = "${local.name}-backend"
@@ -120,7 +120,7 @@ module "ecs_task_definition" {
   container_definitions = {
     bot = {
       essential = true
-      image     = "ghcr.io/meetingbot/bots/meet:pr-103"
+      image     = "ghcr.io/meetingbot/bots/meet:${local.current_commit_sha}"
       environment = [
         {
           name  = "BACKEND_URL"

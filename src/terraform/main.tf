@@ -17,6 +17,8 @@ locals {
   name = "meetingbot-${terraform.workspace}"
 
   azs = slice(data.aws_availability_zones.available.names, 0, 3)
+
+  current_commit_sha = trimspace(file("../../.git/${trimspace(trimprefix(file("../../.git/HEAD"), "ref:"))}"))
 }
 
 terraform {
