@@ -99,6 +99,18 @@ export async function deployBot({
         cluster: 'meetingbot-dev',
         taskDefinition: 'meetingbot-dev-meet-bot',
         launchType: 'FARGATE',
+        networkConfiguration: {
+          awsvpcConfiguration: {
+            // TODO: STOP HARDCODING THESE
+            subnets: [
+              'subnet-0c19be0808044a100',
+              'subnet-0f4ff939fc54af4ab',
+              'subnet-06a3bd70f32b079f3',
+            ],
+            securityGroups: ['sg-0b11e926357708c71'],
+            assignPublicIp: 'ENABLED',
+          },
+        },
         overrides: {
           containerOverrides: [
             {
