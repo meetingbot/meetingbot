@@ -8,6 +8,7 @@ on:
 
 env:
   REGISTRY: ghcr.io
+  DOCKER_METADATA_PR_HEAD_SHA: true
 
 jobs:
   backend:
