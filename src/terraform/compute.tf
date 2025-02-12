@@ -39,7 +39,7 @@ module "ecs_service" {
   container_definitions = {
     "${local.name}-backend" = {
       essential = true
-      image     = "ghcr.io/meetingbot/backend:pr-91"
+      image     = "ghcr.io/meetingbot/backend:${local.current_commit_sha}"
       port_mappings = [
         {
           name          = "${local.name}-backend"
@@ -110,34 +110,23 @@ module "ecs_task_definition" {
   source = "terraform-aws-modules/ecs/aws//modules/service"
 
   # Service
-  name           = "${local.name}-standalone"
+  name           = "${local.name}-meet-bot"
   cluster_arn    = module.ecs_cluster.arn
   create_service = false
 
   # Task Definition
-  volume = {
-    ex-vol = {}
-  }
-
-  runtime_platform = {
-    cpu_architecture        = "ARM64"
-    operating_system_family = "LINUX"
-  }
 
   # Container definition(s)
   container_definitions = {
-    al2023 = {
-      image = "public.ecr.aws/amazonlinux/amazonlinux:2023-minimal"
-
-      mount_points = [
+    bot = {
+      essential = true
+      image     = "ghcr.io/meetingbot/bots/meet:${local.current_commit_sha}"
+      environment = [
         {
-          sourceVolume  = "ex-vol",
-          containerPath = "/var/www/ex-vol"
+          name  = "BACKEND_URL"
+          value = "http://${local.name}-backend:${local.backend_port}/api/trpc"
         }
       ]
-
-      command    = ["echo hello world"]
-      entrypoint = ["/usr/bin/sh", "-c"]
     }
   }
 
