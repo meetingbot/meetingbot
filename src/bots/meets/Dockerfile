@@ -46,8 +46,6 @@ COPY --from=base /root/.cache/ms-playwright /root/.cache/ms-playwright
 
 # Copy files into the container
 COPY ./src ./src
-COPY .env ./
-COPY config.json ./
 
 #Run Commsand
 CMD ["sh", "-c", "xvfb-run -s '-screen 0 1280x1024x24' npm run dev"]

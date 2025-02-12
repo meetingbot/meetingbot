@@ -33,6 +33,9 @@ export const usersRouter = createTRPCRouter({
         .select()
         .from(users)
         .where(eq(users.id, input.id))
+      if (!result[0]) {
+        throw new Error(`User with ID ${input.id} not found`)
+      }
       return result[0]
     }),
 
@@ -48,6 +51,9 @@ export const usersRouter = createTRPCRouter({
     .output(selectUserSchema)
     .mutation(async ({ ctx, input }) => {
       const result = await ctx.db.insert(users).values(input).returning()
+      if (!result[0]) {
+        throw new Error('Failed to create user')
+      }
       return result[0]
     }),
 

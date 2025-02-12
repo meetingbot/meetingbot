@@ -3,7 +3,6 @@ import { Browser, Page } from 'playwright';
 import { saveVideo, PageVideoCapture } from 'playwright-video';
 import { CaptureOptions } from 'playwright-video/build/PageVideoCapture';
 import StealthPlugin from 'puppeteer-extra-plugin-stealth';
-import fs from 'fs-extra';
 import { EventCode } from '../../../backend/src/db/schema';
 
 // Use Stealth
@@ -22,21 +21,7 @@ const onePersonRemainingField = '//span[.//div[text()="Contributors"]]//div[text
 
 const randomDelay = (amount: number) => (2*Math.random() - 1) * (amount/10) + amount;
 
-// Grab Meeting URl from Config
-const get_meeting_url = (config) => {
 
-    // Assertion
-    if (!config)
-        throw new Error('No Config Found')
-    if (!config.meeting_info)
-        throw new Error('No Meeting Info Found Within Config')
-    if (!config.meeting_info.meeting_id)
-        throw new Error('No Neeting Id Provided.')
-  
-    return `https://meet.google.com/${config.meeting_info.meeting_id}`;
-  
-  }
-  
 
 export class MeetingBot {
 
@@ -45,12 +30,12 @@ export class MeetingBot {
     readonly settings: { [key: string]: any }
     onEvent?: (eventType: EventCode, data?: any) => Promise<void>;
 
-    // Ssves
-    browser: Browser;
-    page: Page;
+    // These properties are initialized in joinMeeting()
+    browser!: Browser;
+    page!: Page;
     recorder: PageVideoCapture | undefined;
-    state: number;
-    state_message: string;
+    state: number = 0;
+    state_message: string = '';
     
 
     //

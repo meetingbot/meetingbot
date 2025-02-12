@@ -6,6 +6,7 @@ import { setTimeout } from 'timers/promises';
 import crypto from 'crypto';
 import path from 'path';
 import { startHeartbeat, reportEvent } from './monitoring';
+import { BotConfig } from "../../../backend/src/db/schema";
 
 // Load In Configs
 dotenv.config()
@@ -28,11 +29,11 @@ const main = (async () => {
   }
 
   // Parse bot data
-  const botData = JSON.parse(process.env.BOT_DATA!)
+  const botData: BotConfig = JSON.parse(process.env.BOT_DATA!);
   console.log('Received bot data:', botData)
-  const botId = botData.botId
-  const url = botData.meetingUrl
-  const recordingPath = botData.recordingPath
+  const botId = botData.id;
+  const url = botData.meetingInfo.meetingUrl!;
+  const recordingPath = "./recording.mp4";
   const awsAccessKeyId = process.env.AWS_ACCESS_KEY_ID!
   const awsSecretAccessKey = process.env.AWS_SECRET_ACCESS_KEY!
   const awsBucketName = process.env.AWS_BUCKET_NAME!
@@ -55,7 +56,7 @@ const main = (async () => {
 
   // Create the bot with settings
   const botSettings = {
-    name: botData.name,
+    name: botData.botDisplayName,
     recordingPath,
     // Automatic leave settings from bot data
     silenceTimeout: botData.automaticLeave.silenceDetection.timeout,
@@ -81,7 +82,7 @@ const main = (async () => {
     join = await bot.joinMeeting();
   } catch (error) {
     if (bot.page) await bot.page.screenshot({path: './tmp/debug.png', fullPage: true});
-    await reportEvent(botId, 'FATAL', { description: error.message });
+    await reportEvent(botId, 'FATAL', { description: (error as Error).message });
     throw error
   }
 

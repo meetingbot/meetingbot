@@ -5,12 +5,12 @@ import {
   events,
   insertBotSchema,
   selectBotSchema,
-  deployBotInputSchema,
   insertEventSchema,
   status,
 } from '../db/schema'
 import { eq, sql } from 'drizzle-orm'
 import { deployBot, shouldDeployImmediately } from '../services/botDeployment'
+import { DEFAULT_BOT_VALUES } from '../constants'
 
 export const botsRouter = createTRPCRouter({
   getBots: procedure
@@ -67,12 +67,18 @@ export const botsRouter = createTRPCRouter({
 
         // Extract database fields from input
         const dbInput = {
+          botDisplayName:
+            input.botDisplayName ?? DEFAULT_BOT_VALUES.botDisplayName,
+          botImage: input.botImage,
           userId: input.userId,
-          meetingTitle: input.meetingTitle,
+          meetingTitle: input.meetingTitle ?? DEFAULT_BOT_VALUES.meetingTitle,
           meetingInfo: input.meetingInfo,
-          startTime: input.startTime,
-          endTime: input.endTime,
-          status: status.enum.READY_TO_DEPLOY,
+          startTime: input.startTime ?? new Date(),
+          endTime: input.endTime ?? new Date(),
+          heartbeatInterval:
+            input.heartbeatInterval ?? DEFAULT_BOT_VALUES.heartbeatInterval,
+          automaticLeave:
+            input.automaticLeave ?? DEFAULT_BOT_VALUES.automaticLeave,
         }
 
         const result = await ctx.db.insert(bots).values(dbInput).returning()
@@ -86,7 +92,6 @@ export const botsRouter = createTRPCRouter({
           console.log('Deploying bot immediately...')
           return await deployBot({
             botId: result[0].id,
-            botConfig: input,
             db: ctx.db,
           })
         }
@@ -117,6 +122,29 @@ export const botsRouter = createTRPCRouter({
       const result = await ctx.db
         .update(bots)
         .set(input.data)
+        .where(eq(bots.id, input.id))
+        .returning()
+
+      if (!result[0]) {
+        throw new Error('Bot not found')
+      }
+      return result[0]
+    }),
+
+  updateBotStatus: procedure
+    .meta({
+      openapi: {
+        method: 'PATCH',
+        path: '/bots/{id}/status',
+        description: 'Update the status of a bot',
+      },
+    })
+    .input(z.object({ id: z.number(), status }))
+    .output(selectBotSchema)
+    .mutation(async ({ input, ctx }) => {
+      const result = await ctx.db
+        .update(bots)
+        .set({ status: input.status })
         .where(eq(bots.id, input.id))
         .returning()
 
@@ -231,12 +259,11 @@ export const botsRouter = createTRPCRouter({
           'Deploy a bot by provisioning necessary resources and starting it up',
       },
     })
-    .input(deployBotInputSchema)
+    .input(z.object({ id: z.number() }))
     .output(selectBotSchema)
     .mutation(async ({ input, ctx }) => {
       return await deployBot({
         botId: input.id,
-        botConfig: input.botConfig,
         db: ctx.db,
       })
     }),

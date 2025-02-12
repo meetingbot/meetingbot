@@ -16,10 +16,10 @@ POST http://127.0.0.1:3001/api/bots
 content-type: application/json
 
 {
-  "userId": 1,
+  "userId": 5,
   "meetingTitle": "Test Google Meet",
   "meetingInfo": {
-    "meetingUrl": "https://meet.google.com/mvd-tibd-oxa",
+    "meetingUrl": "https://meet.google.com/orn-ovgv-dym",
     "platform": "google"
   }
 }
