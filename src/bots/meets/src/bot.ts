@@ -1,7 +1,6 @@
 import { chromium } from 'playwright-extra';
+import * as fs from 'fs';
 import { Browser, Page } from 'playwright';
-import { saveVideo, PageVideoCapture } from 'playwright-video';
-import { CaptureOptions } from 'playwright-video/build/PageVideoCapture';
 import StealthPlugin from 'puppeteer-extra-plugin-stealth';
 import { setTimeout } from 'timers/promises';
 import { EventCode } from '../../../backend/src/db/schema';
@@ -21,9 +20,20 @@ const leaveButton = `//button[@aria-label="Leave call"]`
 const peopleButton = `//button[@aria-label="People"]`
 const onePersonRemainingField = '//span[.//div[text()="Contributors"]]//div[text()="1"]'
 
-const randomDelay = (amount: number) => (2*Math.random() - 1) * (amount/10) + amount;  
+const muteButton = `[aria-label*="Turn off mic"]` //conatins
+const cameraOffButton = `[aria-label*="Turn off camera"]`
 
+const randomDelay = (amount: number) => (2 * Math.random() - 1) * (amount / 10) + amount;
 
+// Ensure Typescript doesn't complain about the global exposed functions that will be setup.
+declare global {
+    interface Window {
+        saveChunk: (chunk: number[]) => void;
+        stopRecording: () => void;
+
+        recorder: MediaRecorder | undefined;
+    }
+}
 
 export class MeetingBot {
 
@@ -35,12 +45,15 @@ export class MeetingBot {
     // These properties are initialized in joinMeeting()
     browser!: Browser;
     page!: Page;
-    recorder: PageVideoCapture | undefined;
+    
     state: number = 0;
     state_message: string = '';
 
     kicked: boolean = false;
-    
+    startedRecording: boolean = false;
+
+    private recordBuffer: Buffer[] = [];
+
 
     //
     //
@@ -54,8 +67,11 @@ export class MeetingBot {
             '--disable-setuid-sandbox',
             '--disable-features=IsolateOrigins,site-per-process',
             '--disable-infobars',
-            "--use-fake-device-for-media-stream",
-            "--use-fake-ui-for-media-stream",
+            // "--use-fake-device-for-media-stream",
+
+            '--use-fake-ui-for-media-stream', //bypass permission ui
+            "--enable-blink-features=WebRTCPipeWireCapturer", //Auto accept Linux screen recording (no extra)
+            "--auto-select-desktop-capture-source=your-tab-title", // Auto-selects tab
             "--use-file-for-fake-video-capture=/dev/null",
             "--use-file-for-fake-audio-capture=/dev/null",
             ...(botSettings?.additionalBrowserSettings ?? [])
@@ -73,10 +89,11 @@ export class MeetingBot {
         this.state_message = 'Waiting for Setup';
 
         this.kicked = false;
+        this.startedRecording = false;
     }
 
     // Send a Pulse to Server
-    async sendHeartbeat () {
+    async sendHeartbeat() {
 
         // TODO: Replace with Send to Websocket connection
         console.log(this.state, this.state_message);
@@ -108,7 +125,7 @@ export class MeetingBot {
         // Create Page, Go to
         this.page = await context.newPage();
         await this.page.waitForTimeout(randomDelay(1000));
-        
+
         // Inject anti-detection code using addInitScript
         await this.page.addInitScript(() => {
             // Disable navigator.webdriver to avoid detection
@@ -128,7 +145,8 @@ export class MeetingBot {
             Object.defineProperty(window, 'outerWidth', { get: () => 1920 });
             Object.defineProperty(window, 'outerHeight', { get: () => 1080 });
         });
-        
+
+
         await this.page.mouse.move(10, 672)
         await this.page.mouse.move(102, 872)
         await this.page.mouse.move(114, 1472)
@@ -144,16 +162,28 @@ export class MeetingBot {
         await this.page.waitForSelector(enterNameField);
 
         console.log('Waiting for 1 seconds...');
-        await this.page.waitForTimeout(randomDelay(1000));
-
+        await this.page.waitForTimeout(randomDelay(3000));
+        
         console.log('Filling the input field with the name...');
         await this.page.fill(enterNameField, name);
+        
+        
+        await this.page.waitForTimeout(randomDelay(500));
+        
+        // TODO: Mute Self - Turn Off Camera
+        console.log('Turning Off Camera and Microsphone ...');
+        await this.page.click(muteButton); 
+        await this.page.waitForTimeout(10);
+        await this.page.click(cameraOffButton);
+        await this.page.waitForTimeout(randomDelay(100));
+
+
 
         console.log('Waiting for the "Ask to join" button...');
-        await this.page.waitForSelector(askToJoinButton, { timeout: 60000 });
-
+        await this.page.waitForSelector(askToJoinButton, { timeout: 60000 });;
         console.log('Clicking the "Ask to join" button...');
         await this.page.click(askToJoinButton);
+        
 
         //Should Exit after 1 Minute
         console.log('Awaiting Entry ....')
@@ -165,29 +195,122 @@ export class MeetingBot {
 
     async startRecording() {
 
-        // Set Default Recording Options
-        const recordingOptions: CaptureOptions = this.settings.recordingOptions ||
-        {
-            followPopups: true,
-            fps: 25,
+        console.log('Attempting to start the recording ...');
+
+        // Lock - for debugging
+        if (this.startedRecording) return 0;
+        this.startedRecording = true;
+
+        console.log('Exposing Functions ...')
+
+        // Expose Function to Save Chunks
+        await this.page.exposeFunction('saveChunk', async (chunk: any) => {
+            this.recordBuffer.push(Buffer.from(chunk));
+        });
+
+        // Expose Function to Stop Recording & Save as File
+        await this.page.exposeFunction('stopRecording', async () => {
+            await this.saveRecording();
+        });
+
+
+        //Access Browser Media APIS
+        console.log('Starting Window Details ...')
+        await this.page.evaluate(() => {
+            (async () => {
+
+                try {
+                    console.log('Starting the Recording..')
+                    // Start Recording Stream
+                    const stream = await navigator.mediaDevices.getDisplayMedia({ 
+                        audio: {
+                            echoCancellation: false,
+                            noiseSuppression: false,
+                            autoGainControl: false,
+                            channelCount: 1, // Force audio to come from the browser only
+                        }, 
+                        video: true });
+
+                    // Remove microphone input, keep only system audio
+                    stream.getAudioTracks().forEach(track => {
+                        if (track.label.toLowerCase().includes("microphone")) {
+                            stream.removeTrack(track);
+                        }
+                    });
+
+                    // Store MediaRecorder instance inside `window`
+                    Object.assign(window, {
+                        recorder: new MediaRecorder(stream, { 
+                            mimeType: "video/webm; codecs=opus" ,
+                            audioBitsPerSecond: 128000,
+                        })
+                    });
+
+                    if (!window.recorder) {
+                        throw new Error('Could not create MediaRecorder instance');
+                    }
+
+                    window.recorder.ondataavailable = async (e: BlobEvent) => {
+
+                        //Get a buffer
+                        const buffer = await e.data.arrayBuffer();
+                        window.saveChunk?.(Array.from(new Uint8Array(buffer))); //Send Chunk
+
+                    };
+
+                    window.recorder.onstop = async () => {
+                        console.log('Recording Stopped... attempting to save recording.')
+                        await window.stopRecording?.();
+                    }
+
+                    // Start Recording
+                    window.recorder.start(1000); // 1 second chunks
+                    console.log('Recording Started.')
+
+                    // Catch Error - End
+                } catch (e) {
+                    console.error('Error Starting Recording:', e);
+                }
+            })(); // immediatly invoke
+
+            console.log('Entered Evaluate Function ...')
+        });
+
+
+        console.log('Potentially Done.')
+
+        return 0;
+    }
+
+    async saveRecording() {
+
+        if (this.recordBuffer.length == 0) {
+            console.log('No recording chunks to save.');
+            return 1;
         }
 
-        // Save the Recorder
-        this.recorder = await saveVideo(this.page, this.settings.recordingPath, recordingOptions);
-        return 0;
+        fs.writeFileSync(this.settings.recordingPath, Buffer.concat(this.recordBuffer), 'binary');
+        console.log('Recording saved to:', this.settings.recordingPath);
     }
 
     async stopRecording() {
 
-        // Error case
-        if (!this.recorder) {
-            console.log('Cannot stop recording as recording has not been started.')
-            return 1;
-        }
+        console.log('Attempting to stop the recording ...');
 
-        // Stop the Recording & Drop Reference
-        await this.recorder.stop();
-        this.recorder = undefined;
+        await this.page.evaluate(async () => {
+
+            console.log(window.recorder);
+
+            // Error case
+            if (!window.recorder) {
+                console.log('Cannot stop recording as recording has not been started.')
+                return 1;
+            }
+
+            await window.recorder.stop();
+            window.recorder = undefined;
+            console.log('Stopped Recording.')
+        });
 
         return 0;
     }
@@ -260,20 +383,22 @@ export class MeetingBot {
         console.log('Waiting until a leave condition is fulfilled..')
         while (true) {
 
+            console.log('Checking Conditions ...')
+
             // Check if it's only me in the meeting
             if (await this.page.locator(onePersonRemainingField).count() > 0) break;
-            
+
             // Got kicked
             if (await this.page.locator(gotKickedDetector).count() > 0) {
                 this.kicked = true;
                 console.log('Kicked');
                 break;
             }
-            
+
             // Reset Loop
             await setTimeout(1000); //1 second loop
         }
-    
+
 
         // Exit
         console.log('Starting End Life Actions ...')
