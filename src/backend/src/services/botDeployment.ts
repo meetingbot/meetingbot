@@ -102,7 +102,7 @@ export async function deployBot({
         overrides: {
           containerOverrides: [
             {
-              name: 'meet-bot',
+              name: 'bot',
               environment: [
                 {
                   name: 'BOT_DATA',

@@ -39,7 +39,7 @@ module "ecs_service" {
   container_definitions = {
     "${local.name}-backend" = {
       essential = true
-      image     = "ghcr.io/meetingbot/backend:${local.current_commit_sha}"
+      image     = "ghcr.io/meetingbot/backend:sha-${local.current_commit_sha_short}"
       port_mappings = [
         {
           name          = "${local.name}-backend"
@@ -60,6 +60,17 @@ module "ecs_service" {
       ]
     }
   }
+
+  tasks_iam_role_statements = [
+    {
+      actions = [
+        "ecs:RunTask",
+        "ecs:StopTask",
+        "iam:PassRole",
+      ]
+      resources = ["*"]
+    }
+  ]
 
   service_connect_configuration = {
     namespace = aws_service_discovery_http_namespace.this.arn
@@ -120,7 +131,7 @@ module "ecs_task_definition" {
   container_definitions = {
     bot = {
       essential = true
-      image     = "ghcr.io/meetingbot/bots/meet:${local.current_commit_sha}"
+      image     = "ghcr.io/meetingbot/bots/meet:sha-${local.current_commit_sha_short}"
       environment = [
         {
           name  = "BACKEND_URL"

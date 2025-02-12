@@ -18,7 +18,7 @@ locals {
 
   azs = slice(data.aws_availability_zones.available.names, 0, 3)
 
-  current_commit_sha = trimspace(file("../../.git/${trimspace(trimprefix(file("../../.git/HEAD"), "ref:"))}"))
+  current_commit_sha_short = substr(trimspace(file("../../.git/${trimspace(trimprefix(file("../../.git/HEAD"), "ref:"))}")), 0, 7)
 }
 
 terraform {
