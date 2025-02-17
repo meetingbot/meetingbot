@@ -1,87 +1,59 @@
 import fs from "fs";
 import puppeteer from "puppeteer";
 import { launch, getStream, wss } from "puppeteer-stream";
-import { S3Client, PutObjectCommand } from "@aws-sdk/client-s3";
 import crypto from "crypto";
-import dotenv from "dotenv";
-import { BotConfig } from "../../../backend/src/db/schema";
-// Load environment variables
-dotenv.config();
+import { BotConfig, EventCode } from "../../src/types";
+import { Bot } from "../../src/bot";
 
-const requiredEnvVars = [
-  "BOT_DATA",
-  "AWS_ACCESS_KEY_ID",
-  "AWS_SECRET_ACCESS_KEY",
-  "AWS_BUCKET_NAME",
-  "AWS_REGION",
-] as const;
+export class TeamsBot extends Bot {
+  recordingPath: string;
+  contentType: string;
+  url: string;
+  participants: string[];
+  participantsIntervalId: NodeJS.Timeout;
 
-// Check all required environment variables are present
-for (const envVar of requiredEnvVars) {
-  if (!process.env[envVar]) {
-    throw new Error(`Missing required environment variable: ${envVar}`);
+  constructor(
+    botSettings: BotConfig,
+    onEvent: (eventType: EventCode, data?: any) => Promise<void>
+  ) {
+    super(botSettings, onEvent);
+    this.recordingPath = "./recording.webm";
+    this.contentType = "video/webm";
+    this.url = `https://teams.microsoft.com/v2/?meetingjoin=true#/l/meetup-join/19:meeting_${this.settings.meetingInfo.meetingId}@thread.v2/0?context=%7b%22Tid%22%3a%22${this.settings.meetingInfo.tenantId}%22%2c%22Oid%22%3a%22${this.settings.meetingInfo.organizerId}%22%7d&anon=true`;
+    this.participants = [];
+    this.participantsIntervalId = setInterval(() => {}, 0);
   }
-}
 
-// load config.json
-const botData: BotConfig = JSON.parse(process.env.BOT_DATA!);
-const { meetingInfo, botDisplayName, heartbeatInterval, automaticLeave } =
-  botData;
-const { meetingId, organizerId, tenantId } = meetingInfo;
-const { waitingRoomTimeout } = automaticLeave;
+  getRecordingPath(): string {
+    return this.recordingPath;
+  }
 
-const url = `https://teams.microsoft.com/v2/?meetingjoin=true#/l/meetup-join/19:meeting_${meetingId}@thread.v2/0?context=%7b%22Tid%22%3a%22${tenantId}%22%2c%22Oid%22%3a%22${organizerId}%22%7d&anon=true`;
+  getContentType(): string {
+    return this.contentType;
+  }
 
-// Initialize S3 client
-const s3Client = new S3Client({
-  region: process.env.AWS_REGION!,
-  credentials: {
-    accessKeyId: process.env.AWS_ACCESS_KEY_ID!,
-    secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY!,
-  },
-});
+  async sendHeartbeat() {
+    // TODO: Replace with Send to Websocket connection
+    console.log("heartbeat");
+  }
 
-const recordingPath = __dirname + "/recording.webm";
-const file = fs.createWriteStream(recordingPath);
+  async run() {
+    const file = fs.createWriteStream(this.recordingPath);
 
-const leaveButtonSelector =
-  'button[aria-label="Leave (Ctrl+Shift+H)"], button[aria-label="Leave (⌘+Shift+H)"]';
+    const leaveButtonSelector =
+      'button[aria-label="Leave (Ctrl+Shift+H)"], button[aria-label="Leave (⌘+Shift+H)"]';
 
-//initialize global variable
-let participants: string[] = [];
-let participantsIntervalId: NodeJS.Timeout;
-
-(async () => {
-  const intervalId = setInterval(() => {
-    console.log(
-      `[${new Date().toISOString()}] Bot is running, participants: ${participants.join(
-        ", "
-      )}`
-    );
-    // trpc.bots.heartbeat
-    //   .mutate({
-    //     id: parseInt(process.env.BOT_ID || "0"),
-    //     events: [],
-    //   })
-    //   .then((response) => {
-    //     console.log(
-    //       `[${new Date().toISOString()}] Heartbeat success: ${response.success}`
-    //     );
-    //   });
-  }, heartbeatInterval); // Logs every heartbeatInterval milliseconds
-
-  try {
     // Launch the browser and open a new blank page
     const browser = await launch({
       executablePath: puppeteer.executablePath(),
-      headless: "new",
+      //headless: "new",
       // args: ["--use-fake-ui-for-media-stream"],
       args: ["--no-sandbox"],
       protocolTimeout: 0,
     });
 
     // Parse the URL
-    const urlObj = new URL(url);
+    const urlObj = new URL(this.url);
 
     // Override camera and microphone permissions
     const context = browser.defaultBrowserContext();
@@ -102,7 +74,7 @@ let participantsIntervalId: NodeJS.Timeout;
     // Fill in the display name
     await page
       .locator(`[data-tid="prejoin-display-name-input"]`)
-      .fill(botDisplayName ?? "Meeting Bot");
+      .fill(this.settings.botDisplayName ?? "Meeting Bot");
 
     // Mute microphone before joining
     await page.locator(`[data-tid="toggle-mute"]`).click();
@@ -130,14 +102,18 @@ let participantsIntervalId: NodeJS.Timeout;
     if (isWaitingRoom) {
       console.log(
         `Joined waiting room, will wait for ${
-          waitingRoomTimeout > 60 * 1000
-            ? `${waitingRoomTimeout / 60 / 1000} minute(s)`
-            : `${waitingRoomTimeout / 1000} second(s)`
+          this.settings.automaticLeave.waitingRoomTimeout > 60 * 1000
+            ? `${
+                this.settings.automaticLeave.waitingRoomTimeout / 60 / 1000
+              } minute(s)`
+            : `${
+                this.settings.automaticLeave.waitingRoomTimeout / 1000
+              } second(s)`
         }`
       );
 
       // if in the waiting room, wait for the waiting room timeout
-      timeout = waitingRoomTimeout; // in milliseconds
+      timeout = this.settings.automaticLeave.waitingRoomTimeout; // in milliseconds
     }
 
     // wait for the leave button to appear (meaning we've joined the meeting)
@@ -182,7 +158,7 @@ let participantsIntervalId: NodeJS.Timeout;
             .filter((name) => name);
         });
 
-        participants = currentParticipants;
+        this.participants = currentParticipants;
       } catch (error) {
         console.log("Error getting participants:", error);
       }
@@ -192,7 +168,10 @@ let participantsIntervalId: NodeJS.Timeout;
     await updateParticipants();
 
     // Then check for participants every heartbeatInterval milliseconds
-    participantsIntervalId = setInterval(updateParticipants, heartbeatInterval);
+    this.participantsIntervalId = setInterval(
+      updateParticipants,
+      this.settings.heartbeatInterval
+    );
 
     // Get the stream
     const stream = await getStream(page, { audio: true, video: true });
@@ -210,7 +189,7 @@ let participantsIntervalId: NodeJS.Timeout;
     console.log("Meeting ended");
 
     // Clear the participants checking interval
-    clearInterval(participantsIntervalId);
+    clearInterval(this.participantsIntervalId);
 
     // Stop recording
     await stream.destroy();
@@ -219,37 +198,13 @@ let participantsIntervalId: NodeJS.Timeout;
 
     // Upload recording to S3
     console.log("Uploading recording to S3...");
-    const fileContent = await fs.promises.readFile(recordingPath);
+    const fileContent = await fs.promises.readFile(this.recordingPath);
     const uuid = crypto.randomUUID();
     const key = `recordings/${uuid}-teams-recording.webm`;
-
-    try {
-      await s3Client.send(
-        new PutObjectCommand({
-          Bucket: process.env.AWS_BUCKET_NAME,
-          Key: key,
-          Body: fileContent,
-          ContentType: "video/webm",
-        })
-      );
-      console.log(`Successfully uploaded recording to S3: ${key}`);
-
-      // Clean up local file
-      await fs.promises.unlink(recordingPath);
-    } catch (error) {
-      console.error("Error uploading to S3:", error);
-    }
 
     console.log("Closing browser");
     // Close the browser
     await browser.close();
     (await wss).close();
-
-    // Clean up interval before exiting
-    clearInterval(intervalId);
-  } catch (error) {
-    // Clean up interval if there's an error
-    clearInterval(intervalId);
-    throw error;
   }
-})();
+}

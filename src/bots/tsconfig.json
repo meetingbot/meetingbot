@@ -3,7 +3,7 @@
     /* Base Options: */
     "esModuleInterop": true,
     "skipLibCheck": true,
-    "target": "es2022",
+    "target": "ES2020",
     "allowJs": true,
     "resolveJsonModule": true,
     "moduleDetection": "force",
@@ -17,22 +17,16 @@
     /* Bundled projects */
     "lib": ["dom", "dom.iterable", "ES2022"],
     "noEmit": true,
-    "module": "ESNext",
-    "moduleResolution": "Bundler",
+    "module": "CommonJS",
+    "moduleResolution": "node",
     "jsx": "preserve",
 
     /* Path Aliases */
     "baseUrl": ".",
     "paths": {
-      "~/*": ["./src/*"]
+      "@bots/*": ["./*"]
     }
   },
-  "include": [
-    "**/*.ts",
-    "**/*.tsx",
-    "**/*.cjs",
-    "**/*.js",
-    ".next/types/**/*.ts"
-  ],
+  "include": ["src/**/*", "meet/src/**/*", "teams/src/**/*", "zoom/src/**/*"],
   "exclude": ["node_modules", "../../backend/**/*"]
 }

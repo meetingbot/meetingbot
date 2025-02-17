@@ -19,6 +19,7 @@ RUN npm install -g pnpm
 
 # Copy dependency files
 COPY package.json pnpm-lock.yaml ./
+COPY meet/package.json meet/pnpm-lock.yaml ./meet/
 
 # Install dependencies
 RUN pnpm install --frozen-lockfile
@@ -45,7 +46,8 @@ COPY --from=base /app/package.json /app/package.json
 COPY --from=base /root/.cache/ms-playwright /root/.cache/ms-playwright
 
 # Copy files into the container
-COPY ./src ./src
+COPY src ./src
+COPY meet/src ./meet/src
 
-#Run Commsand
-CMD ["sh", "-c", "xvfb-run -s '-screen 0 1280x1024x24' npm run dev"]
+# Run Command
+CMD ["sh", "-c", "xvfb-run -s '-screen 0 1280x1024x24' pnpm --filter @bots/meet run dev"]

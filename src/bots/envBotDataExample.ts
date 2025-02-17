@@ -6,22 +6,22 @@
 // 3. Ensure the .env file is in this directory with *no* BOT_DATA variable
 // 4. Run the script via `pnpm tsx envBotData.ts` (this will modify your .env file)
 
-import { BotConfig } from "../../backend/src/db/schema";
+import { BotConfig } from "./src/types";
 import fs from "fs";
 import path from "path";
 
-export const botData: BotConfig = {
+const botData: BotConfig = {
   id: 1,
   userId: 12345,
   meetingInfo: {
     meetingId: "<MEETING_ID>",
     meetingPassword: undefined,
-    meetingUrl: "https://teams.microsoft.com/l/meetup-join/...",
+    meetingUrl: "<MEETING_URL>",
     organizerId: "<ORGANIZER_ID>",
     tenantId: "<TENANT_ID>",
     messageId: undefined,
     threadId: undefined,
-    platform: "teams",
+    platform: "teams", // "teams", "google", "zoom", etc.
   },
   meetingTitle: "Test Meeting",
   startTime: new Date(),

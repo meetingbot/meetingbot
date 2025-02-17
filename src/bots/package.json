@@ -1,0 +1,25 @@
+{
+  "name": "bots",
+  "private": true,
+  "workspaces": [
+    "meet",
+    "teams",
+    "zoom"
+  ],
+  "scripts": {
+    "start": "tsx src/index.ts",
+    "dev": "tsx src/index.ts"
+  },
+  "dependencies": {
+    "@aws-sdk/client-s3": "^3.749.0",
+    "@ffmpeg/ffmpeg": "^0.12.15",
+    "@trpc/client": "^10.45.2",
+    "dotenv": "^16.4.7",
+    "superjson": "^2.2.2"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "tsx": "^4.19.2",
+    "typescript": "^5.7.3"
+  }
+}

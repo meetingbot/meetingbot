@@ -131,10 +131,10 @@ const Icons = {
       height={100}
     />
   ),
-  meets: () => (
+  meet: () => (
     <Image
-      src="/meets.svg"
-      alt="meets icon"
+      src="/meet.svg"
+      alt="meet icon"
       className="size-full"
       width={100}
       height={100}

@@ -14,9 +14,11 @@ USER $PPTRUSER_UID
 # Set working directory
 WORKDIR /home/pptruser
 
-# Copy the required files into the src directory
+# Copy files
 COPY package.json pnpm-lock.yaml ./
-COPY src/index.ts ./src/
+COPY teams/package.json teams/pnpm-lock.yaml ./teams/
+COPY src ./src
+COPY teams/src ./teams/src
 
 # Install dependencies inside the container
 RUN pnpm install --frozen-lockfile
@@ -30,4 +32,4 @@ USER $PPTRUSER_UID
 EXPOSE 3000
 
 # Command to run the application
-CMD ["pnpm", "start"]
+CMD ["pnpm", "--filter", "@bots/teams", "run", "dev"]

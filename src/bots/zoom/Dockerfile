@@ -14,12 +14,21 @@ USER $PPTRUSER_UID
 # Set working directory
 WORKDIR /home/pptruser
 
-# Copy the required files into the src directory
+# Copy files
 COPY package.json pnpm-lock.yaml ./
-COPY src/index.ts ./src/
+COPY zoom/package.json zoom/pnpm-lock.yaml ./zoom/
+COPY src ./src
+COPY zoom/src ./zoom/src
 
 # Install dependencies inside the container
 RUN pnpm install --frozen-lockfile
+
+# Install browser
+RUN pnpm dlx puppeteer browsers install chrome
+
+# Copy source files
+COPY src ./src
+COPY zoom/src ./zoom/src
 
 # Change ownership of the files
 USER root
@@ -30,4 +39,4 @@ USER $PPTRUSER_UID
 EXPOSE 3000
 
 # Command to run the application
-CMD ["pnpm", "start"]
+CMD ["pnpm", "--filter", "@bots/zoom", "run", "dev"]
