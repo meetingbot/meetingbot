@@ -1,5 +1,5 @@
 import { z } from 'zod'
-import { createTRPCRouter, procedure } from '../server/trpc'
+import { createTRPCRouter, procedure, protectedProcedure } from '../server/trpc'
 import {
   bots,
   events,
@@ -13,7 +13,7 @@ import { deployBot, shouldDeployImmediately } from '../services/botDeployment'
 import { DEFAULT_BOT_VALUES } from '../constants'
 
 export const botsRouter = createTRPCRouter({
-  getBots: procedure
+  getBots: protectedProcedure
     .meta({
       openapi: {
         method: 'GET',
@@ -24,10 +24,13 @@ export const botsRouter = createTRPCRouter({
     .input(z.object({}))
     .output(z.array(selectBotSchema))
     .query(async ({ ctx }) => {
-      return await ctx.db.select().from(bots)
+      return await ctx.db
+        .select()
+        .from(bots)
+        .where(eq(bots.userId, ctx.auth.userId))
     }),
 
-  getBot: procedure
+  getBot: protectedProcedure
     .meta({
       openapi: {
         method: 'GET',
@@ -42,13 +45,13 @@ export const botsRouter = createTRPCRouter({
         .select()
         .from(bots)
         .where(eq(bots.id, input.id))
-      if (!result[0]) {
+      if (!result[0] || result[0].userId !== ctx.auth.userId) {
         throw new Error('Bot not found')
       }
       return result[0]
     }),
 
-  createBot: procedure
+  createBot: protectedProcedure
     .meta({
       openapi: {
         method: 'POST',
@@ -70,7 +73,7 @@ export const botsRouter = createTRPCRouter({
           botDisplayName:
             input.botDisplayName ?? DEFAULT_BOT_VALUES.botDisplayName,
           botImage: input.botImage,
-          userId: input.userId,
+          userId: ctx.auth.userId,
           meetingTitle: input.meetingTitle ?? DEFAULT_BOT_VALUES.meetingTitle,
           meetingInfo: input.meetingInfo,
           startTime: input.startTime ?? new Date(),
@@ -103,7 +106,7 @@ export const botsRouter = createTRPCRouter({
       }
     }),
 
-  updateBot: procedure
+  updateBot: protectedProcedure
     .meta({
       openapi: {
         method: 'PATCH',
@@ -119,6 +122,16 @@ export const botsRouter = createTRPCRouter({
     )
     .output(selectBotSchema)
     .mutation(async ({ input, ctx }) => {
+      // Check if the bot belongs to the user
+      const bot = await ctx.db
+        .select()
+        .from(bots)
+        .where(eq(bots.id, input.id))
+      
+      if (!bot[0] || bot[0].userId !== ctx.auth.userId) {
+        throw new Error('Bot not found')
+      }
+
       const result = await ctx.db
         .update(bots)
         .set(input.data)
@@ -154,7 +167,7 @@ export const botsRouter = createTRPCRouter({
       return result[0]
     }),
 
-  deleteBot: procedure
+  deleteBot: protectedProcedure
     .meta({
       openapi: {
         method: 'DELETE',
@@ -165,6 +178,16 @@ export const botsRouter = createTRPCRouter({
     .input(z.object({ id: z.number() }))
     .output(z.object({ message: z.string() }))
     .mutation(async ({ input, ctx }) => {
+      // Check if the bot belongs to the user
+      const bot = await ctx.db
+        .select()
+        .from(bots)
+        .where(eq(bots.id, input.id))
+      
+      if (!bot[0] || bot[0].userId !== ctx.auth.userId) {
+        throw new Error('Bot not found')
+      }
+
       const result = await ctx.db
         .delete(bots)
         .where(eq(bots.id, input.id))
@@ -176,7 +199,7 @@ export const botsRouter = createTRPCRouter({
       return { message: 'Bot deleted successfully' }
     }),
 
-  getRecording: procedure
+  getRecording: protectedProcedure
     .meta({
       openapi: {
         method: 'GET',
@@ -250,7 +273,7 @@ export const botsRouter = createTRPCRouter({
       return { success: true }
     }),
 
-  deployBot: procedure
+  deployBot: protectedProcedure
     .meta({
       openapi: {
         method: 'POST',
@@ -262,6 +285,16 @@ export const botsRouter = createTRPCRouter({
     .input(z.object({ id: z.number() }))
     .output(selectBotSchema)
     .mutation(async ({ input, ctx }) => {
+      // Check if the bot belongs to the user
+      const bot = await ctx.db
+        .select()
+        .from(bots)
+        .where(eq(bots.id, input.id))
+      
+      if (!bot[0] || bot[0].userId !== ctx.auth.userId) {
+        throw new Error('Bot not found')
+      }
+
       return await deployBot({
         botId: input.id,
         db: ctx.db,

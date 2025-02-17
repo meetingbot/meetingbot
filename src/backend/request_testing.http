@@ -45,3 +45,23 @@ content-type: application/json
     "waitingRoomTimeout": 180000
   }
 }
+
+###
+
+# Create an API key
+POST http://127.0.0.1:3001/api/api-keys
+content-type: application/json
+
+{
+  "name": "Test API Key",
+  "userId": 5
+}
+
+### 
+
+# Get bots
+GET http://127.0.0.1:3001/api/bots
+content-type: application/json
+x-api-key: 1ba6e028b7f9354ace5011bf5406ce61d1da8870644230c69589b45e2dd5f1cc
+
+

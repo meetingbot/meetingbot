@@ -5,6 +5,7 @@ import {
   timestamp,
   json,
   integer,
+  boolean,
   pgTableCreator,
 } from 'drizzle-orm/pg-core'
 import { createInsertSchema, createSelectSchema } from 'drizzle-zod'
@@ -22,6 +23,54 @@ export const insertUserSchema = createInsertSchema(users).omit({
   createdAt: true,
 })
 export const selectUserSchema = createSelectSchema(users)
+
+export const apiKeys = pgTable('api_keys', {
+  id: serial('id').primaryKey(),
+  userId: integer('user_id')
+    .references(() => users.id)
+    .notNull(),
+  key: varchar('key', { length: 64 }).notNull().unique(),
+  name: varchar('name', { length: 255 }).notNull(),
+  createdAt: timestamp('created_at').defaultNow(),
+  lastUsedAt: timestamp('last_used_at'),
+  expiresAt: timestamp('expires_at'),
+  isRevoked: boolean('is_revoked').default(false),
+})
+
+export const insertApiKeySchema = createInsertSchema(apiKeys).pick({
+  userId: true,
+  name: true,
+  expiresAt: true,
+})
+
+export const selectApiKeySchema = createSelectSchema(apiKeys)
+
+export const apiRequestLogs = pgTable('api_request_logs', {
+  id: serial('id').primaryKey(),
+  apiKeyId: integer('api_key_id')
+    .references(() => apiKeys.id)
+    .notNull(),
+  userId: integer('user_id')
+    .references(() => users.id)
+    .notNull(),
+  method: varchar('method', { length: 10 }).notNull(),
+  path: varchar('path', { length: 255 }).notNull(),
+  statusCode: integer('status_code').notNull(),
+  requestBody: json('request_body').$type<Record<string, unknown> | null>(),
+  responseBody: json('response_body').$type<Record<string, unknown> | null>(),
+  error: varchar('error', { length: 1024 }),
+  duration: integer('duration').notNull(), // in milliseconds
+  createdAt: timestamp('created_at').defaultNow(),
+})
+
+export const insertApiRequestLogSchema = createInsertSchema(
+  apiRequestLogs
+).omit({
+  id: true,
+  createdAt: true,
+})
+
+export const selectApiRequestLogSchema = createSelectSchema(apiRequestLogs)
 
 const silenceDetectionSchema = z.object({
   timeout: z.number(), // the milliseconds of silence before the bot leaves
@@ -163,8 +212,6 @@ export const botConfigSchema = z.object({
   automaticLeave: automaticLeaveSchema,
 })
 export type BotConfig = z.infer<typeof botConfigSchema>
-
-
 
 export const deployBotInputSchema = z.object({
   id: z.number(),

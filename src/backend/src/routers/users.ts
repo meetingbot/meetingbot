@@ -1,10 +1,10 @@
 import { z } from 'zod'
-import { createTRPCRouter, procedure } from '../server/trpc'
+import { createTRPCRouter, protectedProcedure } from '../server/trpc'
 import { users, insertUserSchema, selectUserSchema } from '../db/schema'
 import { eq } from 'drizzle-orm'
 
 export const usersRouter = createTRPCRouter({
-  getUsers: procedure
+  getUsers: protectedProcedure
     .meta({
       openapi: {
         method: 'GET',
@@ -18,7 +18,7 @@ export const usersRouter = createTRPCRouter({
       return ctx.db.select().from(users)
     }),
 
-  getUser: procedure
+  getUser: protectedProcedure
     .meta({
       openapi: {
         method: 'GET',
@@ -39,7 +39,7 @@ export const usersRouter = createTRPCRouter({
       return result[0]
     }),
 
-  createUser: procedure
+  createUser: protectedProcedure
     .meta({
       openapi: {
         method: 'POST',
@@ -57,7 +57,7 @@ export const usersRouter = createTRPCRouter({
       return result[0]
     }),
 
-  updateUser: procedure
+  updateUser: protectedProcedure
     .meta({
       openapi: {
         method: 'PATCH',
@@ -85,7 +85,7 @@ export const usersRouter = createTRPCRouter({
       return result[0]
     }),
 
-  deleteUser: procedure
+  deleteUser: protectedProcedure
     .meta({
       openapi: {
         method: 'DELETE',

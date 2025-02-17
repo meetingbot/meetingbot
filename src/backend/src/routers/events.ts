@@ -1,15 +1,16 @@
 import { z } from 'zod'
-import { createTRPCRouter, procedure } from '../server/trpc'
+import { createTRPCRouter, procedure, protectedProcedure } from '../server/trpc'
 import {
   events,
   insertEventSchema,
   selectEventSchema,
   EVENT_DESCRIPTIONS,
+  bots,
 } from '../db/schema'
 import { eq } from 'drizzle-orm'
 
 export const eventsRouter = createTRPCRouter({
-  getAllEvents: procedure
+  getAllEvents: protectedProcedure
     .meta({
       openapi: {
         method: 'GET',
@@ -24,10 +25,23 @@ export const eventsRouter = createTRPCRouter({
     .input(z.object({}))
     .output(z.array(selectEventSchema))
     .query(async ({ ctx }) => {
-      return await ctx.db.select().from(events)
+      // Get all events for bots owned by the user
+      const userBots = await ctx.db
+        .select({ id: bots.id })
+        .from(bots)
+        .where(eq(bots.userId, ctx.auth.userId))
+
+      const botIds = userBots.map((bot) => bot.id)
+      if (botIds.length === 0) {
+        return []
+      }
+      return await ctx.db
+        .select()
+        .from(events)
+        .where(eq(events.botId, botIds[0]))
     }),
 
-  getEventsForBot: procedure
+  getEventsForBot: protectedProcedure
     .meta({
       openapi: {
         method: 'GET',
@@ -42,13 +56,23 @@ export const eventsRouter = createTRPCRouter({
     .input(z.object({ botId: z.number() }))
     .output(z.array(selectEventSchema))
     .query(async ({ ctx, input }) => {
+      // Check if the bot belongs to the user
+      const bot = await ctx.db
+        .select()
+        .from(bots)
+        .where(eq(bots.id, input.botId))
+
+      if (!bot[0] || bot[0].userId !== ctx.auth.userId) {
+        throw new Error('Bot not found')
+      }
+
       return await ctx.db
         .select()
         .from(events)
         .where(eq(events.botId, input.botId))
     }),
 
-  getEvent: procedure
+  getEvent: protectedProcedure
     .meta({
       openapi: {
         method: 'GET',
@@ -59,15 +83,20 @@ export const eventsRouter = createTRPCRouter({
     .input(z.object({ id: z.number() }))
     .output(selectEventSchema)
     .query(async ({ ctx, input }) => {
+      // Get the event and join with bots to check ownership
       const result = await ctx.db
-        .select()
+        .select({
+          event: events,
+          bot: bots,
+        })
         .from(events)
+        .leftJoin(bots, eq(events.botId, bots.id))
         .where(eq(events.id, input.id))
 
-      if (!result[0]) {
+      if (!result[0] || !result[0].bot || result[0].bot.userId !== ctx.auth.userId) {
         throw new Error('Event not found')
       }
-      return result[0]
+      return result[0].event
     }),
 
   createEvent: procedure
@@ -88,7 +117,7 @@ export const eventsRouter = createTRPCRouter({
       return result[0]
     }),
 
-  updateEvent: procedure
+  updateEvent: protectedProcedure
     .meta({
       openapi: {
         method: 'PATCH',
@@ -104,6 +133,20 @@ export const eventsRouter = createTRPCRouter({
     )
     .output(selectEventSchema)
     .mutation(async ({ ctx, input }) => {
+      // Check if the event's bot belongs to the user
+      const event = await ctx.db
+        .select({
+          event: events,
+          bot: bots,
+        })
+        .from(events)
+        .leftJoin(bots, eq(events.botId, bots.id))
+        .where(eq(events.id, input.id))
+
+      if (!event[0] || !event[0].bot || event[0].bot.userId !== ctx.auth.userId) {
+        throw new Error('Event not found')
+      }
+
       const result = await ctx.db
         .update(events)
         .set(input.data)
@@ -116,7 +159,7 @@ export const eventsRouter = createTRPCRouter({
       return result[0]
     }),
 
-  deleteEvent: procedure
+  deleteEvent: protectedProcedure
     .meta({
       openapi: {
         method: 'DELETE',
@@ -127,6 +170,20 @@ export const eventsRouter = createTRPCRouter({
     .input(z.object({ id: z.number() }))
     .output(z.object({ message: z.string() }))
     .mutation(async ({ ctx, input }) => {
+      // Check if the event's bot belongs to the user
+      const event = await ctx.db
+        .select({
+          event: events,
+          bot: bots,
+        })
+        .from(events)
+        .leftJoin(bots, eq(events.botId, bots.id))
+        .where(eq(events.id, input.id))
+
+      if (!event[0] || !event[0].bot || event[0].bot.userId !== ctx.auth.userId) {
+        throw new Error('Event not found')
+      }
+
       const result = await ctx.db
         .delete(events)
         .where(eq(events.id, input.id))
