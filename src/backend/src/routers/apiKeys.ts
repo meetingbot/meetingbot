@@ -204,4 +204,23 @@ export const apiKeysRouter = createTRPCRouter({
         total: count,
       }
     }),
+
+  getApiKeyCount: protectedProcedure
+    .meta({
+      openapi: {
+        method: 'GET',
+        path: '/api-keys/count',
+        description: 'Get the total count of API keys owned by the user',
+      },
+    })
+    .input(z.object({}))
+    .output(z.object({ count: z.number() }))
+    .query(async ({ ctx }) => {
+      const [{ count }] = await ctx.db
+        .select({ count: sql<number>`count(*)` })
+        .from(apiKeys)
+        .where(eq(apiKeys.userId, ctx.auth.userId))
+
+      return { count: Number(count) }
+    }),
 })
