@@ -1,5 +1,6 @@
 ## File Structure
 
+```
 src/bots/
 ├─ package.json _global dependencies_
 ├─ pnpm-workspace.yaml _specifies sub-workspaces_
@@ -16,6 +17,7 @@ src/bots/
 | ├─ tsconfig.json _bot-specific ts configurations_
 │ ├─ src/
 │ │ ├─ bot.ts _platform-specific bot class_
+```
 
 ## Environment
 
