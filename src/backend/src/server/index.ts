@@ -6,12 +6,25 @@ import cors from 'cors'
 import { createTRPCContext } from './trpc.js'
 import { openApiDocument } from './openapi.js'
 import { appRouter } from '../routers/index.js'
+import { ExpressAuth } from '@auth/express'
+import { authConfig } from './auth.js'
 
 const port = process.env.PORT || 3001
 
 const app = express()
 
-app.use(cors())
+app.use(
+  cors({
+    origin: process.env.FRONTEND_URL,
+    credentials: true,
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization'],
+  })
+)
+
+// This endpoint is used by the auth router
+app.set('trust proxy', true)
+app.use('/auth/*', ExpressAuth(authConfig))
 
 // This endpoint is used by tRPC clients for type-safe API calls
 app.use(

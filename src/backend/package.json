@@ -21,6 +21,8 @@
   "keywords": [],
   "author": "",
   "dependencies": {
+    "@auth/drizzle-adapter": "^1.7.4",
+    "@auth/express": "^0.8.4",
     "@trpc/server": "^10.45.2",
     "@types/lodash-es": "^4.17.12",
     "aws-sdk": "^2.1692.0",

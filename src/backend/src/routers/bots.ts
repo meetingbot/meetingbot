@@ -123,11 +123,8 @@ export const botsRouter = createTRPCRouter({
     .output(selectBotSchema)
     .mutation(async ({ input, ctx }) => {
       // Check if the bot belongs to the user
-      const bot = await ctx.db
-        .select()
-        .from(bots)
-        .where(eq(bots.id, input.id))
-      
+      const bot = await ctx.db.select().from(bots).where(eq(bots.id, input.id))
+
       if (!bot[0] || bot[0].userId !== ctx.auth.userId) {
         throw new Error('Bot not found')
       }
@@ -179,11 +176,8 @@ export const botsRouter = createTRPCRouter({
     .output(z.object({ message: z.string() }))
     .mutation(async ({ input, ctx }) => {
       // Check if the bot belongs to the user
-      const bot = await ctx.db
-        .select()
-        .from(bots)
-        .where(eq(bots.id, input.id))
-      
+      const bot = await ctx.db.select().from(bots).where(eq(bots.id, input.id))
+
       if (!bot[0] || bot[0].userId !== ctx.auth.userId) {
         throw new Error('Bot not found')
       }
@@ -286,11 +280,8 @@ export const botsRouter = createTRPCRouter({
     .output(selectBotSchema)
     .mutation(async ({ input, ctx }) => {
       // Check if the bot belongs to the user
-      const bot = await ctx.db
-        .select()
-        .from(bots)
-        .where(eq(bots.id, input.id))
-      
+      const bot = await ctx.db.select().from(bots).where(eq(bots.id, input.id))
+
       if (!bot[0] || bot[0].userId !== ctx.auth.userId) {
         throw new Error('Bot not found')
       }
