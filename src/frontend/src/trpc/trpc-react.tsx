@@ -10,6 +10,7 @@ import { useState } from "react";
 import { makeQueryClient } from "./query-client";
 import { type AppRouter } from "../../../backend/src/routers";
 import superjson from "superjson";
+import { env } from "~/env";
 
 export const trpcReact = createTRPCReact<AppRouter>();
 let clientQueryClientSingleton: QueryClient;
@@ -36,7 +37,13 @@ export function TRPCProvider(
       transformer: superjson,
       links: [
         httpBatchLink({
-          url: process.env.BACKEND_URL ?? "http://127.0.0.1:3001/api/trpc",
+          url: `${env.NEXT_PUBLIC_BACKEND_URL}/api/trpc`,
+          fetch(url, options) {
+            return fetch(url, {
+              ...options,
+              credentials: "include",
+            });
+          },
         }),
       ],
     }),

@@ -26,7 +26,7 @@ export const usersRouter = createTRPCRouter({
         description: 'Get a specific user by their ID',
       },
     })
-    .input(z.object({ id: z.number() }))
+    .input(z.object({ id: z.string() }))
     .output(selectUserSchema)
     .query(async ({ ctx, input }) => {
       const result = await ctx.db
@@ -67,7 +67,7 @@ export const usersRouter = createTRPCRouter({
     })
     .input(
       z.object({
-        id: z.number(),
+        id: z.string(),
         data: insertUserSchema.partial(),
       })
     )
@@ -93,7 +93,7 @@ export const usersRouter = createTRPCRouter({
         description: 'Delete a user by their ID',
       },
     })
-    .input(z.object({ id: z.number() }))
+    .input(z.object({ id: z.string() }))
     .output(selectUserSchema)
     .mutation(async ({ ctx, input }) => {
       const result = await ctx.db

@@ -7,26 +7,109 @@ import {
   integer,
   boolean,
   pgTableCreator,
+  text,
+  primaryKey,
+  uuid,
 } from 'drizzle-orm/pg-core'
 import { createInsertSchema, createSelectSchema } from 'drizzle-zod'
-
+import { AdapterAccountType } from '@auth/core/adapters'
 const pgTable = pgTableCreator((name) => name)
 
-export const users = pgTable('users', {
-  id: serial('id').primaryKey(),
-  username: varchar('username', { length: 255 }).notNull(),
-  email: varchar('email', { length: 255 }).notNull(),
-  createdAt: timestamp('created_at').defaultNow(),
+/** AUTH TABLES */
+export const users = pgTable('user', {
+  id: uuid('id')
+    .primaryKey()
+    .$defaultFn(() => crypto.randomUUID()),
+  name: text('name'),
+  email: text('email').unique(),
+  emailVerified: timestamp('emailVerified', { mode: 'date' }),
+  image: text('image'),
+  createdAt: timestamp('createdAt').defaultNow(),
 })
+
 export const insertUserSchema = createInsertSchema(users).omit({
   id: true,
   createdAt: true,
 })
+
 export const selectUserSchema = createSelectSchema(users)
 
+export const accounts = pgTable(
+  'account',
+  {
+    userId: uuid('userId')
+      .notNull()
+      .references(() => users.id, { onDelete: 'cascade' }),
+    type: text('type').$type<AdapterAccountType>().notNull(),
+    provider: text('provider').notNull(),
+    providerAccountId: text('providerAccountId').notNull(),
+    refresh_token: text('refresh_token'),
+    access_token: text('access_token'),
+    expires_at: integer('expires_at'),
+    token_type: text('token_type'),
+    scope: text('scope'),
+    id_token: text('id_token'),
+    session_state: text('session_state'),
+  },
+  (account) => [
+    {
+      compoundKey: primaryKey({
+        columns: [account.provider, account.providerAccountId],
+      }),
+    },
+  ]
+)
+
+export const sessions = pgTable('session', {
+  sessionToken: text('sessionToken').primaryKey(),
+  userId: uuid('userId')
+    .notNull()
+    .references(() => users.id, { onDelete: 'cascade' }),
+  expires: timestamp('expires', { mode: 'date' }).notNull(),
+})
+
+export const verificationTokens = pgTable(
+  'verificationToken',
+  {
+    identifier: text('identifier').notNull(),
+    token: text('token').notNull(),
+    expires: timestamp('expires', { mode: 'date' }).notNull(),
+  },
+  (verificationToken) => [
+    {
+      compositePk: primaryKey({
+        columns: [verificationToken.identifier, verificationToken.token],
+      }),
+    },
+  ]
+)
+
+export const authenticators = pgTable(
+  'authenticator',
+  {
+    credentialID: text('credentialID').notNull().unique(),
+    userId: uuid('userId')
+      .notNull()
+      .references(() => users.id, { onDelete: 'cascade' }),
+    providerAccountId: text('providerAccountId').notNull(),
+    credentialPublicKey: text('credentialPublicKey').notNull(),
+    counter: integer('counter').notNull(),
+    credentialDeviceType: text('credentialDeviceType').notNull(),
+    credentialBackedUp: boolean('credentialBackedUp').notNull(),
+    transports: text('transports'),
+  },
+  (authenticator) => [
+    {
+      compositePK: primaryKey({
+        columns: [authenticator.userId, authenticator.credentialID],
+      }),
+    },
+  ]
+)
+/** API KEYS */
 export const apiKeys = pgTable('api_keys', {
   id: serial('id').primaryKey(),
-  userId: integer('user_id')
+  userId: uuid('user_id')
     .references(() => users.id)
     .notNull(),
   key: varchar('key', { length: 64 }).notNull().unique(),
@@ -45,12 +128,13 @@ export const insertApiKeySchema = createInsertSchema(apiKeys).pick({
 
 export const selectApiKeySchema = createSelectSchema(apiKeys)
 
+/** API REQUEST LOGS */
 export const apiRequestLogs = pgTable('api_request_logs', {
   id: serial('id').primaryKey(),
   apiKeyId: integer('api_key_id')
     .references(() => apiKeys.id)
     .notNull(),
-  userId: integer('user_id')
+  userId: uuid('user_id')
     .references(() => users.id)
     .notNull(),
   method: varchar('method', { length: 10 }).notNull(),
@@ -72,6 +156,7 @@ export const insertApiRequestLogSchema = createInsertSchema(
 
 export const selectApiRequestLogSchema = createSelectSchema(apiRequestLogs)
 
+/** BOT CONFIG */
 const silenceDetectionSchema = z.object({
   timeout: z.number(), // the milliseconds of silence before the bot leaves
   activateAfter: z.number(), // the milliseconds the bot waits before it begins to detect silence
@@ -159,7 +244,7 @@ export const bots = pgTable('bots', {
   botDisplayName: varchar('bot_display_name', { length: 255 }).notNull(),
   botImage: varchar('bot_image', { length: 255 }),
   // refernce user
-  userId: integer('user_id')
+  userId: uuid('user_id')
     .references(() => users.id)
     .notNull(),
   // meeting stuff
@@ -186,7 +271,7 @@ export const bots = pgTable('bots', {
 export const insertBotSchema = z.object({
   botDisplayName: z.string().optional(),
   botImage: z.string().url().optional(),
-  userId: z.number(),
+  userId: z.string(),
   meetingTitle: z.string().optional(),
   meetingInfo: meetingInfoSchema,
   startTime: z.date().optional(),
@@ -201,7 +286,7 @@ export type SelectBotType = z.infer<typeof selectBotSchema>
 
 export const botConfigSchema = z.object({
   id: z.number(),
-  userId: z.number(),
+  userId: z.string(),
   meetingInfo: meetingInfoSchema,
   meetingTitle: z.string(),
   startTime: z.date(),
