@@ -7,15 +7,19 @@ import {
   integer,
   boolean,
   pgTableCreator,
+  text,
+  primaryKey,
 } from 'drizzle-orm/pg-core'
 import { createInsertSchema, createSelectSchema } from 'drizzle-zod'
+import { type AdapterAccount } from '@auth/core/adapters'
 
 const pgTable = pgTableCreator((name) => name)
 
 export const users = pgTable('users', {
-  id: serial('id').primaryKey(),
-  username: varchar('username', { length: 255 }).notNull(),
-  email: varchar('email', { length: 255 }).notNull(),
+  id: text('id').notNull().primaryKey(),
+  name: text('name'),
+  email: text('email').notNull(),
+  image: text('image'),
   createdAt: timestamp('created_at').defaultNow(),
 })
 export const insertUserSchema = createInsertSchema(users).omit({
@@ -265,3 +269,49 @@ export const selectEventSchema = createSelectSchema(events).extend({
   data: eventData.nullable(),
   eventType: eventCode,
 })
+
+export const accounts = pgTable(
+  'accounts',
+  {
+    userId: text('user_id')
+      .notNull()
+      .references(() => users.id, { onDelete: 'cascade' }),
+    type: text('type').$type<AdapterAccount['type']>().notNull(),
+    provider: text('provider').notNull(),
+    providerAccountId: text('provider_account_id').notNull(),
+    refresh_token: text('refresh_token'),
+    access_token: text('access_token'),
+    expires_at: integer('expires_at'),
+    token_type: text('token_type'),
+    scope: text('scope'),
+    id_token: text('id_token'),
+    session_state: text('session_state'),
+  },
+  (table) => ({
+    compoundKey: primaryKey({
+      columns: [table.provider, table.providerAccountId],
+    }),
+  })
+)
+
+export const sessions = pgTable('session', {
+  sessionToken: text('sessionToken').notNull().primaryKey(),
+  userId: text('userId')
+    .notNull()
+    .references(() => users.id, { onDelete: 'cascade' }),
+  expires: timestamp('expires', { mode: 'date' }).notNull(),
+})
+
+export const verificationTokens = pgTable(
+  'verificationToken',
+  {
+    identifier: text('identifier').notNull(),
+    token: text('token').notNull(),
+    expires: timestamp('expires', { mode: 'date' }).notNull(),
+  },
+  (table) => ({
+    compoundKey: primaryKey({
+      columns: [table.identifier, table.token],
+    }),
+  })
+)
