@@ -72,79 +72,69 @@ export const createTRPCRouter = t.router
  */
 export const procedure = t.procedure
 
-// Create a middleware that checks for a valid API key and logs the request
-const apiKeyMiddleware = t.middleware(async ({ ctx, next, path, type }) => {
+// Create a middleware that checks for a valid API key or session and logs the request
+const authMiddleware = t.middleware(async ({ ctx, next, path, type }) => {
   const startTime = Date.now()
   const apiKey = ctx.headers['x-api-key']
   let apiKeyRecord = null
   let error = null
   let statusCode = 200
+  let userId: string | null = null
 
   try {
-    if (!apiKey || typeof apiKey !== 'string') {
+    // First check for session auth
+    const session = ctx.req.headers['x-trpc-session']
+    if (session && typeof session === 'string') {
+      const sessionData = JSON.parse(session)
+      if (sessionData?.user?.id) {
+        userId = sessionData.user.id
+      }
+    }
+
+    // If no session, check for API key
+    if (!userId && apiKey && typeof apiKey === 'string') {
+      const apiKeyResult = await ctx.db
+        .select()
+        .from(apiKeys)
+        .where(and(eq(apiKeys.key, apiKey), eq(apiKeys.isRevoked, false)))
+
+      if (!apiKeyResult[0]) {
+        throw new TRPCError({
+          code: 'UNAUTHORIZED',
+          message: 'Invalid API key',
+        })
+      }
+
+      apiKeyRecord = apiKeyResult[0]
+      userId = apiKeyRecord.userId
+
+      // Update last used timestamp for API key
+      await ctx.db
+        .update(apiKeys)
+        .set({ lastUsedAt: new Date() })
+        .where(eq(apiKeys.id, apiKeyRecord.id))
+    }
+
+    if (!userId) {
       throw new TRPCError({
         code: 'UNAUTHORIZED',
-        message: 'API key is required',
+        message: 'Authentication required',
       })
     }
 
-    // Check if the API key exists and is not revoked
-    const apiKeyResult = await ctx.db
-      .select()
-      .from(apiKeys)
-      .where(and(eq(apiKeys.key, apiKey), eq(apiKeys.isRevoked, false)))
-
-    if (!apiKeyResult[0]) {
-      throw new TRPCError({
-        code: 'UNAUTHORIZED',
-        message: 'Invalid API key',
-      })
-    }
-
-    apiKeyRecord = apiKeyResult[0]
-
-    // Update last used timestamp
-    await ctx.db
-      .update(apiKeys)
-      .set({ lastUsedAt: new Date() })
-      .where(eq(apiKeys.id, apiKeyRecord.id))
-
-    // Call the next middleware/procedure
-    const result = await next({
+    // Call the next middleware/procedure with auth context
+    return next({
       ctx: {
         ...ctx,
-        auth: {
-          userId: apiKeyRecord.userId,
-        },
+        auth: { userId },
       },
     })
-
-    return result
   } catch (e) {
     error = e instanceof Error ? e.message : 'Unknown error'
-    statusCode =
-      e instanceof TRPCError
-        ? {
-            BAD_REQUEST: 400,
-            PARSE_ERROR: 400,
-            UNAUTHORIZED: 401,
-            FORBIDDEN: 403,
-            NOT_FOUND: 404,
-            METHOD_NOT_SUPPORTED: 405,
-            TIMEOUT: 408,
-            CONFLICT: 409,
-            PRECONDITION_FAILED: 412,
-            PAYLOAD_TOO_LARGE: 413,
-            UNPROCESSABLE_CONTENT: 422,
-            TOO_MANY_REQUESTS: 429,
-            CLIENT_CLOSED_REQUEST: 499,
-            INTERNAL_SERVER_ERROR: 500,
-            NOT_IMPLEMENTED: 501,
-          }[e.code] || 500
-        : 500
+    statusCode = e instanceof TRPCError ? parseInt(e.code) : 500
     throw e
   } finally {
-    // Log the request
+    // Log API key requests
     if (apiKeyRecord) {
       const duration = Date.now() - startTime
       await ctx.db.insert(apiRequestLogs).values({
@@ -154,7 +144,7 @@ const apiKeyMiddleware = t.middleware(async ({ ctx, next, path, type }) => {
         path,
         statusCode,
         requestBody: null,
-        responseBody: null, // We don't log response bodies for privacy/security
+        responseBody: null,
         error,
         duration,
       })
@@ -162,5 +152,4 @@ const apiKeyMiddleware = t.middleware(async ({ ctx, next, path, type }) => {
   }
 })
 
-// Export a protected procedure that requires an API key
-export const protectedProcedure = t.procedure.use(apiKeyMiddleware)
+export const protectedProcedure = t.procedure.use(authMiddleware)

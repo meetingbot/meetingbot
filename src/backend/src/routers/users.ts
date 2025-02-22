@@ -26,7 +26,7 @@ export const usersRouter = createTRPCRouter({
         description: 'Get a specific user by their ID',
       },
     })
-    .input(z.object({ id: z.number() }))
+    .input(z.object({ id: z.string() }))
     .output(selectUserSchema)
     .query(async ({ ctx, input }) => {
       const result = await ctx.db
@@ -67,7 +67,7 @@ export const usersRouter = createTRPCRouter({
     })
     .input(
       z.object({
-        id: z.number(),
+        id: z.string(),
         data: insertUserSchema.partial(),
       })
     )
@@ -93,7 +93,7 @@ export const usersRouter = createTRPCRouter({
         description: 'Delete a user by their ID',
       },
     })
-    .input(z.object({ id: z.number() }))
+    .input(z.object({ id: z.string() }))
     .output(selectUserSchema)
     .mutation(async ({ ctx, input }) => {
       const result = await ctx.db
@@ -104,6 +104,37 @@ export const usersRouter = createTRPCRouter({
       if (!result[0]) {
         throw new Error('User not found')
       }
+      return result[0]
+    }),
+
+  createOrUpdateAuthUser: protectedProcedure
+    .input(
+      z.object({
+        id: z.string(),
+        email: z.string().email(),
+        name: z.string().optional(),
+        image: z.string().optional(),
+      })
+    )
+    .mutation(async ({ input, ctx }) => {
+      const result = await ctx.db
+        .insert(users)
+        .values({
+          id: input.id,
+          email: input.email,
+          name: input.name,
+          image: input.image,
+        })
+        .onConflictDoUpdate({
+          target: users.id,
+          set: {
+            email: input.email,
+            name: input.name,
+            image: input.image,
+          },
+        })
+        .returning()
+
       return result[0]
     }),
 })

@@ -10,6 +10,8 @@ import { useState } from "react";
 import { makeQueryClient } from "./query-client";
 import { type AppRouter } from "../../../backend/src/routers";
 import superjson from "superjson";
+import { env } from "../env";
+import { useSession } from "next-auth/react";
 
 export const trpcReact = createTRPCReact<AppRouter>();
 let clientQueryClientSingleton: QueryClient;
@@ -31,12 +33,19 @@ export function TRPCProvider(
   //       suspend because React will throw away the client on the initial
   //       render if it suspends and there is no boundary
   const queryClient = getQueryClient();
+  const session = useSession();
+
   const [trpcClient] = useState(() =>
     trpcReact.createClient({
       transformer: superjson,
       links: [
         httpBatchLink({
-          url: process.env.BACKEND_URL ?? "http://127.0.0.1:3001/api/trpc",
+          url: env.BACKEND_URL,
+          headers: () => ({
+            "x-trpc-session": session.data
+              ? JSON.stringify(session.data)
+              : undefined,
+          }),
         }),
       ],
     }),
