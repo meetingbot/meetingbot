@@ -93,7 +93,11 @@ export const eventsRouter = createTRPCRouter({
         .leftJoin(bots, eq(events.botId, bots.id))
         .where(eq(events.id, input.id))
 
-      if (!result[0] || !result[0].bot || result[0].bot.userId !== ctx.auth.userId) {
+      if (
+        !result[0] ||
+        !result[0].bot ||
+        result[0].bot.userId !== ctx.auth.userId
+      ) {
         throw new Error('Event not found')
       }
       return result[0].event
@@ -143,7 +147,11 @@ export const eventsRouter = createTRPCRouter({
         .leftJoin(bots, eq(events.botId, bots.id))
         .where(eq(events.id, input.id))
 
-      if (!event[0] || !event[0].bot || event[0].bot.userId !== ctx.auth.userId) {
+      if (
+        !event[0] ||
+        !event[0].bot ||
+        event[0].bot.userId !== ctx.auth.userId
+      ) {
         throw new Error('Event not found')
       }
 
@@ -180,7 +188,11 @@ export const eventsRouter = createTRPCRouter({
         .leftJoin(bots, eq(events.botId, bots.id))
         .where(eq(events.id, input.id))
 
-      if (!event[0] || !event[0].bot || event[0].bot.userId !== ctx.auth.userId) {
+      if (
+        !event[0] ||
+        !event[0].bot ||
+        event[0].bot.userId !== ctx.auth.userId
+      ) {
         throw new Error('Event not found')
       }
 
