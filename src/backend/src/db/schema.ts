@@ -27,13 +27,6 @@ export const users = pgTable('user', {
   createdAt: timestamp('createdAt').defaultNow(),
 })
 
-export const insertUserSchema = createInsertSchema(users).omit({
-  id: true,
-  createdAt: true,
-})
-
-export const selectUserSchema = createSelectSchema(users)
-
 export const accounts = pgTable(
   'account',
   {
