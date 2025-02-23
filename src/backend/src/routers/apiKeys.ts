@@ -7,11 +7,11 @@ import {
   apiRequestLogs,
   selectApiRequestLogSchema,
 } from '../db/schema'
-import { eq, desc, sql, inArray } from 'drizzle-orm'
+import { eq, desc, sql, inArray, and } from 'drizzle-orm'
 import { randomBytes } from 'crypto'
 
 export const apiKeysRouter = createTRPCRouter({
-  createApiKey: procedure
+  createApiKey: protectedProcedure
     .meta({
       openapi: {
         method: 'POST',
@@ -19,7 +19,11 @@ export const apiKeysRouter = createTRPCRouter({
         description: 'Create a new API key for the specified user',
       },
     })
-    .input(insertApiKeySchema)
+    .input(
+      insertApiKeySchema.pick({ name: true }).extend({
+        expiresIn: z.number().optional(), // number of seconds to expire
+      })
+    )
     .output(
       selectApiKeySchema.extend({
         key: z.string(),
@@ -32,8 +36,13 @@ export const apiKeysRouter = createTRPCRouter({
       const result = await ctx.db
         .insert(apiKeys)
         .values({
-          ...input,
+          userId: ctx.auth.userId,
+          expiresAt:
+            input.expiresIn !== undefined
+              ? new Date(Date.now() + input.expiresIn * 1000)
+              : new Date(Date.now() + 1000 * 60 * 60 * 24 * 180), // default 6 months
           key,
+          name: input.name,
         })
         .returning()
 
@@ -76,7 +85,9 @@ export const apiKeysRouter = createTRPCRouter({
       const apiKey = await ctx.db
         .select()
         .from(apiKeys)
-        .where(eq(apiKeys.id, input.id))
+        .where(
+          and(eq(apiKeys.id, input.id), eq(apiKeys.userId, ctx.auth.userId))
+        )
 
       if (!apiKey[0] || apiKey[0].userId !== ctx.auth.userId) {
         throw new Error('API key not found')
@@ -85,7 +96,9 @@ export const apiKeysRouter = createTRPCRouter({
       const result = await ctx.db
         .update(apiKeys)
         .set({ isRevoked: true })
-        .where(eq(apiKeys.id, input.id))
+        .where(
+          and(eq(apiKeys.id, input.id), eq(apiKeys.userId, ctx.auth.userId))
+        )
         .returning()
 
       if (!result[0]) {
@@ -121,7 +134,9 @@ export const apiKeysRouter = createTRPCRouter({
       const apiKey = await ctx.db
         .select()
         .from(apiKeys)
-        .where(eq(apiKeys.id, input.id))
+        .where(
+          and(eq(apiKeys.id, input.id), eq(apiKeys.userId, ctx.auth.userId))
+        )
 
       if (!apiKey[0] || apiKey[0].userId !== ctx.auth.userId) {
         throw new Error('API key not found')
@@ -131,20 +146,30 @@ export const apiKeysRouter = createTRPCRouter({
       const logs = await ctx.db
         .select()
         .from(apiRequestLogs)
-        .where(eq(apiRequestLogs.apiKeyId, input.id))
+        .where(
+          and(
+            eq(apiRequestLogs.apiKeyId, input.id),
+            eq(apiRequestLogs.userId, ctx.auth.userId)
+          )
+        )
         .orderBy(desc(apiRequestLogs.createdAt))
         .limit(input.limit)
         .offset(input.offset)
 
       // Get total count
       const [{ count }] = await ctx.db
-        .select({ count: sql<number>`count(*)` })
+        .select({ count: sql<string>`count(*)` })
         .from(apiRequestLogs)
-        .where(eq(apiRequestLogs.apiKeyId, input.id))
+        .where(
+          and(
+            eq(apiRequestLogs.apiKeyId, input.id),
+            eq(apiRequestLogs.userId, ctx.auth.userId)
+          )
+        )
 
       return {
         logs,
-        total: count,
+        total: z.coerce.number().parse(count),
       }
     }),
 
@@ -188,7 +213,12 @@ export const apiKeysRouter = createTRPCRouter({
       const logs = await ctx.db
         .select()
         .from(apiRequestLogs)
-        .where(inArray(apiRequestLogs.apiKeyId, apiKeyIds))
+        .where(
+          and(
+            inArray(apiRequestLogs.apiKeyId, apiKeyIds),
+            eq(apiRequestLogs.userId, ctx.auth.userId)
+          )
+        )
         .orderBy(desc(apiRequestLogs.createdAt))
         .limit(input.limit)
         .offset(input.offset)
@@ -197,7 +227,12 @@ export const apiKeysRouter = createTRPCRouter({
       const [{ count }] = await ctx.db
         .select({ count: sql<number>`count(*)` })
         .from(apiRequestLogs)
-        .where(inArray(apiRequestLogs.apiKeyId, apiKeyIds))
+        .where(
+          and(
+            inArray(apiRequestLogs.apiKeyId, apiKeyIds),
+            eq(apiRequestLogs.userId, ctx.auth.userId)
+          )
+        )
 
       return {
         logs,
