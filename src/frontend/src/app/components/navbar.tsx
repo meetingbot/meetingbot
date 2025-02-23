@@ -11,17 +11,15 @@ import {
   NavigationMenuList,
   navigationMenuTriggerStyle,
 } from "@/components/ui/navigation-menu";
-import ProfileButton from "./profileButton";
+import ProfileButton from "./ProfileButton";
+import { ExternalLink } from "lucide-react";
 
-const components: { title: string; href: string }[] = [
+const components: { title: string | React.ReactNode; href: string }[] = [
   {
     title: "Dashboard",
     href: "/",
   },
-  {
-    title: "Docs",
-    href: "/docs",
-  },
+
   {
     title: "API Keys",
     href: "/keys",
@@ -33,6 +31,14 @@ const components: { title: string; href: string }[] = [
   {
     title: "Usage",
     href: "/usage",
+  },
+  {
+    title: (
+      <span className="flex items-center">
+        Docs <ExternalLink className="h-4" />
+      </span>
+    ),
+    href: `${process.env.NEXT_PUBLIC_BACKEND_URL}`,
   },
 ];
 
@@ -49,8 +55,8 @@ export default function Navbar() {
             className="mr-2"
           />
           <NavigationMenuList>
-            {components.map((component) => (
-              <NavigationMenuItem key={component.title}>
+            {components.map((component, index) => (
+              <NavigationMenuItem key={index}>
                 <Link href={component.href} legacyBehavior passHref>
                   <NavigationMenuLink className={navigationMenuTriggerStyle()}>
                     {component.title}
