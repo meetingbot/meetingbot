@@ -8,7 +8,7 @@ import {
   insertEventSchema,
   status,
 } from '../db/schema'
-import { eq, sql } from 'drizzle-orm'
+import { eq, sql, and, notInArray } from 'drizzle-orm'
 import { deployBot, shouldDeployImmediately } from '../services/botDeployment'
 import { DEFAULT_BOT_VALUES } from '../constants'
 
@@ -290,5 +290,30 @@ export const botsRouter = createTRPCRouter({
         botId: input.id,
         db: ctx.db,
       })
+    }),
+
+  getActiveBotCount: protectedProcedure
+    .meta({
+      openapi: {
+        method: 'GET',
+        path: '/bots/active/count',
+        description:
+          'Get the count of currently active bots (not DONE or FATAL)',
+      },
+    })
+    .input(z.object({}))
+    .output(z.object({ count: z.number() }))
+    .query(async ({ ctx }) => {
+      const result = await ctx.db
+        .select({ count: sql<number>`count(*)` })
+        .from(bots)
+        .where(
+          and(
+            eq(bots.userId, ctx.auth.userId),
+            notInArray(bots.status, ['DONE', 'FATAL'] as const)
+          )
+        )
+
+      return { count: Number(result[0].count) }
     }),
 })
