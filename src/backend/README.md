@@ -35,7 +35,7 @@ To start the server, run:
 pnpm dev
 ```
 
-The Express app will run at `http://127.0.0.1:{env.PORT}`.
+The Express app will run at `http://localhost:{env.PORT}`.
 
 ### Technology Stack
 

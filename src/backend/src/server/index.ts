@@ -55,7 +55,7 @@ app.use('/', swaggerUi.serve)
 const main = async () => {
   app.get('/', swaggerUi.setup(openApiDocument))
   app.listen(port, () => {
-    console.log('listening on http://127.0.0.1:' + port)
+    console.log('listening on http://localhost:' + port)
   })
 }
 
