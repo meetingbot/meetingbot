@@ -25,7 +25,7 @@ const peopleButton = `//button[@aria-label="People"]`;
 const onePersonRemainingField = '//span[.//div[text()="Contributors"]]//div[text()="1"]';
 const muteButton = `[aria-label*="Turn off mic"]`; // *= -> conatins
 const cameraOffButton = `[aria-label*="Turn off camera"]`;
-  
+
 const randomDelay = (amount: number) =>
   (2 * Math.random() - 1) * (amount / 10) + amount;
 
@@ -35,6 +35,9 @@ declare global {
   interface Window {
     saveChunk: (chunk: number[]) => void;
     stopRecording: () => void;
+
+    setParticipantCount: (count: number) => void;
+    addParticipantCount: (count: number) => void;
 
     recorder: MediaRecorder | undefined;
   }
@@ -53,6 +56,9 @@ export class MeetsBot extends Bot {
   private recordBuffer: Buffer[] = [];
   private startedRecording: boolean = false;
 
+  private participantCount: number = 0;
+  private timeAloneStarted: number = Infinity;
+
   constructor(
     botSettings: BotConfig,
     onEvent: (eventType: EventCode, data?: any) => Promise<void>
@@ -67,7 +73,7 @@ export class MeetsBot extends Bot {
       "--disable-features=IsolateOrigins,site-per-process",
       "--disable-infobars",
       // "--use-fake-device-for-media-stream",
-      
+
       "--use-fake-ui-for-media-stream",
       "--use-file-for-fake-video-capture=/dev/null",
       "--use-file-for-fake-audio-capture=/dev/null",
@@ -165,11 +171,11 @@ export class MeetsBot extends Bot {
     console.log("Filling the input field with the name...");
     await this.page.fill(enterNameField, name);
 
-    
+
     // TODO: Mute Self - Turn Off Camera
     console.log('Turning Off Camera and Microphone ...');
     await this.page.waitForTimeout(randomDelay(500));
-    await this.page.click(muteButton); 
+    await this.page.click(muteButton);
     await this.page.waitForTimeout(10);
     await this.page.click(cameraOffButton);
     await this.page.waitForTimeout(randomDelay(100));
@@ -182,7 +188,13 @@ export class MeetsBot extends Bot {
 
     //Should Exit after 1 Minute
     console.log("Awaiting Entry ....");
-    await this.page.waitForSelector(leaveButton, { timeout: 60000 });
+    const timeout = this.settings.automaticLeave.waitingRoomTimeout; // in milliseconds
+
+    // wait for the leave button to appear (meaning we've joined the meeting)
+    await this.page.waitForSelector(leaveButton, {
+      timeout: timeout,
+    });
+
 
     console.log("Joined Call.");
 
@@ -229,7 +241,9 @@ export class MeetsBot extends Bot {
               autoGainControl: false,
               channelCount: 1, // Force audio to come from the browser only
             },
-            video: true
+            video: {
+              displaySurface: "window" // Capture only the current window
+            }
           });
 
           // Remove microphone input, keep only system audio
@@ -349,13 +363,34 @@ export class MeetsBot extends Bot {
       }
     );
 
+
+    // Expose function to update participant count
+    await this.page.exposeFunction("addParticipantCount", (count: number) => {
+      this.participantCount += count;
+      console.log("Updated Participant Count:", this.participantCount);
+
+      if (this.participantCount == 1) {
+        this.timeAloneStarted = Date.now();
+      } else {
+        this.timeAloneStarted = Infinity;
+      }
+    });
+
     // Add mutation observer for participant list
     await this.page.evaluate(() => {
+
       const peopleList = document.querySelector('[aria-label="Participants"]');
       if (!peopleList) {
         console.error("Could not find participants list element");
         return;
       }
+
+      // Initialize participant count
+      const initialParticipants = peopleList.querySelectorAll('[data-participant-id]').length;
+      window.addParticipantCount(initialParticipants); // initially 0
+      console.log(`Initial participant count: ${initialParticipants}`);
+
+      // Set up mutation observer
       console.log("Setting up mutation observer on participants list");
       const observer = new MutationObserver((mutations) => {
         mutations.forEach((mutation) => {
@@ -373,6 +408,7 @@ export class MeetsBot extends Bot {
                 window.onParticipantJoin(
                   node.getAttribute("data-participant-id")
                 );
+                window.addParticipantCount(1);
               }
             });
             mutation.removedNodes.forEach((node: any) => {
@@ -388,6 +424,7 @@ export class MeetsBot extends Bot {
                 window.onParticipantLeave(
                   node.getAttribute("data-participant-id")
                 );
+                window.addParticipantCount(-1);
               }
             });
           }
@@ -401,10 +438,18 @@ export class MeetsBot extends Bot {
     while (true) {
 
       // Check if it's only me in the meeting
-      // TODO: Fix
-      // console.log('Checking if 1 Person Remaining ...')
-      if (await this.page.locator(onePersonRemainingField).count().catch(() => 0) > 0) break;
+      console.log('Checking if 1 Person Remaining ...', this.participantCount);
+      if (this.participantCount === 1) {
 
+        const leaveMs = this.settings.automaticLeave.everyoneLeftTimeout;
+        const msDiff = Date.now() - this.timeAloneStarted;
+        console.log(`Only me left in the meeting. Waiting for timeout time to have allocated (${msDiff / 1000} / ${leaveMs / 1000}s) ...`);
+
+        if (msDiff > leaveMs) {
+          console.log('Only one participant remaining for more than alocated time, leaving the meeting.');
+          break;
+        }
+      }
 
       // Got kicked -- no longer in the meeting
       // console.log('Checking for Return to Home ...')
@@ -413,19 +458,14 @@ export class MeetsBot extends Bot {
         console.log('Kicked 0');
         break;
       }
-      // console.log('Checking for lack of leave button ...')
-      if ((await this.page.locator(leaveButton).count().catch(() => 0)) == 0) {
-        this.kicked = true;
-        console.log('Kicked 1');
-        break;
-      }
-      // console.log('Checking for hidden leave button ...')
+
+      console.log('Checking for hidden leave button ...')
       if (await this.page.locator(leaveButton).isHidden({ timeout: 500 }).catch(() => true)) {
         this.kicked = true;
         console.log('Kicked 2');
         break;
       }
-      // console.log('Checking for removed from meeting text ...')
+      console.log('Checking for removed from meeting text ...')
       if (await this.page.locator('text="You\'ve been removed from the meeting"').isVisible({ timeout: 500 }).catch(() => false)) {
         this.kicked = true;
         console.log('Kicked 3');
@@ -433,7 +473,8 @@ export class MeetsBot extends Bot {
       }
 
       // Reset Loop
-      await setTimeout(1000); //1 second loop
+      console.log('Waiting 5 seconds.')
+      await setTimeout(5000); //5 second loop
     }
 
     // Exit
@@ -452,7 +493,7 @@ export class MeetsBot extends Bot {
     // Try and Find the leave button, press. Otherwise, just delete the browser.
     try {
       console.log("Trying to leave the call ...")
-      await this.page.click(leaveButton);
+      await this.page.click(leaveButton, { timeout: 1000 }); //Short Attempt
       console.log('Left Call.')
     } catch (e) {
       console.log('Attempted to Leave Call - couldn\'t (probably aleready left).')
