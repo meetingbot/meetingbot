@@ -11,3 +11,4 @@ export async function POST(req: Request) {
   const body = await req.json(); // Read JSON body
   return NextResponse.json({ message: `Hello, ${body.name}!` });
 }
+
