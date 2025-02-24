@@ -13,8 +13,10 @@ export default function Home() {
       return;
     }
 
+    const ruuid = "50e8400-e29b-41d4-a716-446655440000"
+
     const botData = {
-      userId: 5,
+      userId: ruuid,
       meetingTitle: 'Test Google Meet',
       meetingInfo: {
         meetingUrl: link,
@@ -23,7 +25,7 @@ export default function Home() {
     };
 
     try {
-      const res = await fetch('/api/bots', {
+      const res = await fetch('/api/send-bot', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
