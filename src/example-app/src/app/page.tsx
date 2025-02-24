@@ -3,46 +3,53 @@
 import { useState } from 'react';
 
 export default function Home() {
-  const [message, setMessage] = useState('');
-  const [name, setName] = useState('');
   const [response, setResponse] = useState('');
+  const [link, setMeetingLink] = useState('');
 
-  // Fetch data from GET API
-  const fetchMessage = async () => {
-    const res = await fetch('/api/fetch');
-    const data = await res.json();
-    setMessage(data.message);
-  };
+  const createBot = async () => {
 
-  // Send data via POST request
-  const sendName = async () => {
-    const res = await fetch('/api/fetch', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ name }),
-    });
-    const data = await res.json();
-    setResponse(data.message);
+    if (!/^https:\/\/meet\.google\.com\/[a-z]{3}-[a-z]{4}-[a-z]{3}$/.test(link)) {
+      setResponse('Invalid Google Meet link format');
+      return;
+    }
+
+    const botData = {
+      userId: 5,
+      meetingTitle: 'Test Google Meet',
+      meetingInfo: {
+        meetingUrl: link,
+        platform: 'google',
+      },
+    };
+
+    try {
+      const res = await fetch('/api/bots', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(botData),
+      });
+
+      const data = await res.json();
+      setResponse(JSON.stringify(data, null, 2));
+    } catch (error) {
+      setResponse('Failed to create bot');
+    }
   };
 
   return (
     <div style={{ padding: '20px' }}>
-      <h1>Next.js App Router with API</h1>
-
-      {/* GET Request */}
-      <button onClick={fetchMessage}>Fetch Message</button>
-      <p>{message}</p>
-
-      {/* POST Request */}
+      <h1>Google Meet Bot Creator</h1>
       <input
         type="text"
-        placeholder="Enter your name"
-        value={name}
-        onChange={(e) => setName(e.target.value)}
+        value={link}
+        onChange={(e) => setMeetingLink(e.target.value)}
+        placeholder="Enter meeting link"
+        style={{ marginBottom: '10px', padding: '5px', width: '100%' }}
       />
-      <button onClick={sendName}>Send Name</button>
-      
-      <p>{response}</p>
+      <button onClick={createBot}>Create Google Meet Bot</button>
+      <pre>{response}</pre>
     </div>
   );
 }
