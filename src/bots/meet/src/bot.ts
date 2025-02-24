@@ -74,9 +74,10 @@ export class MeetsBot extends Bot {
       "--disable-infobars",
       // "--use-fake-device-for-media-stream",
 
-      "--use-fake-ui-for-media-stream",
+      "--use-fake-ui-for-media-stream",// automatically grants screen sharing permissions without a selection dialog.
       "--use-file-for-fake-video-capture=/dev/null",
       "--use-file-for-fake-audio-capture=/dev/null",
+      '--auto-select-desktop-capture-source="Chrome"' // record the first tab automatically
     ];
 
     this.meetingURL = botSettings.meetingInfo.meetingUrl!;
@@ -159,6 +160,7 @@ export class MeetsBot extends Bot {
     await this.page.mouse.click(100, 100);
 
     await this.page.goto(this.meetingURL, { waitUntil: "networkidle" });
+    await this.page.bringToFront(); //ensure active
 
     const name = this.settings.botDisplayName || "MeetingBot";
 
@@ -216,7 +218,11 @@ export class MeetsBot extends Bot {
 
     // Expose Function to Save Chunks
     await this.page.exposeFunction('saveChunk', async (chunk: any) => {
-      this.recordBuffer.push(Buffer.from(chunk));
+      
+      if (this.recorder !== undefined) {
+        this.recordBuffer.push(Buffer.from(chunk));
+        console.log('Saved Recording Chunk.')
+      }
     });
 
     // Expose Function to Stop Recording & Save as File
@@ -234,6 +240,7 @@ export class MeetsBot extends Bot {
         try {
           console.log('Starting the Recording..')
           // Start Recording Stream
+
           const stream = await navigator.mediaDevices.getDisplayMedia({
             audio: {
               echoCancellation: false,
@@ -241,9 +248,12 @@ export class MeetsBot extends Bot {
               autoGainControl: false,
               channelCount: 1, // Force audio to come from the browser only
             },
-            video: {
-              displaySurface: "window" // Capture only the current window
-            }
+            video: true,
+            // I can't seem to get this to work: file does not write this way - TODO: fix to record only rh browser tab, not the entire scren
+            // video: {
+            //   displaySurface: "browser", // Ensures only the current window is captured
+            //   frameRate: 30
+            // }
           });
 
           // Remove microphone input, keep only system audio
@@ -265,12 +275,10 @@ export class MeetsBot extends Bot {
             throw new Error('Could not create MediaRecorder instance');
           }
 
+          //Get a buffer
           window.recorder.ondataavailable = async (e: BlobEvent) => {
-
-            //Get a buffer
             const buffer = await e.data.arrayBuffer();
             window.saveChunk?.(Array.from(new Uint8Array(buffer))); //Send Chunk
-
           };
 
           window.recorder.onstop = async () => {
@@ -326,6 +334,8 @@ export class MeetsBot extends Bot {
       window.recorder = undefined;
       console.log('Stopped Recording.')
     });
+
+    console.log('Stopped Recording, at ', this.getRecordingPath());
 
     return 0;
   }
