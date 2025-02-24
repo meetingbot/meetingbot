@@ -22,8 +22,10 @@
    ```
 
 3. Configure environment variables:
-   - Copy `.env.example` to `.env`
-   - Update the values in `.env` with your configuration (`DATABASE_URL` in particular)
+   1. Copy `.env.example` to `.env`
+   2. Set-up a GitHub App to generate `AUTH_GITHUB_ID` and `AUTH_GITHUB_SECRET`. You can follow Auth.js's guide: [Registering your App](https://authjs.dev/guides/configuring-github?framework=next-js#registering-your-app).
+   3. Execute `npx auth` to generate an `AUTH_SECRET`.
+   4. Update the rest of the values in `.env` with your configuration
 
 ### Running the Server
 
