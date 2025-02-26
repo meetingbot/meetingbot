@@ -40,6 +40,7 @@ export type BotConfig = {
   botImage?: string;
   heartbeatInterval: number;
   automaticLeave: AutomaticLeave;
+  callbackUrl?: string;
 };
 
 export enum Status {
