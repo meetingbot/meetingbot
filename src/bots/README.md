@@ -35,6 +35,47 @@ _Why use `envBotDataExample.ts`?_
 3. Ensure the `.env` file is in this directory with _no_ `BOT_DATA` variable
 4. Run the script via `pnpm tsx envBotData.ts` (this will modify your `.env` file)
 
+
+
+## Required Meeting Info per platform
+
+The `meeting_info` object in the `.env` file is used to store the meeting information for the bot to join the meeting. However, this information is platform dependant -
+Each platform requires the use of different keys in the `meeting_info` object.
+
+###Zoom
+```json
+{
+  "meeting_info": {
+    "platform": "zoom",
+    "meetingId": "<MEETING_ID>",
+    "meetingPassword": "<MEETING_PASSWORD>"
+  }
+}
+```
+
+###Google Meet
+```json
+{
+  "meeting_info": {
+    "platform": "google",
+    "meetingUrl": "<MEETING_LINK>"
+  }
+}
+```
+Where Meeting Link is the full URL to the meeting.
+
+###Microsoft Teams
+```json
+{
+  "meeting_info": {
+    "platform": "teams",
+    "meetingId": "<MEETING_ID>",
+    "organizerId": "<ORGANIZER_ID>",
+    "tenantId": "<TENANT_ID>"
+  }
+}
+```
+
 ## Local Development
 
 ```bash

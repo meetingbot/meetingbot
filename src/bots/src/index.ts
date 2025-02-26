@@ -78,21 +78,41 @@ const main = async () => {
     // Run the bot
     await bot.run();
 
-    // 1 second delay
-    console.log(
-      "Waiting 1 second before proceeding (ensure recording is unlocked)"
-    );
-    await setTimeout(1000);
-
     // Upload recording to S3
-    console.log("Uploading recording to S3...");
+    console.log("Start Upload to S3...");
     const recordingPath = bot.getRecordingPath();
-    const fileContent = readFileSync(recordingPath);
+
+    let fileContent: Buffer;
+    let i = 10;
+    while (true) {
+      try {
+        fileContent = readFileSync(recordingPath);
+        console.log("Successfully read recording file");
+        break; // Exit loop if readFileSync is successful
+      } catch (error) {
+
+        const err = (error as NodeJS.ErrnoException);
+        if (err.code === "EBUSY") {
+          console.log("File is busy, retrying...");
+          await setTimeout(1000); // Wait for 1 second before retrying
+        } else if (err.code === "ENOENT") {
+          console.log("File not found, retrying ", i--, ' more times');
+          await setTimeout(1000); // Wait for 1 second before retrying
+
+          if (i < 0) {
+            throw new Error("File not found after multiple retries");
+          }
+        } else {
+          throw error; // Rethrow if it's a different error
+        }
+      }
+    }
+
+    // Create UUid
     const uuid = crypto.randomUUID();
     const contentType = bot.getContentType();
-    const key = `recordings/${uuid}-${
-      bot.settings.meetingInfo.platform
-    }-recording.${contentType.split("/")[1]}`;
+    const key = `recordings/${uuid}-${bot.settings.meetingInfo.platform
+      }-recording.${contentType.split("/")[1]}`;
 
     try {
       const commandObjects = {
