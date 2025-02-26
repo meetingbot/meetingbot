@@ -41,7 +41,7 @@ export default function Home() {
   };
 
   return (
-    <div style={{ padding: '20px' }}>
+    <div style={{ width: '50%', minWidth:'300px', padding: '20px' }}>
       <h1>Google Meet Bot Creator</h1>
       <input
         type="text"
@@ -50,8 +50,10 @@ export default function Home() {
         placeholder="Enter meeting link"
         style={{ marginBottom: '10px', padding: '5px', width: '100%' }}
       />
-      <button onClick={createBot}>Create Google Meet Bot</button>
-      <pre>{response}</pre>
+      <button className='border border-white p-2 rounded-lg mb-5' onClick={createBot}>Create Google Meet Bot</button>
+      
+      <h2>Response</h2>
+      <pre className="text-xs opacity-70 max-h-[200px] overflow-y-auto">{response}</pre>
     </div>
   );
 }
