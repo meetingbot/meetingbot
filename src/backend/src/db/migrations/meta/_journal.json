@@ -1,40 +1,12 @@
 {
-  "version": "7",
+  "version": "0",
   "dialect": "postgresql",
   "entries": [
     {
       "idx": 0,
-      "version": "7",
-      "when": 1738962057115,
-      "tag": "0000_chief_rage",
-      "breakpoints": true
-    },
-    {
-      "idx": 1,
-      "version": "7",
-      "when": 1739803274238,
-      "tag": "0001_new_snowbird",
-      "breakpoints": true
-    },
-    {
-      "idx": 2,
-      "version": "7",
-      "when": 1739804379486,
-      "tag": "0002_fast_phil_sheldon",
-      "breakpoints": true
-    },
-    {
-      "idx": 3,
-      "version": "7",
-      "when": 1740261786509,
-      "tag": "0003_whole_hellion",
-      "breakpoints": true
-    },
-    {
-      "idx": 4,
-      "version": "7",
-      "when": 1740586539478,
-      "tag": "0004_stale_blue_shield",
+      "version": "0",
+      "when": 1740586709953,
+      "tag": "0000_glorious_kingpin",
       "breakpoints": true
     }
   ]
