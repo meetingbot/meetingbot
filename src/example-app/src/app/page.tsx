@@ -14,6 +14,7 @@ export default function Home() {
     }
 
     const ruuid = "50e8400-e29b-41d4-a716-446655440000"
+    const callbackUrl = process.env.CALLBACK_URL || 'https://localhost:3002/api/callback';
 
     const botData = {
       userId: ruuid,
@@ -22,6 +23,7 @@ export default function Home() {
         meetingUrl: link,
         platform: 'google',
       },
+      callbackUrl,
     };
 
     try {

@@ -1,9 +1,11 @@
 // app/api/bots/route.ts
+import { writeFileSync } from 'fs';
 import { NextResponse } from 'next/server';
 
 export async function POST(req: Request) {
   try {
     const body = await req.json();
+    const {botId, status} = body;
 
     // Get Key
     const key = process.env.BOT_API_KEY;
@@ -14,9 +16,11 @@ export async function POST(req: Request) {
     if (!endpoint) throw new Error(`Missing required environment variable: MEETINGBOT_END_POINT`);
 
     // Validate
-    if (!body.botId) return NextResponse.json('Malfored Body', { status: 400 });
-    if (!body.status) return NextResponse.json('Malfored Body', { status: 400 });
+    if (!botId) return NextResponse.json('Malfored Body', { status: 400 });
+    if (!status) return NextResponse.json('Malfored Body', { status: 400 });
 
+    //
+    // Ensure bot actually exists and is really done
     //
     const response = await fetch(`${endpoint}/api/bots`, {
       method: 'GET',
@@ -27,45 +31,44 @@ export async function POST(req: Request) {
     });
     const activeBotData = await response.json();
 
-
     // Check if bot exists in here
+    const botExists = activeBotData.some((bot: { id: string }) => bot.id === botId);
+    if (!botExists) {
+      return NextResponse.json('Bot not found', { status: 404 });
+    }
+    //Check if status is done
+    const botStatus = activeBotData.find((bot: { id: string }) => bot.id === botId).status;
+    if (botStatus !== status) {
+      return NextResponse.json('Bot not done', { status: 404 });
+    }
 
-
+    //
     // Send request to MeetingBot API to download the recording
+    //
+    const recordingResponse = await fetch(`${endpoint}/api/bots/${botId}/recording`, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-api-key': key,
+      }  
+    });
+    const { recording: recordingUrl } = await response.json();
+
+    // Download the recording
+    const recording = await fetch(recordingUrl);
+    const recordingBlob = await recording.blob();
+
+    // Save the recording to a file
+    const recordingBuffer = await recordingBlob.arrayBuffer();
+    const recordingBufferView = new Uint8Array(recordingBuffer);
+    writeFileSync(`./recordings/${botId}.mp4`, recordingBufferView);
 
 
-    // Download the Recording locally here
-    
 
+    // Passback
+    return NextResponse.json({ message: 'OK' }, { status: 200 });
 
-
-    // // Get Key
-    // const key = process.env.BOT_API_KEY;
-    // if (!key) throw new Error(`Missing required environment variable: BOT_API_KEY`);
-    
-    // const endpoint = process.env.MEETINGBOT_END_POINT;
-    // if (!endpoint) throw new Error(`Missing required environment variable: BOT_API_KEY`);
-
-    // //
-    // // Send request to MeetingBot API to start and send a bot to a meeting
-    // //
-    // const response = await fetch(`${endpoint}/api/bots`, {
-    //   method: 'POST',
-    //   headers: {
-    //     'Content-Type': 'application/json',
-    //     'x-api-key': key,
-    //   },
-    //   body: JSON.stringify(body),   
-    // });
-
-    // //
-    // // Return the response from the MeetingBot API
-    // //
-
-    // const data = await response.json();
-    // console.log('RECEIVED', data);
-    return NextResponse.json([], { status: response.status });
   } catch (error) {
-    return NextResponse.json({ error: 'Failed to send request' }, { status: 500 });
+    return NextResponse.json({ error: 'Internal Error' }, { status: 500 });
   }
 }
