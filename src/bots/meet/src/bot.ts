@@ -64,7 +64,7 @@ export class MeetsBot extends Bot {
     onEvent: (eventType: EventCode, data?: any) => Promise<void>
   ) {
     super(botSettings, onEvent);
-    this.recordingPath = "/recording/recording.mp4";
+    this.recordingPath = "./recording.mp4";
 
     this.browserArgs = [
       "--incognito",
@@ -219,9 +219,11 @@ export class MeetsBot extends Bot {
     // Expose Function to Save Chunks
     await this.page.exposeFunction('saveChunk', async (chunk: any) => {
       
-      if (this.recorder !== undefined) {
+      if (this.recordBuffer !== undefined) {
         this.recordBuffer.push(Buffer.from(chunk));
         console.log('Saved Recording Chunk.')
+      } else {
+        console.log('No Recorder Found')
       }
     });
 
@@ -306,7 +308,6 @@ export class MeetsBot extends Bot {
   }
 
   async saveRecording() {
-
     if (this.recordBuffer.length == 0) {
       console.log('No recording chunks to save.');
       return 1;
@@ -316,6 +317,7 @@ export class MeetsBot extends Bot {
     console.log('Recording saved to:', this.getRecordingPath());
   }
 
+  // Entry Function. Calls the stop -- which then in turn calls saveRecording()
   async stopRecording() {
 
     console.log('Attempting to stop the recording ...');
