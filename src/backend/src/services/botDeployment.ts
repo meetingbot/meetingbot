@@ -70,6 +70,7 @@ export async function deployBot({
       botImage: bot.botImage ?? undefined,
       heartbeatInterval: bot.heartbeatInterval,
       automaticLeave: bot.automaticLeave,
+      callbackUrl: bot.callbackUrl ?? undefined,
     }
 
     if (dev) {
@@ -126,7 +127,7 @@ export async function deployBot({
       }
 
       const command = new RunTaskCommand(input)
-      const result = await client.send(command)
+      await client.send(command)
     }
 
     // Update status to joining call

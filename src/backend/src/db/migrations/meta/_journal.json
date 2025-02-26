@@ -29,6 +29,13 @@
       "when": 1740261786509,
       "tag": "0003_whole_hellion",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1740586539478,
+      "tag": "0004_stale_blue_shield",
+      "breakpoints": true
     }
   ]
 }

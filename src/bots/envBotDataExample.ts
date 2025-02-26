@@ -12,7 +12,7 @@ import path from "path";
 
 const botData: BotConfig = {
   id: 1,
-  userId: 12345,
+  userId: "<USER_ID>",
   meetingInfo: {
     meetingId: "<MEETING_ID>",
     meetingPassword: undefined,
@@ -39,6 +39,7 @@ const botData: BotConfig = {
     noOneJoinedTimeout: 3600000,
     everyoneLeftTimeout: 3600000,
   },
+  callbackUrl: "<CALLBACK_URL>",
 };
 
 // Append the botData object to the .env file as a BOT_DATA json variable

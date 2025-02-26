@@ -161,6 +161,31 @@ export const botsRouter = createTRPCRouter({
       if (!result[0]) {
         throw new Error('Bot not found')
       }
+
+      // Get the bot to check for callback URL
+      const bot = (
+        await ctx.db
+          .select({
+            callbackUrl: bots.callbackUrl,
+            id: bots.id,
+          })
+          .from(bots)
+          .where(eq(bots.id, input.id))
+      )[0]
+      if (!bot) {
+        throw new Error('Bot not found')
+      }
+
+      if (input.status === 'DONE' && bot.callbackUrl) {
+        // call the callback url
+        await fetch(bot.callbackUrl, {
+          method: 'POST',
+          body: JSON.stringify({
+            botId: bot.id,
+            status: input.status,
+          }),
+        })
+      }
       return result[0]
     }),
 

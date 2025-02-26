@@ -1,0 +1,1 @@
+ALTER TABLE "bots" ADD COLUMN "callback_url" varchar(1024);
