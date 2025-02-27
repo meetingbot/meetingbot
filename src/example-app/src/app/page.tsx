@@ -17,3 +17,7 @@ export default function Home() {
     </QueryClientProvider>
   );
 }
+function useQuery(arg0: { queryKey: string[]; queryFn: () => Promise<any>; refetchInterval: number; }): { data: any; refetch: any; } {
+  throw new Error('Function not implemented.');
+}
+
