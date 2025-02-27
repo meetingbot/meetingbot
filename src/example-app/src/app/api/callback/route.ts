@@ -2,6 +2,12 @@
 import { writeFileSync } from 'fs';
 import { NextResponse } from 'next/server';
 
+let recordingLink = '';
+
+export async function GET() {
+  return NextResponse.json({ recordingLink }, { status: 200 });
+}
+
 export async function POST(req: Request) {
   try {
     const body = await req.json();
@@ -54,16 +60,8 @@ export async function POST(req: Request) {
     });
     const { recording: recordingUrl } = await response.json();
 
-    // Download the recording
-    const recording = await fetch(recordingUrl);
-    const recordingBlob = await recording.blob();
-
-    // Save the recording to a file
-    const recordingBuffer = await recordingBlob.arrayBuffer();
-    const recordingBufferView = new Uint8Array(recordingBuffer);
-    writeFileSync(`./recordings/${botId}.mp4`, recordingBufferView);
-
-
+    // Store Here to return using GET
+    recordingLink = recordingUrl;
 
     // Passback
     return NextResponse.json({ message: 'OK' }, { status: 200 });
