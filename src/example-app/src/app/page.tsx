@@ -1,10 +1,35 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
+import ReactPlayer from "react-player";
 
 export default function Home() {
   const [response, setResponse] = useState('');
   const [link, setMeetingLink] = useState('');
+
+  const [videoLink, setVideoLink] = useState('');
+
+  // Query this app's backend to get the most recent recording
+  const { data, refetch } = useQuery({
+      queryKey: ["apiStatus"],
+      queryFn: async () => {
+          const res = await fetch("/api/callback");
+          return res.json();
+      },
+      refetchInterval: 5000, // Auto-refetch every 5 seconds
+  });
+
+  // Set Data
+  useEffect(() => {
+    if (data && data.link) {
+      setVideoLink(data.link);
+    }
+  }, [data]);
+
+  // Start the Refetch
+  useEffect(() => {
+    refetch();
+  }, []);
 
   const createBot = async () => {
 
@@ -56,6 +81,23 @@ export default function Home() {
       
       <h2>Response</h2>
       <pre className="text-xs opacity-70 max-h-[200px] overflow-y-auto">{response}</pre>
+
+      {
+        videoLink
+        ?
+        (<ReactPlayer
+          url={videoLink}
+          controls
+          width="640px"
+          height="360px"
+        />)
+        :
+        (<h1>Recording not available</h1>)
+      }
     </div>
   );
 }
+function useQuery(arg0: { queryKey: string[]; queryFn: () => Promise<any>; refetchInterval: number; }): { data: any; refetch: any; } {
+  throw new Error('Function not implemented.');
+}
+
