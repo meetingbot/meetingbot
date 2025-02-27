@@ -1,11 +1,5 @@
 "use client";
 
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from "~/components/ui/dialog";
 import { DataTable } from "./DataTable";
 import { logColumns } from "./LogColumns";
 import { trpcReact } from "~/trpc/trpc-react";

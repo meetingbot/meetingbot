@@ -1,6 +1,6 @@
 "use client";
 
-import { ColumnDef } from "@tanstack/react-table";
+import type { ColumnDef } from "@tanstack/react-table";
 import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
 import {
@@ -42,7 +42,7 @@ export const columns = (
     accessorKey: "createdAt",
     header: "Created At",
     cell: ({ row }) => {
-      const date = row.getValue("createdAt") as Date;
+      const date = row.getValue<Date>("createdAt");
       return date ? dayjs(date).format("MMMM D, YYYY") : "-";
     },
   },
@@ -62,63 +62,74 @@ export const columns = (
     id: "actions",
     cell: ({ row }) => {
       const apiKey = row.original;
-      const [showLogs, setShowLogs] = useState(false);
-      const utils = trpcReact.useUtils();
-
-      const revokeKey = trpcReact.apiKeys.revokeApiKey.useMutation({
-        onSuccess: async () => {
-          await utils.apiKeys.listApiKeys.invalidate();
-          toast.success("API Key revoked");
-        },
-        onError: (error) => {
-          toast.error("Error", {
-            description: error.message,
-          });
-        },
-      });
-
-      return (
-        <>
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="ghost" className="h-8 w-8 p-0">
-                <span className="sr-only">Open menu</span>
-                <MoreHorizontal className="h-4 w-4" />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              <DropdownMenuLabel>Actions</DropdownMenuLabel>
-              <DropdownMenuItem
-                onClick={() =>
-                  navigator.clipboard.writeText(apiKey.key.toString())
-                }
-              >
-                <Copy className="mr-2 h-4 w-4" />
-                Copy Key
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => setSelectedKeyId(apiKey.id)}>
-                View Logs
-              </DropdownMenuItem>
-              {!apiKey.isRevoked && (
-                <DropdownMenuItem
-                  className="text-red-600"
-                  onClick={() => revokeKey.mutate({ id: apiKey.id })}
-                >
-                  Revoke Key
-                </DropdownMenuItem>
-              )}
-            </DropdownMenuContent>
-          </DropdownMenu>
-          <Dialog open={showLogs} onOpenChange={setShowLogs}>
-            <DialogContent className="max-w-4xl">
-              <DialogHeader>
-                <DialogTitle>API Key Logs</DialogTitle>
-                {showLogs && <ViewLogsDialogContent apiKeyId={apiKey.id} />}
-              </DialogHeader>
-            </DialogContent>
-          </Dialog>
-        </>
-      );
+      return <ActionCell apiKey={apiKey} setSelectedKeyId={setSelectedKeyId} />;
     },
   },
 ];
+
+// Create a proper React component for the actions cell
+function ActionCell({ 
+  apiKey, 
+  setSelectedKeyId 
+}: { 
+  apiKey: ApiKey; 
+  setSelectedKeyId: (id: number) => void;
+}) {
+  const [showLogs, setShowLogs] = useState(false);
+  const utils = trpcReact.useUtils();
+
+  const revokeKey = trpcReact.apiKeys.revokeApiKey.useMutation({
+    onSuccess: async () => {
+      await utils.apiKeys.listApiKeys.invalidate();
+      toast.success("API Key revoked");
+    },
+    onError: (error) => {
+      toast.error("Error", {
+        description: error.message,
+      });
+    },
+  });
+
+  return (
+    <>
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <Button variant="ghost" className="h-8 w-8 p-0">
+            <span className="sr-only">Open menu</span>
+            <MoreHorizontal className="h-4 w-4" />
+          </Button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="end">
+          <DropdownMenuLabel>Actions</DropdownMenuLabel>
+          <DropdownMenuItem
+            onClick={() =>
+              navigator.clipboard.writeText(apiKey.key.toString())
+            }
+          >
+            <Copy className="mr-2 h-4 w-4" />
+            Copy Key
+          </DropdownMenuItem>
+          <DropdownMenuItem onClick={() => setSelectedKeyId(apiKey.id)}>
+            View Logs
+          </DropdownMenuItem>
+          {!apiKey.isRevoked && (
+            <DropdownMenuItem
+              className="text-red-600"
+              onClick={() => revokeKey.mutate({ id: apiKey.id })}
+            >
+              Revoke Key
+            </DropdownMenuItem>
+          )}
+        </DropdownMenuContent>
+      </DropdownMenu>
+      <Dialog open={showLogs} onOpenChange={setShowLogs}>
+        <DialogContent className="max-w-4xl">
+          <DialogHeader>
+            <DialogTitle>API Key Logs</DialogTitle>
+            {showLogs && <ViewLogsDialogContent apiKeyId={apiKey.id} />}
+          </DialogHeader>
+        </DialogContent>
+      </Dialog>
+    </>
+  );
+}

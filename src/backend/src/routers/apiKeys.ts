@@ -1,5 +1,5 @@
 import { z } from 'zod'
-import { createTRPCRouter, protectedProcedure, procedure } from '../server/trpc'
+import { createTRPCRouter, protectedProcedure } from '../server/trpc'
 import {
   apiKeys,
   insertApiKeySchema,
@@ -9,6 +9,7 @@ import {
 } from '../db/schema'
 import { eq, desc, sql, inArray, and } from 'drizzle-orm'
 import { randomBytes } from 'crypto'
+import { extractCount } from '../utils/database'
 
 export const apiKeysRouter = createTRPCRouter({
   createApiKey: protectedProcedure
@@ -157,8 +158,8 @@ export const apiKeysRouter = createTRPCRouter({
         .offset(input.offset)
 
       // Get total count
-      const [{ count }] = await ctx.db
-        .select({ count: sql<string>`count(*)` })
+      const countResult = await ctx.db
+        .select({ count: sql<number>`count(*)` })
         .from(apiRequestLogs)
         .where(
           and(
@@ -169,7 +170,7 @@ export const apiKeysRouter = createTRPCRouter({
 
       return {
         logs,
-        total: z.coerce.number().parse(count),
+        total: extractCount(countResult),
       }
     }),
 
@@ -224,7 +225,7 @@ export const apiKeysRouter = createTRPCRouter({
         .offset(input.offset)
 
       // Get total count
-      const [{ count }] = await ctx.db
+      const countResult = await ctx.db
         .select({ count: sql<number>`count(*)` })
         .from(apiRequestLogs)
         .where(
@@ -236,7 +237,7 @@ export const apiKeysRouter = createTRPCRouter({
 
       return {
         logs,
-        total: count,
+        total: extractCount(countResult),
       }
     }),
 
@@ -251,11 +252,11 @@ export const apiKeysRouter = createTRPCRouter({
     .input(z.object({}))
     .output(z.object({ count: z.number() }))
     .query(async ({ ctx }) => {
-      const [{ count }] = await ctx.db
+      const countResult = await ctx.db
         .select({ count: sql<number>`count(*)` })
         .from(apiKeys)
         .where(eq(apiKeys.userId, ctx.auth.userId))
 
-      return { count: Number(count) }
+      return { count: extractCount(countResult) }
     }),
 })

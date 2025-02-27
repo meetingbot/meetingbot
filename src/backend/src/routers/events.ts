@@ -35,10 +35,17 @@ export const eventsRouter = createTRPCRouter({
       if (botIds.length === 0) {
         return []
       }
+      
+      // Ensure botId is defined before using it in the query
+      const botId = botIds[0]
+      if (botId === undefined) {
+        throw new Error('Bot not found')
+      }
+      
       return await ctx.db
         .select()
         .from(events)
-        .where(eq(events.botId, botIds[0]))
+        .where(eq(events.botId, botId))
     }),
 
   getEventsForBot: protectedProcedure

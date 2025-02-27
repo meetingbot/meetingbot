@@ -1,6 +1,6 @@
 "use client";
 
-import { ColumnDef } from "@tanstack/react-table";
+import type { ColumnDef } from "@tanstack/react-table";
 import dayjs from "dayjs";
 
 type ApiKeyLog = {
@@ -17,7 +17,7 @@ export const logColumns: ColumnDef<ApiKeyLog>[] = [
     accessorKey: "method",
     header: "Method",
     cell: ({ row }) => {
-      const method = row.getValue("method") as string;
+      const method = row.getValue<string>("method");
       return <span className="font-mono">{method}</span>;
     },
   },
@@ -25,7 +25,7 @@ export const logColumns: ColumnDef<ApiKeyLog>[] = [
     accessorKey: "path",
     header: "Path",
     cell: ({ row }) => {
-      const path = row.getValue("path") as string;
+      const path = row.getValue<string>("path");
       return <span className="font-mono">{path}</span>;
     },
   },
@@ -33,7 +33,7 @@ export const logColumns: ColumnDef<ApiKeyLog>[] = [
     accessorKey: "statusCode",
     header: "Status",
     cell: ({ row }) => {
-      const status = row.getValue("statusCode") as number;
+      const status = row.getValue<number>("statusCode");
       return (
         <span
           className={`font-mono ${
@@ -53,7 +53,7 @@ export const logColumns: ColumnDef<ApiKeyLog>[] = [
     accessorKey: "createdAt",
     header: "Time",
     cell: ({ row }) => {
-      const date = row.getValue("createdAt") as Date | null;
+      const date = row.getValue<Date | null>("createdAt");
       return date ? dayjs(date).format("MMM D, YYYY HH:mm:ss") : "-";
     },
   },

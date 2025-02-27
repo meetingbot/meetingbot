@@ -11,6 +11,7 @@ import {
 import { eq, sql, and, notInArray } from 'drizzle-orm'
 import { deployBot, shouldDeployImmediately } from '../services/botDeployment'
 import { DEFAULT_BOT_VALUES } from '../constants'
+import { extractCount } from '../utils/database'
 
 export const botsRouter = createTRPCRouter({
   getBots: protectedProcedure
@@ -339,6 +340,6 @@ export const botsRouter = createTRPCRouter({
           )
         )
 
-      return { count: Number(result[0].count) }
+      return { count: extractCount(result) }
     }),
 })
