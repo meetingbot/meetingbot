@@ -25,7 +25,9 @@ app.use(
 
 // This endpoint is used by the auth router
 app.set('trust proxy', true)
-app.use('/auth/*', ExpressAuth(authConfig))
+
+// Move auth under /api
+app.use('/api/auth/*', ExpressAuth(authConfig))
 // add the session to the request object
 app.use(async (req: Request, res: Response, next: NextFunction) => {
   res.locals.session = await getSession(req, authConfig)
@@ -41,6 +43,9 @@ app.use(
   })
 )
 
+// Set up Swagger UI at /api/docs
+app.use('/api/docs', swaggerUi.serve, swaggerUi.setup(openApiDocument))
+
 // This endpoint allows standard HTTP clients to access the API using REST conventions
 app.use(
   '/api',
@@ -50,10 +55,7 @@ app.use(
   })
 )
 
-app.use('/', swaggerUi.serve)
-
 const main = async () => {
-  app.get('/', swaggerUi.setup(openApiDocument))
   app.listen(port, () => {
     console.log('listening on http://localhost:' + port)
   })
