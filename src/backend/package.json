@@ -43,9 +43,9 @@
   "devDependencies": {
     "@types/cors": "^2.8.17",
     "@types/express": "^5.0.0",
-    "@types/node": "^22.10.5",
+    "@types/node": "^22.13.5",
     "@types/pg": "^8.11.10",
-    "@types/swagger-ui-express": "^4.1.7",
+    "@types/swagger-ui-express": "^4.1.8",
     "@typescript-eslint/eslint-plugin": "^7.0.0",
     "@typescript-eslint/parser": "^7.0.0",
     "drizzle-kit": "^0.30.1",

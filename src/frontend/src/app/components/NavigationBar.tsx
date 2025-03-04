@@ -13,6 +13,7 @@ import {
 } from "@/components/ui/navigation-menu";
 import SessionButton from "./SessionButton";
 import { ExternalLink } from "lucide-react";
+import { env } from "~/env";
 
 const components: { title: string | React.ReactNode; href: string }[] = [
   {
@@ -38,7 +39,7 @@ const components: { title: string | React.ReactNode; href: string }[] = [
         Docs <ExternalLink className="h-4" />
       </span>
     ),
-    href: `${process.env.NEXT_PUBLIC_BACKEND_URL}`,
+    href: `${env.NEXT_PUBLIC_BACKEND_URL}/docs`,
   },
 ];
 

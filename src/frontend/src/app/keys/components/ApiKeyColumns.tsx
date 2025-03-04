@@ -68,11 +68,11 @@ export const columns = (
 ];
 
 // Create a proper React component for the actions cell
-function ActionCell({ 
-  apiKey, 
-  setSelectedKeyId 
-}: { 
-  apiKey: ApiKey; 
+function ActionCell({
+  apiKey,
+  setSelectedKeyId,
+}: {
+  apiKey: ApiKey;
   setSelectedKeyId: (id: number) => void;
 }) {
   const [showLogs, setShowLogs] = useState(false);
@@ -102,9 +102,13 @@ function ActionCell({
         <DropdownMenuContent align="end">
           <DropdownMenuLabel>Actions</DropdownMenuLabel>
           <DropdownMenuItem
-            onClick={() =>
-              navigator.clipboard.writeText(apiKey.key.toString())
-            }
+            onClick={() => {
+              toast.promise(navigator.clipboard.writeText(apiKey.key), {
+                loading: "Copying key...",
+                success: "Key copied",
+                error: "Failed to copy key",
+              });
+            }}
           >
             <Copy className="mr-2 h-4 w-4" />
             Copy Key
