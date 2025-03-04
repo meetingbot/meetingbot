@@ -58,7 +58,6 @@ export async function deployBot({
     const botsDir = path.resolve(__dirname, '../../../bots')
 
     // Merge default config with user provided config
-
     const config: BotConfig = {
       id: botId,
       userId: bot.userId,
@@ -80,6 +79,7 @@ export async function deployBot({
         env: {
           ...process.env,
           BOT_DATA: JSON.stringify(config),
+          BOT_TYPE: botType,
         },
       })
 
@@ -94,7 +94,9 @@ export async function deployBot({
         console.error(`Bot ${botId} process error:`, error)
       })
     } else {
-      // todo: i'm not sure if this works as intended
+      // Determine which task definition to use based on the platform
+      const taskDefinition = `meetingbot-dev-${botType}-bot`
+      
       const input: RunTaskRequest = {
         cluster: process.env.ECS_CLUSTER_NAME,
         // taskDefinition: process.env.ECS_TASK_DEFINITION_MEET,
