@@ -7,6 +7,7 @@ import { setTimeout } from "timers/promises";
 import { BotConfig, EventCode } from "../../src/types";
 import { Bot } from "../../src/bot";
 import * as fs from 'fs';
+import path from "path";
 
 // Use Stealth
 const stealthPlugin = StealthPlugin();
@@ -64,7 +65,7 @@ export class MeetsBot extends Bot {
     onEvent: (eventType: EventCode, data?: any) => Promise<void>
   ) {
     super(botSettings, onEvent);
-    this.recordingPath = "/recording/recording.mp4";
+    this.recordingPath = path.resolve(__dirname, "recording.mp4");
 
     this.browserArgs = [
       "--incognito",
@@ -268,7 +269,7 @@ export class MeetsBot extends Bot {
           // Store MediaRecorder instance inside `window`
           Object.assign(window, {
             recorder: new MediaRecorder(stream, {
-              mimeType: "video/webm; codecs=opus",
+              mimeType: "video/mp4; codecs=h264",
               audioBitsPerSecond: 128000,
             })
           });

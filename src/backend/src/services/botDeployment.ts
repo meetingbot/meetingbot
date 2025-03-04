@@ -54,11 +54,10 @@ export async function deployBot({
   await db.update(bots).set({ status: 'DEPLOYING' }).where(eq(bots.id, botId))
 
   try {
-    // Get the absolute path to the meet bot directory
-    const meetDir = path.resolve(__dirname, '../../../bots/meet')
+    // Determine which bot type to use based on meeting platform
+    const botType = bot.meetingInfo.platform?.toLowerCase() || 'meet'
 
     // Merge default config with user provided config
-
     const config: BotConfig = {
       id: botId,
       userId: bot.userId,
@@ -76,10 +75,11 @@ export async function deployBot({
     if (dev) {
       // Spawn the bot process
       const botProcess = spawn('pnpm', ['dev'], {
-        cwd: meetDir,
+        cwd: path.resolve(__dirname, '../../../bots'),
         env: {
           ...process.env,
           BOT_DATA: JSON.stringify(config),
+          BOT_TYPE: botType,
         },
       })
 
@@ -94,10 +94,12 @@ export async function deployBot({
         console.error(`Bot ${botId} process error:`, error)
       })
     } else {
-      // todo: i'm not sure if this works as intended
+      // Determine which task definition to use based on the platform
+      const taskDefinition = `meetingbot-dev-${botType}-bot`
+      
       const input: RunTaskRequest = {
         cluster: 'meetingbot-dev',
-        taskDefinition: 'meetingbot-dev-meet-bot',
+        taskDefinition: taskDefinition,
         launchType: 'FARGATE',
         networkConfiguration: {
           awsvpcConfiguration: {
