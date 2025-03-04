@@ -330,8 +330,8 @@ resource "aws_ecs_task_definition" "meet_bot" {
   family                   = "${local.name}-meet-bot"
   requires_compatibilities = ["FARGATE"]
   network_mode             = "awsvpc"
-  cpu                      = 2048
-  memory                   = 4096
+  cpu                      = 4096
+  memory                   = 16384
   execution_role_arn       = aws_iam_role.ecs_task_execution_role.arn
   task_role_arn            = aws_iam_role.bot_role.arn
 
@@ -372,8 +372,8 @@ resource "aws_ecs_task_definition" "zoom_bot" {
   family                   = "${local.name}-zoom-bot"
   requires_compatibilities = ["FARGATE"]
   network_mode             = "awsvpc"
-  cpu                      = 2048
-  memory                   = 4096
+  cpu                      = 4096
+  memory                   = 16384
   execution_role_arn       = aws_iam_role.ecs_task_execution_role.arn
   task_role_arn            = aws_iam_role.bot_role.arn
 
@@ -414,8 +414,8 @@ resource "aws_ecs_task_definition" "teams_bot" {
   family                   = "${local.name}-teams-bot"
   requires_compatibilities = ["FARGATE"]
   network_mode             = "awsvpc"
-  cpu                      = 2048
-  memory                   = 4096
+  cpu                      = 4096
+  memory                   = 16384
   execution_role_arn       = aws_iam_role.ecs_task_execution_role.arn
   task_role_arn            = aws_iam_role.bot_role.arn
 
