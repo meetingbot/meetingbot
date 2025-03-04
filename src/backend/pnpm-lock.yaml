@@ -70,13 +70,13 @@ importers:
         specifier: ^5.0.0
         version: 5.0.0
       '@types/node':
-        specifier: ^22.10.5
+        specifier: ^22.13.5
         version: 22.13.5
       '@types/pg':
         specifier: ^8.11.10
         version: 8.11.11
       '@types/swagger-ui-express':
-        specifier: ^4.1.7
+        specifier: ^4.1.8
         version: 4.1.8
       '@typescript-eslint/eslint-plugin':
         specifier: ^7.0.0

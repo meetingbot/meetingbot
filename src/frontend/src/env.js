@@ -10,7 +10,6 @@ export const env = createEnv({
     NODE_ENV: z
       .enum(["development", "test", "production"])
       .default("development"),
-    DATABASE_URL: z.string().url(),
   },
 
   /**
@@ -20,7 +19,7 @@ export const env = createEnv({
    */
   client: {
     // NEXT_PUBLIC_CLIENTVAR: z.string(),
-    NEXT_PUBLIC_BACKEND_URL: z.string().url(),
+    NEXT_PUBLIC_BACKEND_URL: z.string(),
   },
 
   /**
@@ -29,8 +28,13 @@ export const env = createEnv({
    */
   runtimeEnv: {
     NODE_ENV: process.env.NODE_ENV,
-    DATABASE_URL: process.env.DATABASE_URL,
-    NEXT_PUBLIC_BACKEND_URL: process.env.NEXT_PUBLIC_BACKEND_URL,
+    /**
+     * We only use this environment variable in development
+     * In production, it is built to an empty string,
+     * i.e. the backend URL is hardcoded to be the same as the frontend URL
+     * Speficially, all requests to /api/* are proxied to the backend
+     */
+    NEXT_PUBLIC_BACKEND_URL: process.env.NEXT_PUBLIC_BACKEND_URL ?? "",
   },
   /**
    * Run `build` or `dev` with `SKIP_ENV_VALIDATION` to skip env validation. This is especially
@@ -41,5 +45,5 @@ export const env = createEnv({
    * Makes it so that empty strings are treated as undefined. `SOME_VAR: z.string()` and
    * `SOME_VAR=''` will throw an error.
    */
-  emptyStringAsUndefined: true,
+  emptyStringAsUndefined: false,
 });

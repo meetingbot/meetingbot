@@ -5,6 +5,7 @@ import { S3Client, PutObjectCommand } from "@aws-sdk/client-s3";
 import crypto from "crypto";
 import { BotConfig, EventCode } from "../../src/types";
 import { Bot } from "../../src/bot";
+import path from "path";
 
 export class ZoomBot extends Bot {
   recordingPath: string;
@@ -16,7 +17,7 @@ export class ZoomBot extends Bot {
     onEvent: (eventType: EventCode, data?: any) => Promise<void>
   ) {
     super(botSettings, onEvent);
-    this.recordingPath = "./recording.mp4";
+    this.recordingPath = path.resolve(__dirname, "recording.mp4");
     this.contentType = "video/mp4";
     this.url = `https://app.zoom.us/wc/${this.settings.meetingInfo.meetingId}/join?fromPWA=1&pwd=${this.settings.meetingInfo.meetingPassword}`;
   }

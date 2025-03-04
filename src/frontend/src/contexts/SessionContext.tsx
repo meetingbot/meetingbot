@@ -8,6 +8,7 @@ import {
   useState,
   type ReactNode,
 } from "react";
+import { env } from "~/env";
 
 interface SessionContextType {
   session: Session | null;
@@ -25,7 +26,7 @@ export function SessionProvider({ children }: { children: ReactNode }) {
   async function getSession(): Promise<Session | null> {
     try {
       const response = await fetch(
-        `${process.env.NEXT_PUBLIC_BACKEND_URL}/auth/session`,
+        `${env.NEXT_PUBLIC_BACKEND_URL}/api/auth/session`,
         {
           credentials: "include",
           headers: {
