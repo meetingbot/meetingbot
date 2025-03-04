@@ -1,73 +1,70 @@
-# Terraform Infrastructure Setup
+# MeetingBot Terraform Infrastructure
 
-We use workspaces for non-prod and prod environments.
+This directory contains the Terraform configuration to deploy MeetingBot infrastructure on AWS.
 
-The prod environment should always be the default workspace, to make deploying to self-hosted infrastructure easy.
-
-## Prerequisites
-
-- Install AWS CLI and configure credentials:
-    <details>
-    <summary>Install AWS CLI with brew</summary>
-
-  ```bash
-  brew install awscli
-  ```
-
-    </details>
-    <details>
-    <summary>Configure AWS credentials</summary>
-
-  ```bash
-  aws configure sso
-  ```
-
-  Put whatever you want for SSO session name. Find SSO start URL and region in AWS access portal > Access keys. Leave SSO registration scopes blank. Enter `meetingbot` as CLI profile name.
-
-  Then:
-
-  ```bash
-  aws sso login --profile meetingbot
-  ```
-
-    </details>
-
-- Install Terraform CLI:
-    <details>
-    <summary>Install with brew</summary>
-
-  ```bash
-  brew install terraform
-  ```
-
-    </details>
-
-## Getting Started
-
-Navigate to this folder (`/src/terraform/`)
-
-1. Copy `backend.tfvars.example` to `backend.tfvars`
-
-2. Initialize Terraform in your project:
+## Quick Start
 
 ```bash
+# 1. Set up your AWS credentials
+aws configure sso  # Use profile name: meetingbot
+
+# 2. Initialize Terraform
+cp backend.tfvars.example backend.tfvars
+cp terraform.tfvars.example terraform.tfvars
 terraform init -backend-config=backend.tfvars
-```
 
-3. Pick a workspace (list them using `terraform workspace list`)
+# 3. Select workspace (dev or prod)
+terraform workspace select dev  # or create with: terraform workspace new dev
 
-```
-terraform workspace select dev
-```
-
-4. Preview infrastructure changes:
-
-```bash
-terraform plan
-```
-
-5. Apply infrastructure changes:
-
-```bash
+# 4. Deploy infrastructure
 terraform apply
 ```
+
+## Environment Workspaces
+
+We use Terraform workspaces to manage different environments:
+
+- `prod`: Production environment (higher availability, deletion protection)
+- Any other name (e.g., `dev`): Non-production environment (reduced resources, easier cleanup)
+
+## Infrastructure Components
+
+The configuration deploys the following resources:
+
+- **VPC**: Private network with public, private, and database subnets
+- **RDS**: PostgreSQL database for persistent storage
+- **ALB**: Application Load Balancer for routing traffic
+- **ECS**: Fargate services for running containerized applications
+- **Security Groups**: Proper access controls for all components
+
+## Common Commands
+
+```bash
+# Log in to AWS
+aws sso login --profile meetingbot
+
+# Switch environments
+terraform workspace select prod  # or dev, etc.
+
+# Plan changes without applying
+terraform plan
+
+# Apply changes
+terraform apply
+
+# Destroy resources (be careful!)
+terraform destroy
+
+# Show current workspace
+terraform workspace show
+```
+
+## Configuration Files
+
+- `main.tf` - Provider configuration
+- `vpc.tf` - Network infrastructure
+- `rds.tf` - Database configuration
+- `alb.tf` - Load balancer setup
+- `ecs.tf` - Container services
+- `variables.tf` - Input variables
+- `terraform.tfvars` - Variable values (copy example file to customize)

@@ -49,5 +49,8 @@ COPY --from=base /root/.cache/ms-playwright /root/.cache/ms-playwright
 COPY src ./src
 COPY meet/src ./meet/src
 
+#Install pnpm globally
+RUN npm install -g pnpm
+
 # Run Command
 CMD ["sh", "-c", "xvfb-run -s '-screen 0 1280x1024x24' pnpm --filter @bots/meet run dev"]

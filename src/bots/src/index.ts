@@ -12,8 +12,6 @@ dotenv.config();
 const main = async () => {
   const requiredEnvVars = [
     "BOT_DATA",
-    "AWS_ACCESS_KEY_ID",
-    "AWS_SECRET_ACCESS_KEY",
     "AWS_BUCKET_NAME",
     "AWS_REGION",
   ] as const;
@@ -31,13 +29,20 @@ const main = async () => {
   const botId = botData.id;
 
   // Initialize S3 client
-  const s3Client = new S3Client({
-    region: process.env.AWS_REGION!,
-    credentials: {
-      accessKeyId: process.env.AWS_ACCESS_KEY_ID!,
-      secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY!,
-    },
-  });
+  let s3Client: S3Client;
+  if (process.env.AWS_ACCESS_KEY_ID && process.env.AWS_SECRET_ACCESS_KEY) {
+    s3Client = new S3Client({
+      region: process.env.AWS_REGION!,
+      credentials: {
+        accessKeyId: process.env.AWS_ACCESS_KEY_ID!,
+        secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY!,
+      },
+    });
+  } else {
+    s3Client = new S3Client({
+      region: process.env.AWS_REGION!,
+    });
+  }
 
   // Create the appropriate bot instance based on platform
   let bot: Bot;
