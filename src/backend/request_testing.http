@@ -1,7 +1,7 @@
 # download VSCode REST Client https://marketplace.visualstudio.com/items?itemName=humao.rest-client
 
 # Create a user
-POST http://127.0.0.1:3001/api/users
+POST http://meetingbot-dev-2081261315.us-east-2.elb.amazonaws.com/api/users
 content-type: application/json
 
 {
@@ -12,14 +12,14 @@ content-type: application/json
 
 ###
 # Create a Google Meet bot (deploy immediately) with default settings
-POST http://127.0.0.1:3001/api/bots
+POST http://meetingbot-dev-1753410297.us-east-2.elb.amazonaws.com/api/bots
 content-type: application/json
 
 {
-  "userId": 5,
+  "userId": 1,
   "meetingTitle": "Test Google Meet",
   "meetingInfo": {
-    "meetingUrl": "https://meet.google.com/orn-ovgv-dym",
+    "meetingUrl": "https://meet.google.com/osn-pemn-piv",
     "platform": "google"
   }
 }
@@ -49,12 +49,12 @@ content-type: application/json
 ###
 
 # Create an API key
-POST http://127.0.0.1:3001/api/api-keys
+POST http://meetingbot-dev-2081261315.us-east-2.elb.amazonaws.com/api/api-keys
 content-type: application/json
 
 {
   "name": "Test API Key",
-  "userId": 5
+  "userId": 1
 }
 
 ### 

@@ -3,6 +3,7 @@ import { File, Users, Bell, Plus, LogIn } from "lucide-react";
 import { Button } from "~/components/ui/button";
 import { useSession } from "~/contexts/SessionContext";
 import Link from "next/link";
+import { env } from "~/env";
 
 export default function WelcomeDashboard() {
   const { session } = useSession();
@@ -38,7 +39,7 @@ export default function WelcomeDashboard() {
                     </Link>
                   ) : (
                     <Link
-                      href={`${process.env.NEXT_PUBLIC_BACKEND_URL}/auth/signin?provider=github`}
+                      href={`${env.NEXT_PUBLIC_BACKEND_URL}/api/auth/signin?provider=github`}
                     >
                       <Button>
                         Sign In <LogIn />
@@ -56,7 +57,7 @@ export default function WelcomeDashboard() {
                 icon={<File className="text-slate-500" />}
                 link={{
                   type: "EXTERNAL",
-                  url: `${process.env.NEXT_PUBLIC_BACKEND_URL}`,
+                  url: `${env.NEXT_PUBLIC_BACKEND_URL}/docs`,
                   text: "View Documentation",
                 }}
               />

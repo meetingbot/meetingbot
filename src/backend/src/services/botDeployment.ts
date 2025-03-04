@@ -96,18 +96,19 @@ export async function deployBot({
     } else {
       // todo: i'm not sure if this works as intended
       const input: RunTaskRequest = {
-        cluster: 'meetingbot-dev',
-        taskDefinition: 'meetingbot-dev-meet-bot',
+        cluster: process.env.ECS_CLUSTER_NAME,
+        // taskDefinition: process.env.ECS_TASK_DEFINITION_MEET,
+        taskDefinition: process.env.ECS_TASK_DEFINITION_ZOOM,
         launchType: 'FARGATE',
         networkConfiguration: {
           awsvpcConfiguration: {
-            // TODO: STOP HARDCODING THESE
-            subnets: [
-              'subnet-0c19be0808044a100',
-              'subnet-0f4ff939fc54af4ab',
-              'subnet-06a3bd70f32b079f3',
-            ],
-            securityGroups: ['sg-0b11e926357708c71'],
+            // Read subnets from environment variables
+            subnets: process.env.ECS_SUBNETS
+              ? process.env.ECS_SUBNETS.split(',')
+              : [],
+            securityGroups: process.env.ECS_SECURITY_GROUPS
+              ? process.env.ECS_SECURITY_GROUPS.split(',')
+              : [],
             assignPublicIp: 'ENABLED',
           },
         },

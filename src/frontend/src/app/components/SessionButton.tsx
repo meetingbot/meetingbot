@@ -10,6 +10,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import { useSession } from "~/contexts/SessionContext";
+import { env } from "~/env";
 
 export default function SessionButton() {
   const { session } = useSession();
@@ -24,7 +25,7 @@ export default function SessionButton() {
   if (!session?.user) {
     return (
       <Link
-        href={`${process.env.NEXT_PUBLIC_BACKEND_URL}/auth/signin?provider=github`}
+        href={`${env.NEXT_PUBLIC_BACKEND_URL}/api/auth/signin?provider=github`}
       >
         <Button variant="outline" className="gap-2">
           Sign In
@@ -51,7 +52,7 @@ export default function SessionButton() {
         <DropdownMenuSeparator />
         <DropdownMenuItem>Profile</DropdownMenuItem>
         <Link
-          href={`${process.env.NEXT_PUBLIC_BACKEND_URL}/auth/signout`}
+          href={`${env.NEXT_PUBLIC_BACKEND_URL}/api/auth/signout`}
           className="cursor-pointer"
         >
           <DropdownMenuItem>Logout</DropdownMenuItem>

@@ -43,8 +43,8 @@ app.use(
   })
 )
 
-// Set up Swagger UI at /api/docs
-app.use('/api/docs', swaggerUi.serve, swaggerUi.setup(openApiDocument))
+// Set up Swagger UI at /docs
+app.use('/docs', swaggerUi.serve)
 
 // This endpoint allows standard HTTP clients to access the API using REST conventions
 app.use(
@@ -56,6 +56,7 @@ app.use(
 )
 
 const main = async () => {
+  app.get('/docs', swaggerUi.setup(openApiDocument))
   app.listen(port, () => {
     console.log('listening on http://localhost:' + port)
   })
