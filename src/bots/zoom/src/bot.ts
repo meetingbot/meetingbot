@@ -81,7 +81,7 @@ export class ZoomBot extends Bot {
       console.log("Joined the meeting");
 
       // Wait for the leave button to appear and be properly labeled before starting recording
-      await new Promise((resolve) => setTimeout(resolve, 700)); // Needed to wait for the aria-label to be properly attached
+      await new Promise((resolve) => setTimeout(resolve, 1400)); // Needed to wait for the aria-label to be properly attached
       await frame.waitForSelector('button[aria-label="Leave"]');
       console.log("Leave button found and labeled, ready to start recording");
     }
@@ -119,7 +119,7 @@ export class ZoomBot extends Bot {
     };
 
     // Start the meeting end check
-    checkMeetingEnd();
+    await checkMeetingEnd();
   }
 
   getRecordingPath(): string {
