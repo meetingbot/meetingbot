@@ -14,15 +14,14 @@ RUN apt-get update && apt-get install -y \
 # Set the working directory inside the container
 WORKDIR /app
 
-#Install pnpm globally
+# Install pnpm globally
 RUN npm install -g pnpm
 
-# Copy dependency files
-COPY package.json pnpm-lock.yaml ./
-COPY meet/package.json meet/pnpm-lock.yaml ./meet/
+# Copy dependency files to the app directory
+COPY package.json pnpm-lock.yaml /app/
 
-# Install dependencies
-RUN pnpm install --frozen-lockfile
+# Install dependencies directly (no workspace)
+RUN pnpm install --frozen-lockfile --ignore-workspace
 
 # Install Playwright dependencies
 RUN npx playwright install-deps
@@ -45,12 +44,14 @@ COPY --from=base /app/node_modules /app/node_modules
 COPY --from=base /app/package.json /app/package.json
 COPY --from=base /root/.cache/ms-playwright /root/.cache/ms-playwright
 
-# Copy files into the container
-COPY src ./src
-COPY meet/src ./meet/src
+# Copy the source files
+COPY src/ /app/src/
 
-#Install pnpm globally
+# Install pnpm globally
 RUN npm install -g pnpm
 
+# Copy tsconfig.json
+COPY tsconfig.json /app/
+
 # Run Command
-CMD ["sh", "-c", "xvfb-run -s '-screen 0 1280x1024x24' pnpm --filter @bots/meet run dev"]
+CMD ["sh", "-c", "xvfb-run -s '-screen 0 1280x1024x24' pnpm run dev"]
