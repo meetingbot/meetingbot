@@ -150,7 +150,16 @@ export const botsRouter = createTRPCRouter({
         description: 'Update the status of a bot',
       },
     })
-    .input(z.object({ id: z.number(), status }))
+    .input(
+      z.discriminatedUnion('status', [
+        z.object({
+          id: z.number(),
+          status: z.literal('DONE'),
+          recording: z.string(), // the object id of the recording
+        }),
+        z.object({ id: z.number(), status: status.exclude(['DONE']) }),
+      ])
+    )
     .output(selectBotSchema)
     .mutation(async ({ input, ctx }) => {
       const result = await ctx.db
@@ -177,15 +186,23 @@ export const botsRouter = createTRPCRouter({
         throw new Error('Bot not found')
       }
 
-      if (input.status === 'DONE' && bot.callbackUrl) {
-        // call the callback url
-        await fetch(bot.callbackUrl, {
-          method: 'POST',
-          body: JSON.stringify({
-            botId: bot.id,
-            status: input.status,
-          }),
-        })
+      if (input.status === 'DONE') {
+        // add the recording to the bot
+        await ctx.db
+          .update(bots)
+          .set({ recording: input.recording })
+          .where(eq(bots.id, bot.id))
+
+        if (bot.callbackUrl) {
+          // call the callback url
+          await fetch(bot.callbackUrl, {
+            method: 'POST',
+            body: JSON.stringify({
+              botId: bot.id,
+              status: input.status,
+            }),
+          })
+        }
       }
       return result[0]
     }),
