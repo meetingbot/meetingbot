@@ -1,7 +1,4 @@
 import { PutObjectCommand, S3Client } from "@aws-sdk/client-s3";
-import { MeetsBot } from "meet/src/bot";
-import { TeamsBot } from "teams/src/bot";
-import { ZoomBot } from "zoom/src/bot";
 import { Bot } from "./bot";
 import fs, { readFileSync } from "fs";
 import dotenv from "dotenv";
@@ -46,16 +43,19 @@ const main = async () => {
   let bot: Bot;
   switch (botData.meetingInfo.platform) {
     case "google":
+      const { MeetsBot } = await import("../meet/src/bot");
       bot = new MeetsBot(botData, async (eventType: EventCode, data: any) => {
         await reportEvent(botId, eventType, data);
       });
       break;
     case "teams":
+      const { TeamsBot } = await import("../teams/src/bot");
       bot = new TeamsBot(botData, async (eventType: EventCode, data: any) => {
         await reportEvent(botId, eventType, data);
       });
       break;
     case "zoom":
+      const { ZoomBot } = await import("../zoom/src/bot");
       bot = new ZoomBot(botData, async (eventType: EventCode, data: any) => {
         await reportEvent(botId, eventType, data);
       });
@@ -76,7 +76,12 @@ const main = async () => {
 
   try {
     // Run the bot
-    await bot.run();
+    await bot.run().catch(async (error) => {
+      console.error("Error running bot:", error);
+      await reportEvent(botId, EventCode.FATAL, {
+        description: (error as Error).message,
+      });
+    });
 
     // Upload recording to S3
     console.log("Start Upload to S3...");
@@ -90,13 +95,12 @@ const main = async () => {
         console.log("Successfully read recording file");
         break; // Exit loop if readFileSync is successful
       } catch (error) {
-
-        const err = (error as NodeJS.ErrnoException);
+        const err = error as NodeJS.ErrnoException;
         if (err.code === "EBUSY") {
           console.log("File is busy, retrying...");
           await setTimeout(1000); // Wait for 1 second before retrying
         } else if (err.code === "ENOENT") {
-          console.log("File not found, retrying ", i--, ' more times');
+          console.log("File not found, retrying ", i--, " more times");
           await setTimeout(1000); // Wait for 1 second before retrying
 
           if (i < 0) {
@@ -111,8 +115,9 @@ const main = async () => {
     // Create UUid
     const uuid = crypto.randomUUID();
     const contentType = bot.getContentType();
-    const key = `recordings/${uuid}-${bot.settings.meetingInfo.platform
-      }-recording.${contentType.split("/")[1]}`;
+    const key = `recordings/${uuid}-${
+      bot.settings.meetingInfo.platform
+    }-recording.${contentType.split("/")[1]}`;
 
     try {
       const commandObjects = {
