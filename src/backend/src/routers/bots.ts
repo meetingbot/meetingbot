@@ -253,6 +253,7 @@ export const botsRouter = createTRPCRouter({
     .input(z.object({ id: z.number() }))
     .output(z.object({ success: z.boolean() }))
     .mutation(async ({ input, ctx }) => {
+      console.log('Heartbeat received for bot', input.id)
       // Update bot's last heartbeat
       const botUpdate = await ctx.db
         .update(bots)
