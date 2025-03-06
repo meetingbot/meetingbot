@@ -8,6 +8,12 @@ export default function RecordingPlayer() {
   const [videoLink, setVideoLink] = useState('');
 
   // Query this app's backend to get the most recent recording
+
+  //
+  // Ideally this wouldn't be how you do it -- this is a quick botch to
+  // get the recording link from the backend. In a real app, you'd want
+  //
+
   const { data, refetch } = useQuery({
       queryKey: ["apiStatus"],
       queryFn: async () => {
@@ -34,12 +40,13 @@ export default function RecordingPlayer() {
       {
         videoLink
         ?
-        (<ReactPlayer
+        (<>
+        <ReactPlayer
           url={videoLink}
           controls
-          width="640px"
-          height="360px"
-        />)
+        />
+        <h3><a href={videoLink}>{videoLink}</a></h3>
+        </>)
         :
         (<h1>Recording not available</h1>)
       }

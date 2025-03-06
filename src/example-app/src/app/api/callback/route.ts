@@ -5,47 +5,57 @@ import { NextResponse } from 'next/server';
 let recordingLink = '';
 
 export async function GET() {
-  return NextResponse.json({ recordingLink }, { status: 200 });
+  return NextResponse.json({ link: recordingLink }, { status: 200 });
 }
 
 export async function POST(req: Request) {
-  try {
+  // try {
+
+    console.log('Getting...')
     const body = await req.json();
-    const {botId, status} = body;
+    const {botId} = body;
+    console.log(body)
 
     // Get Key
     const key = process.env.BOT_API_KEY;
+    console.log(key);
     if (!key) throw new Error(`Missing required environment variable: BOT_API_KEY`);
         
+    
     // Get a list of currently valid bots
     const endpoint = process.env.MEETINGBOT_END_POINT;
+    console.log(endpoint);
     if (!endpoint) throw new Error(`Missing required environment variable: MEETINGBOT_END_POINT`);
+    
 
     // Validate
-    if (!botId) return NextResponse.json('Malfored Body', { status: 400 });
-    if (!status) return NextResponse.json('Malfored Body', { status: 400 });
+    console.log(botId);
+    if (botId === null) return NextResponse.json('Malfored Body - botId is not defined', { status: 400 });
 
     //
     // Ensure bot actually exists and is really done
     //
-    const response = await fetch(`${endpoint}/api/bots`, {
+    const response = await fetch(`${endpoint}/api/bots/${botId}`, {
       method: 'GET',
       headers: {
         'Content-Type': 'application/json',
         'x-api-key': key,
       }  
     });
-    const activeBotData = await response.json();
+    console.log(response.status);
 
-    // Check if bot exists in here
-    const botExists = activeBotData.some((bot: { id: string }) => bot.id === botId);
-    if (!botExists) {
-      return NextResponse.json('Bot not found', { status: 404 });
+
+    if (response.status !== 200) {
+      return NextResponse.json('Bot with id could not be fetched', { status: 404 });
     }
+
+    const fetchedBot = await response.json();
+    console.log(fetchedBot);
+
     //Check if status is done
-    const botStatus = activeBotData.find((bot: { id: string }) => bot.id === botId).status;
-    if (botStatus !== status) {
-      return NextResponse.json('Bot not done', { status: 404 });
+    if (fetchedBot.status !== 'DONE') {
+      console.log('Bot Status is not set to done');
+      // return NextResponse.json('Bot Status not done', { status: 404 });
     }
 
     //
@@ -58,15 +68,16 @@ export async function POST(req: Request) {
         'x-api-key': key,
       }  
     });
-    const { recording: recordingUrl } = await response.json();
+    const { recording } = await recordingResponse.json();
 
-    // Store Here to return using GET
-    recordingLink = recordingUrl;
+    // Store Here -- which is then returned using GET
+    recordingLink = recording;
 
     // Passback
     return NextResponse.json({ message: 'OK' }, { status: 200 });
 
-  } catch (error) {
+  // } catch (error) {
+    // return NextResponse.json({ error }, { status: 500 });
     return NextResponse.json({ error: 'Internal Error' }, { status: 500 });
-  }
+  // }
 }
