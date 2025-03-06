@@ -57,11 +57,30 @@ content-type: application/json
   "userId": 5
 }
 
+
+###
+
+## Fake a backend callback to an example application
+POST http://127.0.0.1:3002/api/callback
+content-type: application/json
+
+{
+  "botId": 33
+}
+
+
 ### 
 
 # Get bots
 GET http://127.0.0.1:3001/api/bots
 content-type: application/json
-x-api-key: 1ba6e028b7f9354ace5011bf5406ce61d1da8870644230c69589b45e2dd5f1cc
+x-api-key: 1724ec3e1d267d64289b6955cb972a7b99945ef72a9f33d934b762ac117a020b
 
 
+
+### 
+
+# Get Recording
+GET http://127.0.0.1:3001/api/bots/23/recording
+content-type: application/json
+x-api-key: 1724ec3e1d267d64289b6955cb972a7b99945ef72a9f33d934b762ac117a020b
