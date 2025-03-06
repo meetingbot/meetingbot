@@ -94,3 +94,11 @@ docker build -f meet/Dockerfile -t meet .
 docker build -f teams/Dockerfile -t teams .
 docker build -f zoom/Dockerfile -t zoom .
 ```
+
+## Running
+
+```bash
+docker run --env-file .env meet
+docker run --env-file .env teams
+docker run --env-file .env zoom
+```
