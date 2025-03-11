@@ -1,5 +1,5 @@
 import { z } from 'zod'
-import { createTRPCRouter, procedure, protectedProcedure } from '../server/trpc'
+import { createTRPCRouter, protectedProcedure } from '../server/trpc'
 import {
   events,
   insertEventSchema,
@@ -110,7 +110,7 @@ export const eventsRouter = createTRPCRouter({
       return result[0].event
     }),
 
-  createEvent: procedure
+  createEvent: protectedProcedure
     .meta({
       openapi: {
         method: 'POST',
@@ -121,6 +121,16 @@ export const eventsRouter = createTRPCRouter({
     .input(insertEventSchema)
     .output(selectEventSchema)
     .mutation(async ({ ctx, input }) => {
+      // Check if the bot belongs to the user
+      const bot = await ctx.db
+        .select()
+        .from(bots)
+        .where(eq(bots.id, input.botId))
+
+      if (!bot[0] || bot[0].userId !== ctx.auth.userId) {
+        throw new Error('Bot not found')
+      }
+
       const result = await ctx.db.insert(events).values(input).returning()
       if (!result[0]) {
         throw new Error('Failed to create event')

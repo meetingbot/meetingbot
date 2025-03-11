@@ -16,7 +16,6 @@ POST http://meetingbot-dev-1753410297.us-east-2.elb.amazonaws.com/api/bots
 content-type: application/json
 
 {
-  "userId": 1,
   "meetingTitle": "Test Google Meet",
   "meetingInfo": {
     "meetingUrl": "https://meet.google.com/osn-pemn-piv",
@@ -30,7 +29,6 @@ POST http://127.0.0.1:3001/api/bots
 content-type: application/json
 
 {
-  "userId": 1,
   "meetingTitle": "Test Google Meet with Custom Settings",
   "meetingInfo": {
     "meetingUrl": "https://meet.google.com/mvd-tibd-oxa",
@@ -53,8 +51,7 @@ POST http://meetingbot-dev-2081261315.us-east-2.elb.amazonaws.com/api/api-keys
 content-type: application/json
 
 {
-  "name": "Test API Key",
-  "userId": 1
+  "name": "Test API Key"
 }
 
 ### 
@@ -62,7 +59,7 @@ content-type: application/json
 # Get bots
 GET http://127.0.0.1:3001/api/bots
 content-type: application/json
-x-api-key: 0bc3598273e72800afa66146686c2c5d28cff0aa76f9381b3fd59651e63b4000
+x-api-key: a4147f16411c5d505ecd31ceeb199976fda87d688aee216339caa5ef313ab621
 
 
 ###
@@ -73,7 +70,6 @@ content-type: application/json
 x-api-key: 0bc3598273e72800afa66146686c2c5d28cff0aa76f9381b3fd59651e63b4000
 
 {
-  "userId": "1",
   "meetingTitle": "Test Meeting",
   "meetingInfo": {
     "meetingId": "86701589057",

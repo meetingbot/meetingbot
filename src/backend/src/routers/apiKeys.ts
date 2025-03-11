@@ -21,7 +21,7 @@ export const apiKeysRouter = createTRPCRouter({
       },
     })
     .input(
-      insertApiKeySchema.pick({ name: true }).extend({
+      insertApiKeySchema.extend({
         expiresIn: z.number().optional(), // number of seconds to expire
       })
     )

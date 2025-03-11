@@ -114,7 +114,6 @@ export const apiKeys = pgTable('api_keys', {
 })
 
 export const insertApiKeySchema = createInsertSchema(apiKeys).pick({
-  userId: true,
   name: true,
   expiresAt: true,
 })
@@ -265,7 +264,6 @@ export const bots = pgTable('bots', {
 export const insertBotSchema = z.object({
   botDisplayName: z.string().optional(),
   botImage: z.string().url().optional(),
-  userId: z.string(),
   meetingTitle: z.string().optional(),
   meetingInfo: meetingInfoSchema,
   startTime: z.date().optional(),
