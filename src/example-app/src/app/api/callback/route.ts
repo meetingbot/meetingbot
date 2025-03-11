@@ -13,7 +13,7 @@ export async function POST(req: Request) {
 
     console.log('Getting...')
     const body = await req.json();
-    const {botId} = body;
+    const { botId } = body;
     console.log(body)
 
     // Get Key
@@ -72,7 +72,8 @@ export async function POST(req: Request) {
 
     // Store Here -- which is then returned using GET
     recordingLink = recording;
-
+    console.log('Set Recording link to:', recording);
+    
     // Passback
     return NextResponse.json({ message: 'OK' }, { status: 200 });
 
