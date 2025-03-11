@@ -7,6 +7,7 @@ import { setTimeout } from "timers/promises";
 import { BotConfig, EventCode } from "../../src/types";
 import { Bot } from "../../src/bot";
 import * as fs from 'fs';
+import path from "path";
 
 // Use Stealth
 const stealthPlugin = StealthPlugin();
@@ -64,7 +65,7 @@ export class MeetsBot extends Bot {
     onEvent: (eventType: EventCode, data?: any) => Promise<void>
   ) {
     super(botSettings, onEvent);
-    this.recordingPath = "/recording/recording.mp4";
+    this.recordingPath = path.resolve(__dirname, "recording.mp4");
 
     this.browserArgs = [
       "--incognito",
@@ -219,9 +220,11 @@ export class MeetsBot extends Bot {
     // Expose Function to Save Chunks
     await this.page.exposeFunction('saveChunk', async (chunk: any) => {
       
-      if (this.recorder !== undefined) {
+      if (this.recordBuffer !== undefined) {
         this.recordBuffer.push(Buffer.from(chunk));
         console.log('Saved Recording Chunk.')
+      } else {
+        console.log('No Recorder Found')
       }
     });
 
@@ -266,7 +269,7 @@ export class MeetsBot extends Bot {
           // Store MediaRecorder instance inside `window`
           Object.assign(window, {
             recorder: new MediaRecorder(stream, {
-              mimeType: "video/webm; codecs=opus",
+              mimeType: "video/mp4; codecs=h264",
               audioBitsPerSecond: 128000,
             })
           });
@@ -306,7 +309,6 @@ export class MeetsBot extends Bot {
   }
 
   async saveRecording() {
-
     if (this.recordBuffer.length == 0) {
       console.log('No recording chunks to save.');
       return 1;
@@ -316,6 +318,7 @@ export class MeetsBot extends Bot {
     console.log('Recording saved to:', this.getRecordingPath());
   }
 
+  // Entry Function. Calls the stop -- which then in turn calls saveRecording()
   async stopRecording() {
 
     console.log('Attempting to stop the recording ...');

@@ -1,7 +1,7 @@
 # download VSCode REST Client https://marketplace.visualstudio.com/items?itemName=humao.rest-client
 
 # Create a user
-POST http://meetingbot-dev-2081261315.us-east-2.elb.amazonaws.com/api/users
+POST http://127.0.0.1:3001/api/users
 content-type: application/json
 
 {
@@ -12,13 +12,14 @@ content-type: application/json
 
 ###
 # Create a Google Meet bot (deploy immediately) with default settings
-POST http://meetingbot-dev-1753410297.us-east-2.elb.amazonaws.com/api/bots
+POST http://127.0.0.1:3001/api/bots
 content-type: application/json
 
 {
+  "userId": 5,
   "meetingTitle": "Test Google Meet",
   "meetingInfo": {
-    "meetingUrl": "https://meet.google.com/osn-pemn-piv",
+    "meetingUrl": "https://meet.google.com/orn-ovgv-dym",
     "platform": "google"
   }
 }
@@ -29,6 +30,7 @@ POST http://127.0.0.1:3001/api/bots
 content-type: application/json
 
 {
+  "userId": 1,
   "meetingTitle": "Test Google Meet with Custom Settings",
   "meetingInfo": {
     "meetingUrl": "https://meet.google.com/mvd-tibd-oxa",
@@ -47,49 +49,38 @@ content-type: application/json
 ###
 
 # Create an API key
-POST http://meetingbot-dev-2081261315.us-east-2.elb.amazonaws.com/api/api-keys
+POST http://127.0.0.1:3001/api/api-keys
 content-type: application/json
 
 {
-  "name": "Test API Key"
+  "name": "Test API Key",
+  "userId": 5
 }
+
+
+###
+
+## Fake a backend callback to an example application
+POST http://127.0.0.1:3002/api/callback
+content-type: application/json
+
+{
+  "botId": 33
+}
+
 
 ### 
 
 # Get bots
 GET http://127.0.0.1:3001/api/bots
 content-type: application/json
-x-api-key: a4147f16411c5d505ecd31ceeb199976fda87d688aee216339caa5ef313ab621
+x-api-key: 1724ec3e1d267d64289b6955cb972a7b99945ef72a9f33d934b762ac117a020b
 
 
-###
 
-# Create google meet bot local
-POST http://127.0.0.1:3001/api/bots
+### 
+
+# Get Recording
+GET http://127.0.0.1:3001/api/bots/23/recording
 content-type: application/json
-x-api-key: 0bc3598273e72800afa66146686c2c5d28cff0aa76f9381b3fd59651e63b4000
-
-{
-  "meetingTitle": "Test Meeting",
-  "meetingInfo": {
-    "meetingId": "86701589057",
-    "platform": "zoom",
-    "meetingPassword": "6k9dAP"
-  }
-}
-
-###
-
-# Get bot 53
-GET http://127.0.0.1:3001/api/bots/53
-content-type: application/json
-x-api-key: 0bc3598273e72800afa66146686c2c5d28cff0aa76f9381b3fd59651e63b4000
-
-###
-
-# Get bot 53 recording
-GET http://127.0.0.1:3001/api/bots/53/recording
-content-type: application/json
-x-api-key: 0bc3598273e72800afa66146686c2c5d28cff0aa76f9381b3fd59651e63b4000
-
-
+x-api-key: 1724ec3e1d267d64289b6955cb972a7b99945ef72a9f33d934b762ac117a020b
