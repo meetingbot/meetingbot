@@ -25,7 +25,7 @@ export default function SessionButton() {
   if (!session?.user) {
     return (
       <Link
-        href={`${env.NEXT_PUBLIC_BACKEND_URL}/api/auth/signin?provider=github`}
+        href={`${env.NEXT_PUBLIC_BACKEND_URL}/auth/signin?provider=github`}
       >
         <Button variant="outline" className="gap-2">
           Sign In
@@ -52,7 +52,7 @@ export default function SessionButton() {
         <DropdownMenuSeparator />
         <DropdownMenuItem>Profile</DropdownMenuItem>
         <Link
-          href={`${env.NEXT_PUBLIC_BACKEND_URL}/api/auth/signout`}
+          href={`${env.NEXT_PUBLIC_BACKEND_URL}/auth/signout`}
           className="cursor-pointer"
         >
           <DropdownMenuItem>Logout</DropdownMenuItem>

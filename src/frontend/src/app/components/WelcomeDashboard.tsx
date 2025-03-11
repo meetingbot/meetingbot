@@ -39,7 +39,7 @@ export default function WelcomeDashboard() {
                     </Link>
                   ) : (
                     <Link
-                      href={`${env.NEXT_PUBLIC_BACKEND_URL}/api/auth/signin?provider=github`}
+                      href={`${env.NEXT_PUBLIC_BACKEND_URL}/auth/signin?provider=github`}
                     >
                       <Button>
                         Sign In <LogIn />
