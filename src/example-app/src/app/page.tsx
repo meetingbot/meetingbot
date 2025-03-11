@@ -9,6 +9,7 @@ import ZoomBotCreator from './components/ZoomBotCreator';
 import { MeetingType } from '~/types/MeetingType';
 import MeetingTypeButton from './components/MeetingTypeButton';
 import TeamsBotCreator from './components/TeamsBotCreator';
+import AppSection from './components/AppSection';
 
 const queryClient = new QueryClient();
 
@@ -18,15 +19,12 @@ export default function Home() {
 
   return (
     <QueryClientProvider client={queryClient}>
-      <div>
-        <h2 className="text-2xl font-bold tracking-tight">Meeting Chooser</h2>
-        <p className="text-muted-foreground">
-          Select the meeting platform and input the meeting link to get started.
-        </p>
 
-        {/* Body */}
-        <div className='p-4'>
-          <div className='flex gap-2'>
+      <AppSection 
+        header={'Meeting Chooser'} 
+        description={'Select the meeting platform and input the meeting link to get started.'}
+      >
+        <div className='flex gap-2'>
             <MeetingTypeButton type={'meet'} onPress={setMeetingType} active={meetingType}/>
             <MeetingTypeButton type={'zoom'} onPress={setMeetingType} active={meetingType}/>
             <MeetingTypeButton type={'teams'} onPress={setMeetingType} active={meetingType}/>
@@ -35,19 +33,15 @@ export default function Home() {
           {meetingType === 'meet' && <MeetsBotCreator />}
           {meetingType === 'zoom' && <ZoomBotCreator />}
           {meetingType === 'teams' && <TeamsBotCreator />}
+      </AppSection>
 
-        </div>
-      </div>
-      <div>
-        <h2 className="text-2xl font-bold tracking-tight">Recording Replay</h2>
-        <p className="text-muted-foreground">
-          Once the meeting is finished, the recording will play below.
-        </p>
-        {/* Body */}
-        <div className='p-4'>
-          <RecordingPlayer />
-        </div>
-      </div>
+      {/* Recording */}
+      <AppSection 
+        header={'Recording Replay'} 
+        description={'Once the meeting is finished, the recording will play below.'}
+      >
+        <RecordingPlayer />
+      </AppSection>
 
     </QueryClientProvider>
   );
