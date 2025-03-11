@@ -62,6 +62,38 @@ content-type: application/json
 # Get bots
 GET http://127.0.0.1:3001/api/bots
 content-type: application/json
-x-api-key: 1ba6e028b7f9354ace5011bf5406ce61d1da8870644230c69589b45e2dd5f1cc
+x-api-key: 0bc3598273e72800afa66146686c2c5d28cff0aa76f9381b3fd59651e63b4000
+
+
+###
+
+# Create google meet bot local
+POST http://127.0.0.1:3001/api/bots
+content-type: application/json
+x-api-key: 0bc3598273e72800afa66146686c2c5d28cff0aa76f9381b3fd59651e63b4000
+
+{
+  "userId": "1",
+  "meetingTitle": "Test Meeting",
+  "meetingInfo": {
+    "meetingId": "86701589057",
+    "platform": "zoom",
+    "meetingPassword": "6k9dAP"
+  }
+}
+
+###
+
+# Get bot 53
+GET http://127.0.0.1:3001/api/bots/53
+content-type: application/json
+x-api-key: 0bc3598273e72800afa66146686c2c5d28cff0aa76f9381b3fd59651e63b4000
+
+###
+
+# Get bot 53 recording
+GET http://127.0.0.1:3001/api/bots/53/recording
+content-type: application/json
+x-api-key: 0bc3598273e72800afa66146686c2c5d28cff0aa76f9381b3fd59651e63b4000
 
 

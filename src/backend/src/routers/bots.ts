@@ -12,6 +12,7 @@ import { eq, sql, and, notInArray } from 'drizzle-orm'
 import { deployBot, shouldDeployImmediately } from '../services/botDeployment'
 import { DEFAULT_BOT_VALUES } from '../constants'
 import { extractCount } from '../utils/database'
+import { generateSignedUrl } from '../utils/s3'
 
 export const botsRouter = createTRPCRouter({
   getBots: protectedProcedure
@@ -151,8 +152,8 @@ export const botsRouter = createTRPCRouter({
       },
     })
     .input(
-        z.object({
-          id: z.number(),
+      z.object({
+        id: z.number(),
         status: status,
         recording: z.string().optional(),
       }).refine(
@@ -243,16 +244,17 @@ export const botsRouter = createTRPCRouter({
       return { message: 'Bot deleted successfully' }
     }),
 
-  getRecording: protectedProcedure
+  getSignedRecordingUrl: protectedProcedure
     .meta({
       openapi: {
         method: 'GET',
         path: '/bots/{id}/recording',
-        description: 'Retrieve the recording associated with a specific bot',
+        description:
+          'Retrieve a signed URL for the recording associated with a specific bot',
       },
     })
     .input(z.object({ id: z.number() }))
-    .output(z.object({ recording: z.string().nullable() }))
+    .output(z.object({ recordingUrl: z.string().nullable() }))
     .query(async ({ input, ctx }) => {
       const result = await ctx.db
         .select({ recording: bots.recording })
@@ -262,7 +264,13 @@ export const botsRouter = createTRPCRouter({
       if (!result[0]) {
         throw new Error('Bot not found')
       }
-      return { recording: result[0].recording }
+
+      if (!result[0].recording) {
+        return { recordingUrl: null }
+      }
+
+      const signedUrl = await generateSignedUrl(result[0].recording)
+      return { recordingUrl: signedUrl }
     }),
 
   heartbeat: procedure

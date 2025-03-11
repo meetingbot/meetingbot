@@ -24,6 +24,8 @@
     "@auth/drizzle-adapter": "^1.7.4",
     "@auth/express": "^0.8.4",
     "@aws-sdk/client-ecs": "^3.738.0",
+    "@aws-sdk/client-s3": "^3.758.0",
+    "@aws-sdk/s3-request-presigner": "^3.758.0",
     "@trpc/server": "^10.45.2",
     "@types/lodash-es": "^4.17.12",
     "aws-sdk": "^2.1692.0",
