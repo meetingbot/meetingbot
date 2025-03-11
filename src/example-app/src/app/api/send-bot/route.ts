@@ -15,7 +15,11 @@ export async function POST(req: Request) {
     //
     // Send request to MeetingBot API to start and send a bot to a meeting
     //
-    const response = await fetch(`${endpoint}/api/bots`, {
+    const eurl = `${endpoint}/api/bots`;
+    console.log('Sending Request to', eurl ,'with body', body);
+
+    //Send
+    const response = await fetch(eurl, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
