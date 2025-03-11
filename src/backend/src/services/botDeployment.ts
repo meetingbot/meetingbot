@@ -54,8 +54,8 @@ export async function deployBot({
   await db.update(bots).set({ status: 'DEPLOYING' }).where(eq(bots.id, botId))
 
   try {
-    // Get the absolute path to the meet bot directory
-    const meetDir = path.resolve(__dirname, '../../../bots/meet')
+    // Get the absolute path to the bots directory (parent directory)
+    const botsDir = path.resolve(__dirname, '../../../bots')
 
     // Merge default config with user provided config
 
@@ -75,8 +75,8 @@ export async function deployBot({
 
     if (dev) {
       // Spawn the bot process
-      const botProcess = spawn('pnpm', ['dev'], {
-        cwd: meetDir,
+      const botProcess = spawn('pnpm', ['start'], {
+        cwd: botsDir,
         env: {
           ...process.env,
           BOT_DATA: JSON.stringify(config),
