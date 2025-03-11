@@ -1,4 +1,4 @@
-import { type EventCode, Status } from "./types";
+import { EventCode, Status } from "./types";
 import { trpc } from "./trpc";
 import { setTimeout } from "timers/promises";
 
@@ -42,10 +42,19 @@ export const reportEvent = async (
 
     // Update bot status if this event type is a valid status
     if (eventType in Status) {
-      await trpc.bots.updateBotStatus.mutate({
-        id: botId,
-        status: eventType as unknown as Status,
-      });
+      // If the event is DONE, we need to include the recording parameter
+      if (eventType === EventCode.DONE && eventData?.recording) {
+        await trpc.bots.updateBotStatus.mutate({
+          id: botId,
+          status: eventType as unknown as Status,
+          recording: eventData.recording,
+        });
+      } else {
+        await trpc.bots.updateBotStatus.mutate({
+          id: botId,
+          status: eventType as unknown as Status,
+        });
+      }
     }
 
     console.log(`[${new Date().toISOString()}] Event reported: ${eventType}`);

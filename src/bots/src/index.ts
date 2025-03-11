@@ -28,6 +28,9 @@ const main = async () => {
   console.log("Received bot data:", botData);
   const botId = botData.id;
 
+  // Declare key variable at the top level of the function
+  let key: string = "";
+
   // Initialize S3 client
   let s3Client: S3Client;
   if (process.env.AWS_ACCESS_KEY_ID && process.env.AWS_SECRET_ACCESS_KEY) {
@@ -117,10 +120,10 @@ const main = async () => {
       }
     }
 
-    // Create UUid
+    // Create UUID and initialize key
     const uuid = crypto.randomUUID();
     const contentType = bot.getContentType();
-    const key = `recordings/${uuid}-${
+    key = `recordings/${uuid}-${
       bot.settings.meetingInfo.platform
     }-recording.${contentType.split("/")[1]}`;
 
@@ -153,6 +156,6 @@ const main = async () => {
   console.log("Bot execution completed, heartbeat stopped.");
 
   // Report final DONE event
-  await reportEvent(botId, EventCode.DONE);
+  await reportEvent(botId, EventCode.DONE, { recording: key });
 };
 main();
