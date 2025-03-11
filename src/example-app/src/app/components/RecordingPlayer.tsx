@@ -48,7 +48,7 @@ export default function RecordingPlayer() {
         <h3><a href={videoLink}>{videoLink}</a></h3>
         </>)
         :
-        (<h1>Recording not available</h1>)
+        (<h1>Waiting for recording to become available ... </h1>)
       }
     </div>
   );

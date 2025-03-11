@@ -186,18 +186,13 @@ export default function MeetingBotCreator() {
   const detectedBot: MeetingType | undefined = parseMeetingLink();
   const platformString = detectedBot ? detectedBot[0]?.toUpperCase() + detectedBot.slice(1) : undefined;
 
-  const inputFieldClass = 'my-[20px] p-2 w-full rounded-md border border-input bg-background shadow-sm hover:bg-accent' +
+  const inputFieldClass = 'my-[20px] p-2 w-full rounded-md border border-input bg-background shadow-sm hover:bg-accent mt-0' +
     (detectedBot ? ' font-medium text-accent-foreground hover:text-accent-foreground' : ' text-muted-foreground hover:text-muted-foreground');
 
   const shortResponse = /"id": \d+/.test(response) ? 'Bot was created.' : 'Bot was not created.';
 
   return (
     <div style={{ width: '50%', minWidth: '300px', padding: '20px' }}>
-      <h2 className="text-xl font-bold tracking-tight">
-        Enter Meeting Link
-      </h2>
-      <p className="text-muted-foreground">Enter a meeting link for a Meet, Teams or Zoom Meeting.</p>
-
       <input
         type="text"
         value={link}
