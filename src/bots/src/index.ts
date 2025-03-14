@@ -10,6 +10,7 @@ import { EventCode, type BotConfig } from "./types";
 dotenv.config();
 
 const main = async () => {
+  let hasErrorOccurred = false;
   const requiredEnvVars = [
     "BOT_DATA",
     "AWS_BUCKET_NAME",
@@ -145,6 +146,7 @@ const main = async () => {
       console.error("Error uploading to S3:", error);
     }
   } catch (error) {
+    hasErrorOccurred = true;
     console.error("Error running bot:", error);
     await reportEvent(botId, EventCode.FATAL, {
       description: (error as Error).message,
@@ -155,7 +157,14 @@ const main = async () => {
   heartbeatController.abort();
   console.log("Bot execution completed, heartbeat stopped.");
 
-  // Report final DONE event
-  await reportEvent(botId, EventCode.DONE, { recording: key });
+  // Only report DONE if no error occurred
+  if (!hasErrorOccurred) {
+    // Report final DONE event
+    await reportEvent(botId, EventCode.DONE, { recording: key });
+  }
+
+  // Exit with appropriate code
+  process.exit(hasErrorOccurred ? 1 : 0);
 };
+
 main();
