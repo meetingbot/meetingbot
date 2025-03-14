@@ -32,11 +32,6 @@ export class TeamsBot extends Bot {
     return this.contentType;
   }
 
-  async sendHeartbeat() {
-    // TODO: Replace with Send to Websocket connection
-    console.log("heartbeat");
-  }
-
   async run() {
     const file = fs.createWriteStream(this.recordingPath);
 

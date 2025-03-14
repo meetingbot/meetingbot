@@ -85,12 +85,6 @@ export class MeetsBot extends Bot {
     this.startedRecording = false;
   }
 
-  // Send a Pulse to Server
-  async sendHeartbeat() {
-    // TODO: Replace with Send to Websocket connection
-    console.log("heartbeat");
-  }
-
   async run(): Promise<void> {
     await this.joinMeeting();
     await this.meetingActions();
