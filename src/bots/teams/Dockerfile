@@ -4,32 +4,39 @@ ENV \
     # Configure default locale (important for chrome-headless-shell).
     LANG=en_US.UTF-8 \
     # UID of the non-root user 'pptruser'
-    PPTRUSER_UID=10042
+    PPTRUSER_UID=10042 \
+    # Set the Chrome path to match the actual installation
+    PUPPETEER_EXECUTABLE_PATH=/home/pptruser/.cache/puppeteer/chrome/linux-134.0.6998.35/chrome-linux64/chrome
+
+# Stay as root for all installation steps
+USER root
 
 # Install pnpm
-USER root
 RUN npm install -g pnpm
-USER $PPTRUSER_UID
 
 # Set working directory
 WORKDIR /home/pptruser
 
 # Copy files
-COPY package.json pnpm-lock.yaml ./
+COPY pnpm-workspace.yaml package.json pnpm-lock.yaml ./
 COPY teams/package.json teams/pnpm-lock.yaml ./teams/
 COPY src ./src
 COPY teams/src ./teams/src
 
-# Install dependencies inside the container
-RUN pnpm install --frozen-lockfile
+# Install dependencies as root
+RUN pnpm install --filter "@bots/teams" --filter "bots"
 
-# Change ownership of the files
-USER root
-RUN chown -R pptruser:pptruser .
-USER $PPTRUSER_UID
+# Install browser
+RUN pnpm dlx puppeteer browsers install chrome
+
+# Change ownership of all files after installation
+RUN chown -R pptruser:pptruser /home/pptruser
+
+# Switch to pptruser for running the application
+USER pptruser
 
 # Expose the port the app runs on
 EXPOSE 3000
 
 # Command to run the application
-CMD ["pnpm", "--filter", "@bots/teams", "run", "dev"]
+CMD ["pnpm", "run", "dev"]

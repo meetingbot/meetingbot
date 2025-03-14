@@ -41,7 +41,7 @@ export class TeamsBot extends Bot {
     // Launch the browser and open a new blank page
     const browser = await launch({
       executablePath: puppeteer.executablePath(),
-      //headless: "new",
+      headless: "new",
       // args: ["--use-fake-ui-for-media-stream"],
       args: ["--no-sandbox"],
       protocolTimeout: 0,
@@ -57,11 +57,6 @@ export class TeamsBot extends Bot {
 
     // Open a new page
     const page = await browser.newPage();
-
-    // Log all console messages
-    page.on("console", (msg) =>
-      console.log("\x1b[36m[BROWSER CONSOLE]\x1b[0m", msg.text())
-    );
 
     // Navigate the page to a URL
     await page.goto(urlObj.href);
