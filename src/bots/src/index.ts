@@ -158,4 +158,8 @@ const main = async () => {
   // Report final DONE event
   await reportEvent(botId, EventCode.DONE, { recording: key });
 };
-main();
+
+main().finally(() => {
+  // Ensure process exits after completion or error
+  process.exit(1);
+});
