@@ -30,11 +30,6 @@ const botData: BotConfig = {
   botImage: undefined,
   heartbeatInterval: 10000,
   automaticLeave: {
-    silenceDetection: { timeout: 3600000, activateAfter: 1200000 },
-    botDetection: {
-      usingParticipantEvents: { timeout: 600000, activateAfter: 1200000 },
-      usingParticipantNames: { timeout: 3600000, activateAfter: 1200000 },
-    },
     waitingRoomTimeout: 3600000,
     noOneJoinedTimeout: 3600000,
     everyoneLeftTimeout: 3600000,

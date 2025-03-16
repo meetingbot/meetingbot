@@ -149,23 +149,7 @@ export const insertApiRequestLogSchema = createInsertSchema(
 export const selectApiRequestLogSchema = createSelectSchema(apiRequestLogs)
 
 /** BOT CONFIG */
-const silenceDetectionSchema = z.object({
-  timeout: z.number(), // the milliseconds of silence before the bot leaves
-  activateAfter: z.number(), // the milliseconds the bot waits before it begins to detect silence
-})
-const botDetectionSchema = z.object({
-  usingParticipantEvents: z.object({
-    timeout: z.number(), // the milliseconds before the bot leaves the meeting if it detects another bot
-    activateAfter: z.number(), // the milliseconds the bot waits before it begins to detect other bots
-  }),
-  usingParticipantNames: z.object({
-    timeout: z.number(), // the milliseconds before the bot leaves the meeting if it detects another bot
-    activateAfter: z.number(), // the milliseconds the bot waits before it begins to detect other bots
-  }),
-})
 const automaticLeaveSchema = z.object({
-  silenceDetection: silenceDetectionSchema,
-  botDetection: botDetectionSchema,
   waitingRoomTimeout: z.number(), // the milliseconds before the bot leaves the meeting if it is in the waiting room
   noOneJoinedTimeout: z.number(), // the milliseconds before the bot leaves the meeting if no one has joined
   everyoneLeftTimeout: z.number(), // the milliseconds before the bot leaves the meeting if everyone has left

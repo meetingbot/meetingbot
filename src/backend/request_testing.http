@@ -36,10 +36,6 @@ content-type: application/json
   },
   "botDisplayName": "Custom Bot Name",
   "automaticLeave": {
-    "silenceDetection": {
-      "timeout": 600000,
-      "activateAfter": 120000
-    },
     "waitingRoomTimeout": 180000
   }
 }

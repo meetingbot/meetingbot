@@ -10,20 +10,6 @@ export type MeetingInfo = {
 };
 
 export type AutomaticLeave = {
-  silenceDetection: {
-    timeout: number;
-    activateAfter: number;
-  };
-  botDetection: {
-    usingParticipantEvents: {
-      timeout: number;
-      activateAfter: number;
-    };
-    usingParticipantNames: {
-      timeout: number;
-      activateAfter: number;
-    };
-  };
   waitingRoomTimeout: number;
   noOneJoinedTimeout: number;
   everyoneLeftTimeout: number;
