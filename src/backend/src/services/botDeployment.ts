@@ -29,6 +29,28 @@ if (process.env.AWS_ACCESS_KEY_ID && process.env.AWS_SECRET_ACCESS_KEY) {
 
 const client = new ECSClient(config)
 
+/**
+ * Selects the appropriate bot task definition based on meeting information
+ * @param meetingInfo - Information about the meeting, including platform
+ * @returns The task definition ARN to use for deployment
+ */
+export function selectBotTaskDefinition(
+  meetingInfo: schema.MeetingInfo
+): string {
+  const platform = meetingInfo.platform
+
+  switch (platform?.toLowerCase()) {
+    case 'google':
+      return process.env.ECS_TASK_DEFINITION_MEET || ''
+    case 'teams':
+      return process.env.ECS_TASK_DEFINITION_TEAMS || ''
+    case 'zoom':
+      return process.env.ECS_TASK_DEFINITION_ZOOM || ''
+    default:
+      throw new Error(`Unsupported platform: ${platform}`)
+  }
+}
+
 export class BotDeploymentError extends Error {
   constructor(message: string) {
     super(message)
@@ -98,7 +120,7 @@ export async function deployBot({
       const input: RunTaskRequest = {
         cluster: process.env.ECS_CLUSTER_NAME,
         // taskDefinition: process.env.ECS_TASK_DEFINITION_MEET,
-        taskDefinition: process.env.ECS_TASK_DEFINITION_ZOOM,
+        taskDefinition: selectBotTaskDefinition(bot.meetingInfo),
         launchType: 'FARGATE',
         networkConfiguration: {
           awsvpcConfiguration: {
