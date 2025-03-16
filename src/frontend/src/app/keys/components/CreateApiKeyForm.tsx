@@ -3,6 +3,8 @@
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
+import { format } from "date-fns";
+import { Calendar as CalendarIcon } from "lucide-react";
 import { Button } from "~/components/ui/button";
 import {
   Form,
@@ -14,6 +16,13 @@ import {
   FormMessage,
 } from "~/components/ui/form";
 import { Input } from "~/components/ui/input";
+import { Calendar } from "~/components/ui/calendar";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "~/components/ui/popover";
+import { cn } from "~/lib/utils";
 import { trpcReact } from "~/trpc/trpc-react";
 import { DialogClose } from "~/components/ui/dialog";
 import { toast } from "sonner";
@@ -22,7 +31,7 @@ const formSchema = z.object({
   name: z.string().min(2, {
     message: "Name must be at least 2 characters.",
   }),
-  expiresIn: z.number().optional(),
+  expiresAt: z.date().default(new Date(Date.now() + 1000 * 60 * 60 * 24 * 180)), // 6 months from now
 });
 
 type CreateApiKeyFormProps = {
@@ -50,12 +59,18 @@ export function CreateApiKeyForm({ onSuccess }: CreateApiKeyFormProps) {
     resolver: zodResolver(formSchema),
     defaultValues: {
       name: "",
-      expiresIn: undefined,
+      expiresAt: new Date(Date.now() + 1000 * 60 * 60 * 24 * 180), // 6 months from now
     },
   });
 
   async function onSubmit(values: z.infer<typeof formSchema>) {
-    await createApiKey.mutateAsync(values);
+    // Set time to end of day (23:59:59.999) in local time
+    const expiresAt = new Date(values.expiresAt);
+    expiresAt.setHours(23, 59, 59, 999);
+    await createApiKey.mutateAsync({
+      ...values,
+      expiresAt,
+    });
   }
 
   return (
@@ -77,28 +92,44 @@ export function CreateApiKeyForm({ onSuccess }: CreateApiKeyFormProps) {
         />
         <FormField
           control={form.control}
-          name="expiresIn"
+          name="expiresAt"
           render={({ field }) => (
-            <FormItem>
-              <FormLabel>Expires In (seconds)</FormLabel>
-              <FormControl>
-                <Input
-                  type="number"
-                  placeholder="3600"
-                  {...field}
-                  value={field.value ?? ""}
-                  onChange={(e) => {
-                    const value =
-                      e.target.value === ""
-                        ? undefined
-                        : e.target.valueAsNumber;
-                    field.onChange(value);
-                  }}
-                />
-              </FormControl>
+            <FormItem className="flex flex-col">
+              <FormLabel>Expiration Date</FormLabel>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <FormControl>
+                    <Button
+                      variant={"outline"}
+                      className={cn(
+                        "w-full pl-3 text-left font-normal",
+                        !field.value && "text-muted-foreground",
+                      )}
+                    >
+                      <CalendarIcon className="mr-2 h-4 w-4" />
+                      {field.value ? (
+                        format(field.value, "PPP")
+                      ) : (
+                        <span>Pick a date</span>
+                      )}
+                    </Button>
+                  </FormControl>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0" align="start">
+                  <Calendar
+                    mode="single"
+                    selected={field.value}
+                    onSelect={field.onChange}
+                    disabled={
+                      (date) => date < new Date() // Disable past dates
+                    }
+                    initialFocus
+                  />
+                </PopoverContent>
+              </Popover>
               <FormDescription>
-                How long the API key should be valid for, in seconds. Leave
-                empty for default expiration of 6 months.
+                When should this API key expire? Defaults to 6 months from now.
+                The key will expire at the end of the selected day.
               </FormDescription>
               <FormMessage />
             </FormItem>
