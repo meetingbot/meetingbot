@@ -81,7 +81,7 @@ GET http://127.0.0.1:3001/api/bots/53
 content-type: application/json
 x-api-key: 0bc3598273e72800afa66146686c2c5d28cff0aa76f9381b3fd59651e63b4000
 
-###
+###me
 
 # Get bot 53 recording
 GET http://127.0.0.1:3001/api/bots/53/recording
@@ -89,3 +89,10 @@ content-type: application/json
 x-api-key: 0bc3598273e72800afa66146686c2c5d28cff0aa76f9381b3fd59651e63b4000
 
 
+
+###
+
+# Check Bot Usage
+GET http://127.0.0.1:3001/api/usage/day
+content-type: application/json
+x-api-key: 0bc3598273e72800afa66146686c2c5d28cff0aa76f9381b3fd59651e63b4000

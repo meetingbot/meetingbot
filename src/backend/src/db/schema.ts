@@ -13,6 +13,7 @@ import {
 } from 'drizzle-orm/pg-core'
 import { createInsertSchema, createSelectSchema } from 'drizzle-zod'
 import { AdapterAccountType } from '@auth/core/adapters'
+import { usageRouter } from '../routers/usage'
 const pgTable = pgTableCreator((name) => name)
 
 /** AUTH TABLES */
@@ -335,4 +336,10 @@ export const insertEventSchema = createInsertSchema(events)
 export const selectEventSchema = createSelectSchema(events).extend({
   data: eventData.nullable(),
   eventType: eventCode,
+})
+
+export const dailyUsageSchema = z.object({
+  date: z.string().nullable(),
+  msEllapsed: z.number().nullable(),
+  count: z.number().nullable(),
 })
