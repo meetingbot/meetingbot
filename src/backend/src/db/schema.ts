@@ -339,7 +339,8 @@ export const selectEventSchema = createSelectSchema(events).extend({
 })
 
 export const dailyUsageSchema = z.object({
-  date: z.string().nullable(),
-  msEllapsed: z.number().nullable(),
-  count: z.number().nullable(),
+  date: z.string(),
+  msEllapsed: z.number(),
+  estimatedCost: z.string(),
+  count: z.number(),
 })
