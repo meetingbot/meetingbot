@@ -6,11 +6,9 @@ import {
   DialogHeader,
   DialogTitle,
 } from "~/components/ui/dialog";
-import { DataTable } from "./DataTable";
+import { DataTable } from "~/components/custom/DataTable";
 import { logColumns } from "./LogColumns";
 import { trpcReact } from "~/trpc/trpc-react";
-import ErrorAlert from "~/app/components/ErrorAlert";
-import TableSkeleton from "./TableSkeleton";
 
 interface ViewLogsDialogProps {
   apiKeyId: number | null;
@@ -44,13 +42,12 @@ export function ViewLogsDialog({
         <DialogHeader>
           <DialogTitle>API Key Logs</DialogTitle>
         </DialogHeader>
-        {isLoading ? (
-          <TableSkeleton />
-        ) : error ? (
-          <ErrorAlert errorMessage={error.message} />
-        ) : (
-          <DataTable columns={logColumns} data={logsData?.logs || []} />
-        )}
+        <DataTable
+          columns={logColumns}
+          data={logsData?.logs}
+          isLoading={isLoading}
+          errorMessage={error?.message}
+        />
       </DialogContent>
     </Dialog>
   );
