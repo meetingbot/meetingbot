@@ -2,7 +2,7 @@
 import { Skeleton } from "~/components/ui/skeleton";
 import WelcomeDashboard from "./components/WelcomeDashboard";
 import { trpcReact } from "~/trpc/trpc-react";
-import ErrorAlert from "./components/ErrorAlert";
+import ErrorAlert from "../components/custom/ErrorAlert";
 import Dashboard from "./components/Dashboard";
 import { useSession } from "~/contexts/SessionContext";
 
