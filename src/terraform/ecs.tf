@@ -146,6 +146,12 @@ resource "aws_ecs_task_definition" "frontend" {
           protocol      = "tcp"
         }
       ]
+      environment = [
+        {
+          name = "NEXT_PUBLIC_BACKEND_URL"
+          value = "https://${var.domain_name}/api"
+        }
+      ]
 
       logConfiguration = {
         logDriver = "awslogs"
