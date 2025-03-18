@@ -137,7 +137,7 @@ resource "aws_ecs_task_definition" "frontend" {
   container_definitions = jsonencode([
     {
       name      = "frontend"
-      image     = "ghcr.io/meetingbot/frontend:sha-${local.current_commit_sha_short}"
+      image     = var.frontend_image_url
       essential = true
       portMappings = [
         {
@@ -194,7 +194,7 @@ resource "aws_ecs_task_definition" "backend" {
   container_definitions = jsonencode([
     {
       name      = "backend"
-      image     = "ghcr.io/meetingbot/backend:sha-${local.current_commit_sha_short}"
+      image     = var.backend_image_url
       essential = true
       portMappings = [
         {
@@ -338,7 +338,7 @@ resource "aws_ecs_task_definition" "meet_bot" {
   container_definitions = jsonencode([
     {
       name      = "bot"
-      image     = "ghcr.io/meetingbot/bots/meet:sha-${local.current_commit_sha_short}"
+      image     = var.meet_bot_image_url
       essential = true
       environment = [
         {
@@ -380,7 +380,7 @@ resource "aws_ecs_task_definition" "zoom_bot" {
   container_definitions = jsonencode([
     {
       name      = "bot"
-      image     = "ghcr.io/meetingbot/bots/zoom:sha-${local.current_commit_sha_short}"
+      image     = var.zoom_bot_image_url
       essential = true
       environment = [
         {
@@ -422,7 +422,7 @@ resource "aws_ecs_task_definition" "teams_bot" {
   container_definitions = jsonencode([
     {
       name      = "bot"
-      image     = "ghcr.io/meetingbot/bots/teams:sha-${local.current_commit_sha_short}"
+      image     = var.teams_bot_image_url
       essential = true
       environment = [
         {
