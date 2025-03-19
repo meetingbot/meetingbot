@@ -1,9 +1,10 @@
 import DashboardCard from "./DashboardCard";
-import { File, Users, Bell, Plus, LogIn } from "lucide-react";
+import { File, Bell, Plus, LogIn } from "lucide-react";
 import { Button } from "~/components/ui/button";
 import { useSession } from "~/contexts/SessionContext";
 import Link from "next/link";
 import { env } from "~/env";
+import CommunityCard from "./CommunityCard";
 
 export default function WelcomeDashboard() {
   const { session } = useSession();
@@ -63,20 +64,9 @@ export default function WelcomeDashboard() {
               />
             </div>
             <div className="">
-              <DashboardCard
-                title="Join our Community"
-                className="h-full"
-                content="To seek support, suggest features, report bugs and contribute yourself, join our Community!"
-                icon={<Users className="text-slate-500" />}
-                link={{
-                  type: "EXTERNAL",
-                  url: "https://discord.gg/hPdjJW9xzT",
-                  text: "Join Community",
-                }}
-              />
+              <CommunityCard className="max-h-96 overflow-hidden overflow-y-auto" />
             </div>
           </div>
-
           <div className="col-span-full h-full md:col-span-1 md:row-span-2">
             <DashboardCard
               title="Community Updates"
