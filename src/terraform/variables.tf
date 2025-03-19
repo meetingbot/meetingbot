@@ -34,24 +34,29 @@ variable "auth_github_secret" {
 variable "meet_bot_image_url" {
   type        = string
   description = "The Docker image to use for the Google Meet bot"
+  default     = ""
 }
 
 variable "zoom_bot_image_url" {
   type        = string
   description = "The Docker image to use for the Zoom bot"
+  default     = ""
 }
 
 variable "teams_bot_image_url" {
   type        = string
   description = "The Docker image to use for the Teams bot"
+  default     = ""
 }
 
 variable "frontend_image_url" {
   type        = string
   description = "The Docker image to use for the frontend"
+  default     = ""
 }
 
 variable "backend_image_url" {
   type        = string
   description = "The Docker image to use for the backend"
+  default     = ""
 }

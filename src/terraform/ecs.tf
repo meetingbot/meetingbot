@@ -137,19 +137,13 @@ resource "aws_ecs_task_definition" "frontend" {
   container_definitions = jsonencode([
     {
       name      = "frontend"
-      image     = var.frontend_image_url
+      image     = var.frontend_image_url != "" ? var.frontend_image_url : "ghcr.io/meetingbot/frontend:sha-${local.current_commit_sha_short}"
       essential = true
       portMappings = [
         {
           containerPort = local.frontend_port
           hostPort      = local.frontend_port
           protocol      = "tcp"
-        }
-      ]
-      environment = [
-        {
-          name = "NEXT_PUBLIC_BACKEND_URL"
-          value = "https://${var.domain_name}/api"
         }
       ]
 
@@ -200,7 +194,7 @@ resource "aws_ecs_task_definition" "backend" {
   container_definitions = jsonencode([
     {
       name      = "backend"
-      image     = var.backend_image_url
+      image     = var.backend_image_url != "" ? var.backend_image_url : "ghcr.io/meetingbot/backend:sha-${local.current_commit_sha_short}"
       essential = true
       portMappings = [
         {
@@ -344,7 +338,7 @@ resource "aws_ecs_task_definition" "meet_bot" {
   container_definitions = jsonencode([
     {
       name      = "bot"
-      image     = var.meet_bot_image_url
+      image     = var.meet_bot_image_url != "" ? var.meet_bot_image_url : "ghcr.io/meetingbot/bots/meet:sha-${local.current_commit_sha_short}"
       essential = true
       environment = [
         {
@@ -386,7 +380,7 @@ resource "aws_ecs_task_definition" "zoom_bot" {
   container_definitions = jsonencode([
     {
       name      = "bot"
-      image     = var.zoom_bot_image_url
+      image     = var.zoom_bot_image_url != "" ? var.zoom_bot_image_url : "ghcr.io/meetingbot/bots/zoom:sha-${local.current_commit_sha_short}"
       essential = true
       environment = [
         {
@@ -428,7 +422,7 @@ resource "aws_ecs_task_definition" "teams_bot" {
   container_definitions = jsonencode([
     {
       name      = "bot"
-      image     = var.teams_bot_image_url
+      image     = var.teams_bot_image_url != "" ? var.teams_bot_image_url : "ghcr.io/meetingbot/bots/teams:sha-${local.current_commit_sha_short}"
       essential = true
       environment = [
         {
