@@ -1,11 +1,9 @@
 "use client";
 
 import { columns } from "./components/ApiKeyColumns";
-import { DataTable } from "./components/DataTable";
+import { DataTable } from "~/components/custom/DataTable";
 import { trpcReact } from "~/trpc/trpc-react";
-import ErrorAlert from "../components/ErrorAlert";
 import { CreateApiKeyDialog } from "./components/CreateApiKeyDialog";
-import TableSkeleton from "./components/TableSkeleton";
 import { ViewLogsDialog } from "./components/ViewLogsDialog";
 import { useState } from "react";
 
@@ -30,16 +28,12 @@ export default function Keys() {
         </div>
         <CreateApiKeyDialog />
       </div>
-      {isLoading ? (
-        <TableSkeleton />
-      ) : error ? (
-        <ErrorAlert errorMessage={error.message} />
-      ) : (
-        <DataTable
-          columns={columns(setSelectedViewLogsKeyId)}
-          data={apiKeys || []}
-        />
-      )}
+      <DataTable
+        columns={columns(setSelectedViewLogsKeyId)}
+        data={apiKeys}
+        isLoading={isLoading}
+        errorMessage={error?.message}
+      />
       <ViewLogsDialog
         apiKeyId={selectedViewLogsKeyId}
         open={selectedViewLogsKeyId !== null}
