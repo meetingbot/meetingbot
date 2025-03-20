@@ -26,7 +26,7 @@ export function SessionProvider({ children }: { children: ReactNode }) {
   async function getSession(): Promise<Session | null> {
     try {
       const response = await fetch(
-        `${env.NEXT_PUBLIC_BACKEND_URL}/auth/session`,
+        `${env.NEXT_PUBLIC_BACKEND_URL}/api/auth/session`,
         {
           credentials: "include",
           headers: {
