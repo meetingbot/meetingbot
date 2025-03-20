@@ -14,11 +14,16 @@ interface DashboardCardProps {
   description?: string | React.ReactNode;
   content?: string | React.ReactNode;
   icon?: React.ReactNode;
-  link?: {
-    type: "EXTERNAL" | "INTERNAL";
-    url: string;
-    text: string;
-  };
+  link?:
+    | {
+        type: "EXTERNAL" | "INTERNAL";
+        url: string;
+        text: string;
+      }
+    | {
+        type: "CUSTOM";
+        component: React.ReactNode;
+      };
   className?: string;
 }
 
@@ -31,7 +36,7 @@ export default function DashboardCard({
   className,
 }: DashboardCardProps) {
   return (
-    <Card className={`flex flex-col ${className}`}>
+    <Card className={`flex h-full flex-col ${className}`}>
       {(!!title || !!description || !!icon) && (
         <CardHeader className="relative">
           {!!icon && <div className="absolute right-2 top-2">{icon}</div>}
@@ -49,17 +54,23 @@ export default function DashboardCard({
         </CardHeader>
       )}
 
-      {!!content && <CardContent>{content}</CardContent>}
+      {!!content && (
+        <CardContent className="min-h-0 flex-1">{content}</CardContent>
+      )}
       {!!link && (
         <CardFooter className="mt-auto">
-          <Link href={link.url} className="flex items-center">
-            {link.text}
-            {link.type === "EXTERNAL" ? (
-              <ExternalLink className="ml-2 h-4 w-4" />
-            ) : (
-              <ChevronRight className="ml-2 h-4 w-4" />
-            )}
-          </Link>
+          {link.type == "CUSTOM" ? (
+            link.component
+          ) : (
+            <Link href={link.url} className="flex items-center">
+              {link.text}
+              {link.type === "EXTERNAL" ? (
+                <ExternalLink className="ml-2 h-4 w-4" />
+              ) : (
+                <ChevronRight className="ml-2 h-4 w-4" />
+              )}
+            </Link>
+          )}
         </CardFooter>
       )}
     </Card>

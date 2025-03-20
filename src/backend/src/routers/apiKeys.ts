@@ -246,7 +246,8 @@ export const apiKeysRouter = createTRPCRouter({
       openapi: {
         method: 'GET',
         path: '/api-keys/count',
-        description: 'Get the total count of API keys owned by the user',
+        description:
+          'Get the total count of non-expired API keys owned by the user',
       },
     })
     .input(z.object({}))
@@ -255,7 +256,12 @@ export const apiKeysRouter = createTRPCRouter({
       const countResult = await ctx.db
         .select({ count: sql<number>`count(*)` })
         .from(apiKeys)
-        .where(eq(apiKeys.userId, ctx.auth.userId))
+        .where(
+          and(
+            eq(apiKeys.userId, ctx.auth.userId),
+            sql`${apiKeys.expiresAt} > NOW()`
+          )
+        )
 
       return { count: extractCount(countResult) }
     }),

@@ -26,6 +26,7 @@
     "@aws-sdk/client-ecs": "^3.738.0",
     "@aws-sdk/client-s3": "^3.758.0",
     "@aws-sdk/s3-request-presigner": "^3.758.0",
+    "@octokit/core": "^6.1.4",
     "@trpc/server": "^10.45.2",
     "@types/lodash-es": "^4.17.12",
     "aws-sdk": "^2.1692.0",
