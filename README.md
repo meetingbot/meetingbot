@@ -35,7 +35,7 @@ _Note: Our goal is to ensure this project is ready for community supports. We ho
 
 ## Get Started Using Meeting Bot!
 
-To get started, see the [terraform README](terraform/README.md) for instructions on how to deploy the project.
+To get started, see the [terraform README](src/terraform/README.md) for instructions on how to deploy the project.
 
 ## Contributing
 
