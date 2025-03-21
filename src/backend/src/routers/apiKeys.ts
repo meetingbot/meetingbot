@@ -22,7 +22,10 @@ export const apiKeysRouter = createTRPCRouter({
     })
     .input(
       insertApiKeySchema.extend({
-        expiresIn: z.number().optional(), // number of seconds to expire
+        expiresAt: z
+          .date()
+          .optional()
+          .default(new Date(Date.now() + 1000 * 60 * 60 * 24 * 180)), // 6 months from now
       })
     )
     .output(
@@ -38,10 +41,7 @@ export const apiKeysRouter = createTRPCRouter({
         .insert(apiKeys)
         .values({
           userId: ctx.auth.userId,
-          expiresAt:
-            input.expiresIn !== undefined
-              ? new Date(Date.now() + input.expiresIn * 1000)
-              : new Date(Date.now() + 1000 * 60 * 60 * 24 * 180), // default 6 months
+          expiresAt: input.expiresAt,
           key,
           name: input.name,
         })
