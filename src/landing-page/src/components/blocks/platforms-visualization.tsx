@@ -68,7 +68,7 @@ export function PlatformsVisualization() {
         </div>
         <div className="flex flex-row items-center justify-between">
           <Circle ref={div3Ref} className="size-14">
-            <Icons.meets />
+            <Icons.meet />
           </Circle>
           <Circle ref={div7Ref} className="size-14">
             <Icons.events />
