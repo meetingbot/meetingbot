@@ -5,13 +5,15 @@ import { eq, and, isNotNull, gte } from 'drizzle-orm'
 
 // Interface matching dailyUsageSchema exactly
 interface DayUsage {
-  date: string;
-  count: number;
-  msEllapsed: number;
-  estimatedCost: string;
+  date: string
+  count: number
+  msEllapsed: number
+  estimatedCost: string
 }
 
-const formatDayUsageDictToOutput = (eventsByDate: { [date: string]: DayUsage }) => {
+const formatDayUsageDictToOutput = (eventsByDate: {
+  [date: string]: DayUsage
+}) => {
   // Create Output Object (list of dates)
   let outputObject = Object.values(eventsByDate)
 
@@ -69,14 +71,14 @@ export const usageRouter = createTRPCRouter({
 
         // Get the start date
         const startDate = bot.startTime.toISOString().split('T')[0]
-        
+
         // Initialize this date if it doesn't exist
         if (startDate && !eventsByDate[startDate]) {
           eventsByDate[startDate] = {
             date: startDate,
             count: 0,
             msEllapsed: 0,
-            estimatedCost: "0",
+            estimatedCost: '0',
           }
         }
 
@@ -84,7 +86,7 @@ export const usageRouter = createTRPCRouter({
         const botElapsed =
           new Date(bot.endTime.toISOString()).getTime() -
           new Date(bot.startTime.toISOString()).getTime()
-          
+
         // Ensure properties exist before accessing them
         if (startDate && eventsByDate[startDate]) {
           eventsByDate[startDate].msEllapsed += botElapsed
@@ -164,7 +166,7 @@ export const usageRouter = createTRPCRouter({
             date: dateString,
             count: 0,
             msEllapsed: 0,
-            estimatedCost: "0",
+            estimatedCost: '0',
           }
         }
       }
@@ -182,14 +184,17 @@ export const usageRouter = createTRPCRouter({
         const botElapsed =
           new Date(bot.endTime.toISOString()).getTime() -
           new Date(bot.startTime.toISOString()).getTime()
-          
+
         // Check if the date exists before accessing it
         if (startDate && eventsByDate[startDate]) {
           eventsByDate[startDate].msEllapsed += botElapsed
           eventsByDate[startDate].count += 1
           // Convert to string when saving
-          const currentCost = parseFloat(eventsByDate[startDate].estimatedCost);
-          eventsByDate[startDate].estimatedCost = (currentCost + botElapsed / 36000000).toFixed(2);
+          const currentCost = parseFloat(eventsByDate[startDate].estimatedCost)
+          eventsByDate[startDate].estimatedCost = (
+            currentCost +
+            botElapsed / 36000000
+          ).toFixed(2)
         }
       })
 
@@ -249,7 +254,7 @@ export const usageRouter = createTRPCRouter({
             date: dateString,
             count: 0,
             msEllapsed: 0,
-            estimatedCost: "0",
+            estimatedCost: '0',
           }
         }
       }
@@ -267,14 +272,17 @@ export const usageRouter = createTRPCRouter({
         const botElapsed =
           new Date(bot.endTime.toISOString()).getTime() -
           new Date(bot.startTime.toISOString()).getTime()
-          
+
         // Check if the date exists before accessing it
         if (startDate && eventsByDate[startDate]) {
           eventsByDate[startDate].msEllapsed += botElapsed
           eventsByDate[startDate].count += 1
           // Convert to string when saving
-          const currentCost = parseFloat(eventsByDate[startDate].estimatedCost);
-          eventsByDate[startDate].estimatedCost = (currentCost + botElapsed / 36000000).toFixed(2);
+          const currentCost = parseFloat(eventsByDate[startDate].estimatedCost)
+          eventsByDate[startDate].estimatedCost = (
+            currentCost +
+            botElapsed / 36000000
+          ).toFixed(2)
         }
       })
 
