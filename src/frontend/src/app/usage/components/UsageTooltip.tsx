@@ -1,3 +1,5 @@
+"use client";
+
 // Define the data structure
 interface UsageData {
   date: string;

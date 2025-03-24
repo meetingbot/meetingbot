@@ -2,7 +2,7 @@ import DashboardCard from "./DashboardCard";
 
 import { useSession } from "~/contexts/SessionContext";
 import CommunityCard from "./CommunityCard";
-import { Bot, ChartLine, File, Key } from "lucide-react";
+import { Bot, File, Key } from "lucide-react";
 import { UsageChart } from "../usage/components/UsageChart";
 import { trpcReact } from "~/trpc/trpc-react";
 import { Skeleton } from "~/components/ui/skeleton";

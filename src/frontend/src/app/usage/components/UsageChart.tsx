@@ -1,4 +1,6 @@
-import React from "react";
+"use client";
+
+import React, { useEffect, useState } from "react";
 import {
   LineChart,
   Line,
@@ -34,6 +36,19 @@ export function UsageChart() {
   const [timeframe, setTimeframe] = React.useState<"week" | "month" | "year">(
     "week",
   );
+  const [isMobile, setIsMobile] = useState(false);
+
+  // Initialize window-dependent states safely
+  useEffect(() => {
+    setIsMobile(window.innerWidth < 768);
+    
+    const handleResize = () => {
+      setIsMobile(window.innerWidth < 768);
+    };
+    
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
 
   // Load the Data
   const { data, isLoading, error } =
@@ -52,7 +67,7 @@ export function UsageChart() {
         return Math.ceil(parseFloat(d[metric]));
       }),
     );
-  const ydomain = data && [0, max ? max : 0];
+  const ydomain = data && [0, max ?? 0];
 
   const dateTickFormatter = (date: string) => {
     if (timeframe === "week") {
@@ -80,7 +95,7 @@ export function UsageChart() {
     <div className="p-1 px-[50px]">
       {/* Buttons */}
       <div
-        className={`flex ${window.innerWidth < 768 ? "flex-col" : "justify-between"} mt-4 w-full gap-2`}
+        className={`flex ${isMobile ? "flex-col" : "justify-between"} mt-4 w-full gap-2`}
       >
         <div className="align-center flex flex-col justify-center">
           <div className="pb-2 font-semibold">Time Span</div>
