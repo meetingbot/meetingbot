@@ -13,7 +13,7 @@ import {
 } from 'drizzle-orm/pg-core'
 import { createInsertSchema, createSelectSchema } from 'drizzle-zod'
 import { AdapterAccountType } from '@auth/core/adapters'
-import { usageRouter } from '../routers/usage'
+
 const pgTable = pgTableCreator((name) => name)
 
 /** AUTH TABLES */

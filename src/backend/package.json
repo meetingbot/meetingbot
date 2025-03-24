@@ -21,6 +21,7 @@
   "keywords": [],
   "author": "",
   "dependencies": {
+    "@auth/core": "^0.38.0",
     "@auth/drizzle-adapter": "^1.7.4",
     "@auth/express": "^0.8.4",
     "@aws-sdk/client-ecs": "^3.738.0",
