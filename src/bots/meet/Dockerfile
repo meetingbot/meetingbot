@@ -3,13 +3,14 @@ FROM mcr.microsoft.com/playwright:v1.51.0-jammy AS base
 
 # Install XVFB dependencies
 RUN apt-get update && apt-get install -y \
-  libx11-dev \
-  libxcomposite-dev \
-  libxdamage-dev \
-  libxrandr-dev \
-  x11-xserver-utils \
-  xvfb \
-  && rm -rf /var/lib/apt/lists/*
+    xvfb \
+    ffmpeg \
+    x11-utils \
+    pulseaudio \
+    x11-xserver-utils \
+    fluxbox \
+    && rm -rf /var/lib/apt/lists/*
+    # delete the cache of the package manager ^^
 
 # Set the working directory inside the container
 WORKDIR /app
@@ -48,13 +49,27 @@ COPY --from=base /app/meet/node_modules /app/meet/node_modules
 COPY --from=base /app/meet/package.json /app/meet/package.json
 COPY --from=base /app/meet/pnpm-lock.yaml /app/meet/pnpm-lock.yaml
 COPY --from=base /root/ms-playwright /root/ms-playwright
+COPY /meet/entrypoint.sh /app/entrypoint.sh
 
+# install xvfb, pulseaudio, and xephyr in a single step
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    xvfb \
+    pulseaudio \
+    pulseaudio-utils \
+    xserver-xephyr \
+    && rm -rf /var/lib/apt/lists/*
+    
 # Copy files into the container
 COPY src ./src
 COPY meet/src ./meet/src
 
 #Install pnpm globally
 RUN npm install -g pnpm
+RUN corepack enable && corepack prepare pnpm@latest --activate
 
-# Run Command
-CMD ["sh", "-c", "xvfb-run -s '-screen 0 1280x1024x24' pnpm run dev"]
+# Expose display port
+ENV DISPLAY=:99
+
+# # Run Command
+RUN chmod +x /app/entrypoint.sh
+CMD ["/app/entrypoint.sh"]

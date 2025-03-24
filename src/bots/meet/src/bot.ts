@@ -7,6 +7,8 @@ import { setTimeout } from "timers/promises";
 import { BotConfig, EventCode } from "../../src/types";
 import { Bot } from "../../src/bot";
 import * as fs from 'fs';
+import path from "path";
+import { ChildProcessWithoutNullStreams, spawn } from "child_process";
 
 // Use Stealth Plugin to avoid detection
 const stealthPlugin = StealthPlugin();
@@ -25,7 +27,7 @@ const gotKickedDetector = '//button[.//span[text()="Return to home screen"]]';
 const leaveButton = `//button[@aria-label="Leave call"]`;
 const peopleButton = `//button[@aria-label="People"]`;
 const onePersonRemainingField = '//span[.//div[text()="Contributors"]]//div[text()="1"]';
-const muteButton = `[aria-label*="Turn off mic"]`; // *= -> conatins
+const muteButton = `[aria-label*="Turn off microphone"]`; // *= -> conatins
 const cameraOffButton = `[aria-label*="Turn off camera"]`;
 
 /**
@@ -51,7 +53,55 @@ declare global {
   }
 }
 
-
+/**
+ * Represents a bot that can join and interact with Google Meet meetings.
+ * The bot is capable of joining meetings, performing actions, recording the meeting,
+ * monitoring participants, and leaving the meeting based on specific conditions.
+ * 
+ * @class MeetsBot
+ * @extends Bot
+ * 
+ * @property {string[]} browserArgs - Arguments passed to the browser instance.
+ * @property {string} meetingURL - The URL of the Google Meet meeting to join.
+ * @property {Browser} browser - The Playwright browser instance used by the bot.
+ * @property {Page} page - The Playwright page instance used by the bot.
+ * @property {PageVideoCapture | undefined} recorder - The video recorder instance for capturing the meeting.
+ * @property {boolean} kicked - Indicates if the bot was kicked from the meeting.
+ * @property {string} recordingPath - The file path where the meeting recording is saved.
+ * @property {Buffer[]} recordBuffer - Buffer to store video chunks during recording.
+ * @property {boolean} startedRecording - Indicates if the recording has started.
+ * @property {number} participantCount - The current number of participants in the meeting.
+ * @property {number} timeAloneStarted - The timestamp when the bot was the only participant in the meeting.
+ * @property {ChildProcessWithoutNullStreams | null} ffmpegProcess - The ffmpeg process used for recording.
+ * 
+ * @constructor
+ * @param {BotConfig} botSettings - Configuration settings for the bot, including meeting information.
+ * @param {(eventType: EventCode, data?: any) => Promise<void>} onEvent - Callback function to handle events.
+ * 
+ * @method run - Runs the bot to join the meeting and perform actions.
+ * @returns {Promise<void>}
+ * 
+ * @method getRecordingPath - Retrieves the file path of the recording.
+ * @returns {string} The path to the recording file.
+ * 
+ * @method getContentType - Retrieves the content type of the recording file.
+ * @returns {string} The content type of the recording file.
+ * 
+ * @method joinMeeting - Joins the Google Meet meeting and performs necessary setup.
+ * @returns {Promise<number>} Returns 0 if the bot successfully joins the meeting, or throws an error if it fails.
+ * 
+ * @method startRecording - Starts recording the meeting using ffmpeg.
+ * @returns {Promise<void>}
+ * 
+ * @method stopRecording - Stops the ongoing recording if it has been started.
+ * @returns {Promise<number>} Returns 0 if the recording was successfully stopped.
+ * 
+ * @method meetingActions - Performs actions during the meeting, including monitoring participants and recording.
+ * @returns {Promise<number>} Returns 0 when the bot finishes its meeting actions.
+ * 
+ * @method leaveMeeting - Stops the recording and leaves the meeting.
+ * @returns {Promise<number>} Returns 0 if the bot successfully leaves the meeting.
+ */
 export class MeetsBot extends Bot {
   browserArgs: string[];
   meetingURL: string;
@@ -67,6 +117,8 @@ export class MeetsBot extends Bot {
   private participantCount: number = 0;
   private timeAloneStarted: number = Infinity;
 
+  private ffmpegProcess: ChildProcessWithoutNullStreams | null;
+
   /**
    * 
    * @param botSettings Bot Settings as Passed in the API call.
@@ -77,7 +129,7 @@ export class MeetsBot extends Bot {
     onEvent: (eventType: EventCode, data?: any) => Promise<void>
   ) {
     super(botSettings, onEvent);
-    this.recordingPath = "/recording/recording.mp4";
+    this.recordingPath = path.resolve('/tmp/recording.mp4');
 
     this.browserArgs = [
       "--incognito",
@@ -85,17 +137,19 @@ export class MeetsBot extends Bot {
       "--disable-setuid-sandbox",
       "--disable-features=IsolateOrigins,site-per-process",
       "--disable-infobars",
+      "--disable-gpu", //disable gpu rendering
 
       "--use-fake-ui-for-media-stream",// automatically grants screen sharing permissions without a selection dialog.
       "--use-file-for-fake-video-capture=/dev/null",
       "--use-file-for-fake-audio-capture=/dev/null",
       '--auto-select-desktop-capture-source="Chrome"' // record the first tab automatically
     ];
-
     // Fetch
     this.meetingURL = botSettings.meetingInfo.meetingUrl!;
     this.kicked = false; // Flag for if the bot was kicked from the meeting, no need to click exit button.
     this.startedRecording = false; //Flag to not duplicate recording start
+
+    this.ffmpegProcess = null;
   }
 
   /**
@@ -111,6 +165,14 @@ export class MeetsBot extends Bot {
    * @returns {string} - Returns the path to the recording file.
    */
   getRecordingPath(): string {
+
+    // Ensure the directory exists
+    const dir = path.dirname(this.recordingPath);
+    if (!fs.existsSync(dir)) {
+      fs.mkdirSync(dir, { recursive: true });
+    }
+
+    // Give Back the path
     return this.recordingPath;
   }
 
@@ -147,12 +209,17 @@ export class MeetsBot extends Bot {
     const context = await this.browser.newContext({
       permissions: ["camera", "microphone"],
       userAgent: userAgent,
-      viewport: vp,
+      viewport: vp
     });
 
     // Create Page, Go to
     this.page = await context.newPage();
     await this.page.waitForTimeout(randomDelay(1000));
+
+    // Listen for console events, reprint them in the terminal
+    this.page.on('console', msg => {
+      console.log(`\t :: Browser Console (${msg.type()}): ${msg.text()}`);
+    });
 
     // Inject anti-detection code using addInitScript
     await this.page.addInitScript(() => {
@@ -206,13 +273,22 @@ export class MeetsBot extends Bot {
     console.log("Filling the input field with the name...");
     await this.page.fill(enterNameField, name);
 
-    // TODO: Mute Self - Turn Off Camera
     console.log('Turning Off Camera and Microphone ...');
-    await this.page.waitForTimeout(randomDelay(500));
-    await this.page.click(muteButton);
-    await this.page.waitForTimeout(10);
-    await this.page.click(cameraOffButton);
-    await this.page.waitForTimeout(randomDelay(100));
+    try {
+      await this.page.waitForTimeout(randomDelay(500));
+      await this.page.click(muteButton, { timeout: 200 });
+      await this.page.waitForTimeout(200);
+
+    } catch (e) {
+      console.log('Could not turn off Microphone, probably already off.');
+    }
+    try {
+      await this.page.click(cameraOffButton, { timeout: 200 });
+      await this.page.waitForTimeout(200);
+
+    } catch (e) {
+      console.log('Could not turn off Camera -- probably already off.');
+    }
 
     // Click the "Ask to join" button
     console.log('Waiting for the "Ask to join" button...');
@@ -230,7 +306,7 @@ export class MeetsBot extends Bot {
       });
     } catch (e) {
       // Timeout Error: Will get caught by bot/index.ts
-      throw {message: 'Bot was not admitted into the meeting.'}; 
+      throw { message: 'Bot was not admitted into the meeting.' };
     }
 
     //Done. Log.
@@ -242,167 +318,71 @@ export class MeetsBot extends Bot {
   }
 
   /**
-   *  Function to start the recording of the call.
-   * Done using the browser's media APIS. 
-   *    Note: We cannot use playwright's video recording as it does not handle audio support -- video files are audioless.
+   * Starts the recording of the call using ffmpeg.
    * 
-   * We expose functions to the browser to interface with the the media recorder here -- `saveChunk` and `stopRecording`.
+   * This function initializes an ffmpeg process to capture the screen and audio of the meeting.
+   * It ensures that only one recording process is active at a time and logs the status of the recording.
    * 
-   * @returns 
+   * @returns {void}
    */
   async startRecording() {
 
     console.log('Attempting to start the recording ...');
+    if (this.ffmpegProcess) return console.log('Recording already started.');
 
-    // Ensure we have not accidentally started recording twice
-    if (this.startedRecording) return 0;
-    this.startedRecording = true;
+    this.ffmpegProcess = spawn('ffmpeg', [
+      '-y',
+      '-f', 'x11grab',
+      '-video_size', '1280x720',
+      '-i', ':99.0',
+      '-f', 'pulse',
+      '-i', 'default',
+      '-c:v', 'libx264',
+      '-preset', 'ultrafast',
+      '-c:a', 'aac',
+      this.getRecordingPath()
+    ]);
+    console.log('Spawned a subprocess to record: pid=', this.ffmpegProcess.pid);
 
-    console.log('Exposing Functions ...')
+    // Report any data / errors (DEBUG, since it also prints that data is available).
+    this.ffmpegProcess.stderr.on('data', (data) => {
+      // console.error(`ffmpeg: ${data}`);
 
-    // Expose Function to Save Recording Chunks to File
-    await this.page.exposeFunction('saveChunk', async (chunk: any) => {
-      
-      //Ensure Exists
-      if (this.recorder !== undefined) {
-
-        //Save Recording Chunk
-        this.recordBuffer.push(Buffer.from(chunk));
-        // console.log('Saved Recording Chunk.')
+      // Just a simple quick log.
+      if (!this.startedRecording) {
+        console.log('Recording Started. Data was pushed.');
+        this.startedRecording = true;
       }
     });
 
-    // Expose Function to Stop Recording & Save as File
-    //
-    // GIve the recorder access to this class's saveRecording function.
-    // This is autocalled when the recording it stopped.
-    await this.page.exposeFunction('stopRecording', async () => {
-      console.log('Recording Stop Initiated with recorder.stop().')
-      await this.saveRecording();
+    // Report when the process exits
+    this.ffmpegProcess.on('exit', (code) => {
+      console.log(`ffmpeg exited with code ${code}`);
+      this.ffmpegProcess = null;
     });
 
-    //Access Browser Media APIS
-    console.log('Starting Window Details ...')
-    await this.page.evaluate(() => {
-      (async () => {
-        try {
-
-          //Prints in Browser
-          console.log('Starting the Recording..')
-
-          // Start Recording Stream
-          const stream = await navigator.mediaDevices.getDisplayMedia({
-            audio: {
-              echoCancellation: false,
-              noiseSuppression: false,
-              autoGainControl: false,
-              channelCount: 1, // Force audio to come from the browser only
-            },
-            video: true,
-            // I can't seem to get this to work: file does not write this way - TODO: fix to record only rh browser tab, not the entire scren
-            // video: {
-            //   displaySurface: "browser", // Ensures only the current window is captured
-            //   frameRate: 30
-            // }
-          });
-
-          // Remove microphone input, keep only system audio
-          stream.getAudioTracks().forEach(track => {
-            if (track.label.toLowerCase().includes("microphone")) {
-              stream.removeTrack(track);
-            }
-          });
-
-          // Store MediaRecorder instance inside `window`
-          Object.assign(window, {
-            recorder: new MediaRecorder(stream, {
-              mimeType: "video/webm; codecs=opus",
-              audioBitsPerSecond: 128000,
-            })
-          });
-
-          // Error Case
-          if (!window.recorder) {
-            throw new Error('Could not create MediaRecorder instance');
-          }
-
-          //Create a Buffer
-          window.recorder.ondataavailable = async (e: BlobEvent) => {
-            const buffer = await e.data.arrayBuffer();
-            window.saveChunk?.(Array.from(new Uint8Array(buffer))); //Send Chunk
-          };
-
-          // Stop Recording Event -- call the exposed window.stopRecording function, which then calls
-          // this.saveRecording() -- needs to be accessable to the window.
-          window.recorder.onstop = async () => {
-            console.log('Recording Stopped... Attempting to save recording.')
-            await window.stopRecording?.();
-          }
-
-          // Start Recording
-          window.recorder.start(1000); // 1 second chunks
-          console.log('Recording Started.')
-
-          // Catch Error - End
-        } catch (e) {
-          console.error('Error Starting Recording:', e);
-        }
-      })(); // immediatly invoke
-    });
-    return 0;
-  }
-
-  /**
-   * 
-   * Saves the recording to a file.
-   * 
-   * @returns 0 if the recording was successfully saved, or 1 if there was no recording to save.
-   */
-  async saveRecording() {
-
-    // Ensure
-    if (this.recordBuffer.length == 0) {
-      console.log('Could not write file -- No recording chunks to save.');
-      return 1;
-    }
-
-    // Write to file
-    fs.writeFileSync(this.getRecordingPath(), Buffer.concat(this.recordBuffer), 'binary');
-    console.log('Recording saved to:', this.getRecordingPath());
-    return 0;
+    console.log('Started Recording.')
   }
 
   /**
    * Stops the ongoing recording if it has been started.
    * 
-   * This function attempts to stop the recording by evaluating a script in the page context.
-   * It checks if the `window.recorder` object exists and if it does, it stops the recording
-   * and sets `window.recorder` to `undefined`. If the recorder does not exist, it logs an error message.
+   * This function ensures that the recording process is terminated. It checks if the `ffmpegProcess`
+   * exists and, if so, sends a termination signal to stop the recording. If no recording process
+   * is active, it logs a message indicating that no recording was in progress.
    * 
-   * @returns {Promise<number>} - Returns 0 if the recording was successfully stopped, or 1 if the recording was not started.
+   * @returns {Promise<number>} - Returns 0 if the recording was successfully stopped.
    */
   async stopRecording() {
 
     console.log('Attempting to stop the recording ...');
 
-    // We have saved the recorder in the browser
-    await this.page.evaluate(async () => {
+    if (!this.ffmpegProcess) {
+      throw new Error('No recording in progress');
+    }
+    this.ffmpegProcess.kill('SIGINT'); // Graceful stop
+    this.ffmpegProcess = null;
 
-      console.log(window.recorder);
-
-      // Error case
-      if (!window.recorder) {
-        console.log('Cannot stop recording as recording has not been started.')
-        return 1;
-      }
-
-      //Stop
-      await window.recorder.stop();
-      window.recorder = undefined;
-      console.log('Stopped Recording.')
-    });
-
-    console.log('Stopped Recording, at ', this.getRecordingPath());
     return 0;
   }
 

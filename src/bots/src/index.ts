@@ -77,7 +77,7 @@ const main = async () => {
 
   // Start heartbeat in the background
   console.log("Starting heartbeat");
-  startHeartbeat(botId, heartbeatController.signal);
+  // startHeartbeat(botId, heartbeatController.signal);
 
   // Report READY_TO_DEPLOY event
   await reportEvent(botId, EventCode.READY_TO_DEPLOY);
@@ -102,6 +102,7 @@ const main = async () => {
         fileContent = readFileSync(recordingPath);
         console.log("Successfully read recording file");
         break; // Exit loop if readFileSync is successful
+
       } catch (error) {
         const err = error as NodeJS.ErrnoException;
         if (err.code === "EBUSY") {
