@@ -6,6 +6,6 @@
     "node": ">=18.0.0"
   },
   "scripts": {
-    "typecheck": "pnpm --recursive run typecheck"
+    "typecheck": "pnpm --filter \"./src/**\" run typecheck"
   }
 } 
