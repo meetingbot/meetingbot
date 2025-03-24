@@ -344,3 +344,4 @@ export const dailyUsageSchema = z.object({
   estimatedCost: z.string(),
   count: z.number(),
 })
+export type DailyUsage = z.infer<typeof dailyUsageSchema>

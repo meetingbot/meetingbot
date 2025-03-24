@@ -15,7 +15,7 @@ const formatDayUsageDictToOutput = (eventsByDate: {
   [date: string]: DayUsage
 }) => {
   // Create Output Object (list of dates)
-  let outputObject = Object.values(eventsByDate)
+  let events = Object.values(eventsByDate)
 
   // The estimatedCost is already a string, so we don't need to convert it
   // Sort output keys (date)
@@ -95,10 +95,10 @@ export const usageRouter = createTRPCRouter({
       })
 
       // Create Output Object (list of dates)
-      let outputObject = Object.values(eventsByDate)
+      let events = Object.values(eventsByDate)
 
       // Alter to include a cost variable
-      outputObject = outputObject.map((d) => {
+      let outputObject: DailyUsage[] = events.map((d) => {
         return {
           ...d,
           estimatedCost: (d.msEllapsed / 36000000).toFixed(2),
@@ -179,6 +179,10 @@ export const usageRouter = createTRPCRouter({
 
         // Get the start date
         const startDate = bot.startTime.toISOString().split('T')[0]
+
+        if (!startDate) {
+          return //next in loop
+        }
 
         //Time the bot ellapsed
         const botElapsed =

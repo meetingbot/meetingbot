@@ -41,13 +41,13 @@ export function UsageChart() {
   // Initialize window-dependent states safely
   useEffect(() => {
     setIsMobile(window.innerWidth < 768);
-    
+
     const handleResize = () => {
       setIsMobile(window.innerWidth < 768);
     };
-    
-    window.addEventListener('resize', handleResize);
-    return () => window.removeEventListener('resize', handleResize);
+
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
   }, []);
 
   // Load the Data
