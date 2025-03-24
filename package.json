@@ -7,5 +7,10 @@
   },
   "scripts": {
     "typecheck": "pnpm --filter \"./src/**\" run typecheck"
+  },
+  "pnpm": {
+    "overrides": {
+      "@types/react": "^18.3.3"
+    }
   }
 } 
