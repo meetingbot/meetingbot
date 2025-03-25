@@ -255,7 +255,11 @@ resource "aws_ecs_task_definition" "backend" {
         {
           name  = "ECS_SECURITY_GROUPS"
           value = join(",", [aws_security_group.ecs_tasks.id])
-        }
+        },
+        {
+          name  = "AWS_BUCKET_NAME"
+          value = aws_s3_bucket.this.bucket
+        },
       ]
 
       logConfiguration = {
