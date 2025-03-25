@@ -12,7 +12,8 @@ const checkMeetBotLink = (link: string) => {
 }
 
 const checkZoomBotLink = (link: string) => {
-  return /^((https:\/\/)?zoom\.us\/j\/)?[0-9]{9,11}$/.test(link);
+  // Match any zoom.us subdomain followed by /j/ and 9-11 digits
+  return /^https:\/\/[a-z0-9]+\.zoom\.us\/j\/[0-9]{9,11}(?:\?pwd=[^&]+)?$/.test(link);
 }
 
 function parseTeamsMeetingLink(url: string) {
@@ -62,6 +63,22 @@ const linkParsers: Record<MeetingType, (link: string) => boolean> = {
   'teams': checkTeamsBotLink,
 }
 
+function parseZoomMeetingLink(url: string) {
+  try {
+    const urlObj = new URL(url);
+    const pathSegments = urlObj.pathname.split('/');
+    const meetingId = pathSegments[pathSegments.length - 1];
+    const meetingPassword = urlObj.searchParams.get('pwd') || '';
+
+    return {
+      meetingId,
+      meetingPassword
+    };
+  } catch (error) {
+    console.error("Error parsing Zoom meeting link:", error);
+    return null;
+  }
+}
 
 export default function MeetingBotCreator() {
 
@@ -85,18 +102,14 @@ export default function MeetingBotCreator() {
     }
     // Zoom
     if (type === 'zoom') {
+      const parsed = parseZoomMeetingLink(link);
+      if (!parsed) return undefined;
 
-      // Parse URL
-      const meetingId = '';
-      const meetingPassword = '';
-
-      // Passback
       return {
         platform: 'zoom',
-        meetingId,
-        meetingPassword
+        meetingId: parsed.meetingId,
+        meetingPassword: parsed.meetingPassword
       };
-
     }
     // Teams
     if (type === 'teams') {
@@ -131,7 +144,7 @@ export default function MeetingBotCreator() {
 
     // Define Here
     const ruuid = "50e8400-e29b-41d4-a716-446655440000"
-    const callbackUrl = process.env.CALLBACK_URL || 'https://localhost:3002/api/callback';
+    const callbackUrl = process.env.NEXT_PUBLIC_CALLBACK_URL || 'https://localhost:3002/api/callback';
 
     const meetingInfo = defineMeetingInfo(link, inputType);
     if (!meetingInfo) {

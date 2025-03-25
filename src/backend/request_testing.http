@@ -96,3 +96,19 @@ x-api-key: 0bc3598273e72800afa66146686c2c5d28cff0aa76f9381b3fd59651e63b4000
 GET http://127.0.0.1:3001/api/usage/day
 content-type: application/json
 x-api-key: 0bc3598273e72800afa66146686c2c5d28cff0aa76f9381b3fd59651e63b4000
+
+###
+
+# Check Bot Usage
+POST https://d531-184-146-60-163.ngrok-free.app/api/callback
+content-type: application/json
+
+{
+  "botId": 36
+}
+
+###
+
+# Get bots
+GET http://app.meetingbot.tech/api/bots/40
+x-api-key: 559b52c91b258c44b0c90ea43e3e914a21aa96079e72941635310298b864ea57
