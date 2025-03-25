@@ -13,7 +13,7 @@ import {
 import { Button } from "@/components/ui/button"; // Assuming you're using shadcn/ui
 import { UsageTooltip } from "./UsageTooltip";
 import { Skeleton } from "~/components/ui/skeleton";
-import { trpcReact } from "~/trpc/trpc-react";
+import { api } from "~/utils/trpc";
 
 // Define a proper type for the usage data
 interface UsageData {
@@ -41,20 +41,20 @@ export function UsageChart() {
   // Initialize window-dependent states safely
   useEffect(() => {
     setIsMobile(window.innerWidth < 768);
-    
+
     const handleResize = () => {
       setIsMobile(window.innerWidth < 768);
     };
-    
-    window.addEventListener('resize', handleResize);
-    return () => window.removeEventListener('resize', handleResize);
+
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
   }, []);
 
   // Load the Data
   const { data, isLoading, error } =
     timeframe === "week"
-      ? trpcReact.usage.getWeekDailyUsage.useQuery({})
-      : trpcReact.usage.getMonthDailyUsage.useQuery({});
+      ? api.usage.getWeekDailyUsage.useQuery({})
+      : api.usage.getMonthDailyUsage.useQuery({});
 
   // Decide scale
   const max =

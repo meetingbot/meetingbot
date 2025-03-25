@@ -1,27 +1,24 @@
 "use client";
 import { Skeleton } from "~/components/ui/skeleton";
 import WelcomeDashboard from "./components/WelcomeDashboard";
-import { trpcReact } from "~/trpc/trpc-react";
 import ErrorAlert from "../components/custom/ErrorAlert";
 import Dashboard from "./components/Dashboard";
-import { useSession } from "~/contexts/SessionContext";
+import { useSession } from "next-auth/react";
+import { api } from "~/utils/trpc";
 
 export default function Home() {
-  const {
-    session,
-    isLoading: isSessionLoading,
-    error: sessionError,
-  } = useSession();
-  const { data, isLoading, error } = trpcReact.apiKeys.getApiKeyCount.useQuery(
+  const session = useSession();
+  const { data, isLoading, error } = api.apiKeys.getApiKeyCount.useQuery(
     {},
     {
-      enabled: !!session?.user?.id,
+      enabled: !!session.data?.user.id,
     },
   );
 
   return (
     <main>
-      {isSessionLoading || (!!session?.user?.id && isLoading) ? ( // if loading, show skeleton
+      {session.status === "loading" ||
+      (!!session.data?.user.id && isLoading) ? ( // if loading, show skeleton
         <div>
           <div className="mb-5 mt-5">
             <Skeleton className="h-10 w-72" />
@@ -46,15 +43,15 @@ export default function Home() {
             </div>
           </div>
         </div>
-      ) : error || sessionError ? ( // if error, show error alert
+      ) : error || session.status === "unauthenticated" ? ( // if error, show error alert
         <ErrorAlert
           errorMessage={
-            error?.message ??
-            sessionError?.message ??
-            "An unknown error occurred"
+            (error?.message ?? session.status === "unauthenticated")
+              ? "Unauthorized"
+              : "An unknown error occurred"
           }
         />
-      ) : !session?.user?.id || data?.count === 0 ? ( // if user is not logged in or has no api keys, show welcome dashboard
+      ) : !session?.data?.user.id || data?.count === 0 ? ( // if user is not logged in or has no api keys, show welcome dashboard
         <WelcomeDashboard />
       ) : (
         // if user has api keys, show dashboard

@@ -1,6 +1,5 @@
 import { ExternalLink, User, Users } from "lucide-react";
 import DashboardCard from "./DashboardCard";
-import { trpcReact } from "~/trpc/trpc-react";
 import { Skeleton } from "~/components/ui/skeleton";
 import ErrorAlert from "~/components/custom/ErrorAlert";
 import { Separator } from "~/components/ui/separator";
@@ -8,7 +7,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "~/components/ui/avatar";
 import ReactMarkdown from "react-markdown";
 import Link from "next/link";
 import { Button } from "~/components/ui/button";
-
+import { api } from "~/utils/trpc";
 interface CommunityUpdate {
   className?: string;
 }
@@ -18,7 +17,8 @@ export default function CommunityCard({ className }: CommunityUpdate) {
     data: communityUpdates,
     isLoading,
     error,
-  } = trpcReact.community.getCommunityUpdates.useQuery({});
+  } = api.community.getCommunityUpdates.useQuery({});
+
   return (
     <DashboardCard
       title="Community Updates"
@@ -66,7 +66,7 @@ export default function CommunityCard({ className }: CommunityUpdate) {
               <ErrorAlert errorMessage={error.message} />
             ) : (
               <div className="flex flex-col gap-4">
-                {communityUpdates.map((update, index) => (
+                {communityUpdates?.map((update, index) => (
                   <div key={index} className="flex flex-col gap-2">
                     <div className="flex items-center gap-2">
                       <Avatar className="h-6 w-6">

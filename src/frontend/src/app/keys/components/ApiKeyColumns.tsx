@@ -14,7 +14,7 @@ import { MoreHorizontal, Copy } from "lucide-react";
 import dayjs from "dayjs";
 import { useState } from "react";
 import { ViewLogsDialogContent } from "./LogDialogContent";
-import { trpcReact } from "~/trpc/trpc-react";
+import { api } from "~/utils/trpc";
 import { toast } from "sonner";
 import { DialogTitle } from "~/components/ui/dialog";
 import { DialogContent } from "~/components/ui/dialog";
@@ -76,9 +76,9 @@ function ActionCell({
   setSelectedKeyId: (id: number) => void;
 }) {
   const [showLogs, setShowLogs] = useState(false);
-  const utils = trpcReact.useUtils();
+  const utils = api.useUtils();
 
-  const revokeKey = trpcReact.apiKeys.revokeApiKey.useMutation({
+  const revokeKey = api.apiKeys.revokeApiKey.useMutation({
     onSuccess: async () => {
       await utils.apiKeys.listApiKeys.invalidate();
       toast.success("API Key revoked");

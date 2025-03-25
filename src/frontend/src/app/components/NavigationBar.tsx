@@ -39,7 +39,7 @@ const components: { title: string | React.ReactNode; href: string }[] = [
         Docs <ExternalLink className="h-4" />
       </span>
     ),
-    href: `${env.NEXT_PUBLIC_BACKEND_URL}/docs`,
+    href: `/docs`,
   },
 ];
 

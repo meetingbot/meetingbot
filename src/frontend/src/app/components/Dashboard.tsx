@@ -1,33 +1,31 @@
 import DashboardCard from "./DashboardCard";
-
-import { useSession } from "~/contexts/SessionContext";
 import CommunityCard from "./CommunityCard";
 import { Bot, File, Key } from "lucide-react";
 import { UsageChart } from "../usage/components/UsageChart";
-import { trpcReact } from "~/trpc/trpc-react";
+import { api } from "~/utils/trpc";
 import { Skeleton } from "~/components/ui/skeleton";
 import ErrorAlert from "~/components/custom/ErrorAlert";
-import { env } from "~/env";
+import { useSession } from "next-auth/react";
 export default function Dashboard() {
-  const { session } = useSession();
+  const session = useSession();
   const {
     data: activeBotCount,
     isLoading: activeBotCountLoading,
     error: activeBotCountError,
-  } = trpcReact.bots.getActiveBotCount.useQuery({});
+  } = api.bots.getActiveBotCount.useQuery({});
 
   const {
     data: keyCount,
     isLoading: keyCountLoading,
     error: keyCountError,
-  } = trpcReact.apiKeys.getApiKeyCount.useQuery({});
+  } = api.apiKeys.getApiKeyCount.useQuery({});
 
   return (
     <>
       <div className="mb-5 mt-5">
         <h1 className="text-3xl font-bold">
           Welcome to Meeting Bot
-          {session?.user?.name ? `, ${session.user.name}` : ""}
+          {session?.data?.user.name ? `, ${session.data.user.name}` : ""}
         </h1>
         <p className="mt-2 text-gray-600">
           Easily create automated applications that leverage recordings across
@@ -92,7 +90,7 @@ export default function Dashboard() {
               icon={<File className="text-slate-500" />}
               link={{
                 type: "EXTERNAL",
-                url: `${env.NEXT_PUBLIC_BACKEND_URL}/docs`,
+                url: `/docs`,
                 text: "View Documentation",
               }}
             />

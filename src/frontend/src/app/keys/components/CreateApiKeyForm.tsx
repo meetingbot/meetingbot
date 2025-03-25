@@ -22,8 +22,8 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "~/components/ui/popover";
-import { cn } from "~/lib/utils";
-import { trpcReact } from "~/trpc/trpc-react";
+import { cn } from "~/utils/utils";
+import { api } from "~/utils/trpc";
 import { DialogClose } from "~/components/ui/dialog";
 import { toast } from "sonner";
 
@@ -39,8 +39,8 @@ type CreateApiKeyFormProps = {
 };
 
 export function CreateApiKeyForm({ onSuccess }: CreateApiKeyFormProps) {
-  const utils = trpcReact.useUtils();
-  const createApiKey = trpcReact.apiKeys.createApiKey.useMutation({
+  const utils = api.useUtils();
+  const createApiKey = api.apiKeys.createApiKey.useMutation({
     onSuccess: async () => {
       await utils.apiKeys.listApiKeys.invalidate();
       toast.success("API Key created", {

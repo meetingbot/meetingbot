@@ -1,13 +1,13 @@
 import DashboardCard from "./DashboardCard";
 import { File, Plus, LogIn, Users } from "lucide-react";
 import { Button } from "~/components/ui/button";
-import { useSession } from "~/contexts/SessionContext";
+import { useSession } from "next-auth/react";
 import Link from "next/link";
 import { env } from "~/env";
 import CommunityCard from "./CommunityCard";
 
 export default function WelcomeDashboard() {
-  const { session } = useSession();
+  const { data: session } = useSession();
   return (
     <>
       <div className="mb-5 mt-5">
@@ -40,9 +40,7 @@ export default function WelcomeDashboard() {
                         </Button>
                       </Link>
                     ) : (
-                      <Link
-                        href={`${env.NEXT_PUBLIC_BACKEND_URL}/api/auth/signin?provider=github`}
-                      >
+                      <Link href="/api/auth/signin?provider=github">
                         <Button>
                           Sign In <LogIn />
                         </Button>
@@ -60,7 +58,7 @@ export default function WelcomeDashboard() {
                     icon={<File className="text-slate-500" />}
                     link={{
                       type: "EXTERNAL",
-                      url: `${env.NEXT_PUBLIC_BACKEND_URL}/docs`,
+                      url: `/docs`,
                       text: "View Documentation",
                     }}
                   />

@@ -5,7 +5,7 @@ import { DataTable } from "~/components/custom/DataTable";
 import { type ColumnDef } from "@tanstack/react-table";
 import { Button } from "~/components/ui/button";
 import { formatDistanceToNow } from "date-fns";
-import { trpcReact } from "~/trpc/trpc-react";
+import { api } from "~/utils/trpc";
 import Image from "next/image";
 import { BotDetailsDialog } from "~/app/bots/components/BotDetailsDialog";
 import { Badge } from "~/components/ui/badge";
@@ -14,11 +14,7 @@ import { ExternalLinkIcon } from "lucide-react";
 
 export default function BotsPage() {
   const [selectedBot, setSelectedBot] = useState<number | null>(null);
-  const {
-    data: bots = [],
-    isLoading,
-    error,
-  } = trpcReact.bots.getBots.useQuery({});
+  const { data: bots = [], isLoading, error } = api.bots.getBots.useQuery({});
   type Bot = (typeof bots)[number];
 
   const columns: ColumnDef<Bot>[] = [

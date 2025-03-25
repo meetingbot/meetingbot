@@ -9,11 +9,10 @@ import {
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
-import { useSession } from "~/contexts/SessionContext";
-import { env } from "~/env";
+import { useSession } from "next-auth/react";
 
 export default function SessionButton() {
-  const { session } = useSession();
+  const { data: session } = useSession();
 
   const getInitials = (name: string) => {
     return name
@@ -24,9 +23,7 @@ export default function SessionButton() {
 
   if (!session?.user) {
     return (
-      <Link
-        href={`${env.NEXT_PUBLIC_BACKEND_URL}/api/auth/signin?provider=github`}
-      >
+      <Link href="/api/auth/signin?provider=github">
         <Button variant="outline" className="gap-2">
           Sign In
         </Button>
@@ -50,10 +47,7 @@ export default function SessionButton() {
       <DropdownMenuContent>
         <DropdownMenuLabel>My Account</DropdownMenuLabel>
         <DropdownMenuSeparator />
-        <Link
-          href={`${env.NEXT_PUBLIC_BACKEND_URL}/api/auth/signout`}
-          className="cursor-pointer"
-        >
+        <Link href="/api/auth/signout" className="cursor-pointer">
           <DropdownMenuItem>Logout</DropdownMenuItem>
         </Link>
       </DropdownMenuContent>

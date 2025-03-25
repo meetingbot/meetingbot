@@ -2,7 +2,7 @@
 
 import { columns } from "./components/ApiKeyColumns";
 import { DataTable } from "~/components/custom/DataTable";
-import { trpcReact } from "~/trpc/trpc-react";
+import { api } from "~/utils/trpc";
 import { CreateApiKeyDialog } from "./components/CreateApiKeyDialog";
 import { ViewLogsDialog } from "./components/ViewLogsDialog";
 import { useState } from "react";
@@ -15,7 +15,7 @@ export default function Keys() {
     data: apiKeys,
     isLoading,
     error,
-  } = trpcReact.apiKeys.listApiKeys.useQuery({});
+  } = api.apiKeys.listApiKeys.useQuery({});
 
   return (
     <div className="space-y-4">

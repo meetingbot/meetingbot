@@ -2,7 +2,7 @@
 
 import { DataTable } from "~/components/custom/DataTable";
 import { logColumns } from "./LogColumns";
-import { trpcReact } from "~/trpc/trpc-react";
+import { api } from "~/utils/trpc";
 
 interface ViewLogsDialogProps {
   apiKeyId: number;
@@ -13,7 +13,7 @@ export function ViewLogsDialogContent({ apiKeyId }: ViewLogsDialogProps) {
     data: logsData,
     isLoading,
     error,
-  } = trpcReact.apiKeys.getApiKeyLogs.useQuery({
+  } = api.apiKeys.getApiKeyLogs.useQuery({
     id: apiKeyId,
     limit: 100,
     offset: 0,

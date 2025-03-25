@@ -8,7 +8,7 @@ import {
 } from "~/components/ui/dialog";
 import { DataTable } from "~/components/custom/DataTable";
 import { type ColumnDef } from "@tanstack/react-table";
-import { trpcReact } from "~/trpc/trpc-react";
+import { api } from "~/utils/trpc";
 import { format } from "date-fns";
 import Image from "next/image";
 import ErrorAlert from "~/components/custom/ErrorAlert";
@@ -27,13 +27,13 @@ export function BotDetailsDialog({ botId, onClose }: BotDetailsDialogProps) {
     data: bot,
     isLoading: botLoading,
     error: botError,
-  } = trpcReact.bots.getBot.useQuery({ id: botId! }, { enabled: !!botId });
+  } = api.bots.getBot.useQuery({ id: botId! }, { enabled: !!botId });
 
   const {
     data: events = [],
     isLoading: eventsLoading,
     error: eventsError,
-  } = trpcReact.events.getEventsForBot.useQuery(
+  } = api.events.getEventsForBot.useQuery(
     { botId: botId! },
     { enabled: !!botId },
   );
