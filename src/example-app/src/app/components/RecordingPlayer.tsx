@@ -45,7 +45,7 @@ export default function RecordingPlayer() {
           url={videoLink}
           controls
         />
-        <h3><a href={videoLink}>{videoLink}</a></h3>
+        <h3><a href={videoLink}>Click Link</a></h3>
         </>)
         :
         (<h1>Waiting for recording to become available ... </h1>)

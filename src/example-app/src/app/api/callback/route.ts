@@ -5,11 +5,12 @@ import { NextResponse } from 'next/server';
 let recordingLink = '';
 
 export async function GET() {
+  console.log('Attempting to get the recording link: ', recordingLink);
   return NextResponse.json({ link: recordingLink }, { status: 200 });
 }
 
 export async function POST(req: Request) {
-  // try {
+  try {
 
     console.log('Getting...')
     const body = await req.json();
@@ -42,11 +43,12 @@ export async function POST(req: Request) {
         'x-api-key': key,
       }  
     });
-    console.log(response.status);
-
+    console.log(response);
 
     if (response.status !== 200) {
-      return NextResponse.json('Bot with id could not be fetched', { status: 404 });
+      // TODO: Uncomment this
+      // return NextResponse.json('Bot with id could not be fetched', { status: 404 });
+
     }
 
     const fetchedBot = await response.json();
@@ -55,6 +57,7 @@ export async function POST(req: Request) {
     //Check if status is done
     if (fetchedBot.status !== 'DONE') {
       console.log('Bot Status is not set to done');
+      // TODO: Uncomment this
       // return NextResponse.json('Bot Status not done', { status: 404 });
     }
 
@@ -68,17 +71,20 @@ export async function POST(req: Request) {
         'x-api-key': key,
       }  
     });
-    const { recording } = await recordingResponse.json();
+    const bodyBody = await recordingResponse.json();
+    console.log(bodyBody);
+
+    const { recordingUrl } = bodyBody;
 
     // Store Here -- which is then returned using GET
-    recordingLink = recording;
-    console.log('Set Recording link to:', recording);
+    recordingLink = recordingUrl;
+    console.log('Set Recording link to:', recordingLink);
     
     // Passback
     return NextResponse.json({ message: 'OK' }, { status: 200 });
 
-  // } catch (error) {
+  } catch (error) {
     // return NextResponse.json({ error }, { status: 500 });
     return NextResponse.json({ error: 'Internal Error' }, { status: 500 });
-  // }
+  }
 }
