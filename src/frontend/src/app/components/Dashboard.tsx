@@ -39,7 +39,7 @@ export default function Dashboard() {
           <div className="h-full lg:min-h-0">
             <DashboardCard
               title="Active Bots"
-              className="h-full"
+              className="h-full min-h-56"
               content={
                 activeBotCountLoading ? (
                   <Skeleton className="h-10 w-10" />
@@ -64,7 +64,7 @@ export default function Dashboard() {
           <div className="h-full lg:min-h-0">
             <DashboardCard
               title="Active Keys"
-              className="h-full"
+              className="h-full min-h-56"
               content={
                 keyCountLoading ? (
                   <Skeleton className="h-10 w-10" />
@@ -87,7 +87,7 @@ export default function Dashboard() {
           <div className="h-full lg:min-h-0">
             <DashboardCard
               title="View our Docs"
-              className="h-full"
+              className="h-full min-h-56"
               content="To learn more about how to create bots, pull meeting recordings, pull transcriptions and more, view our Documentation!"
               icon={<File className="text-slate-500" />}
               link={{
