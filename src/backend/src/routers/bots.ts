@@ -85,6 +85,7 @@ export const botsRouter = createTRPCRouter({
             input.heartbeatInterval ?? DEFAULT_BOT_VALUES.heartbeatInterval,
           automaticLeave:
             input.automaticLeave ?? DEFAULT_BOT_VALUES.automaticLeave,
+          callbackUrl: input.callbackUrl, // Credit to @martinezpl for this line -- cannot merge at time of writing due to capstone requirements
         }
 
         const result = await ctx.db.insert(bots).values(dbInput).returning()
