@@ -3,88 +3,120 @@ import { writeFileSync } from 'fs';
 import { NextResponse } from 'next/server';
 
 let recordingLink = '';
+let clients: any[] = []; // Store connected clients
 
-export async function GET() {
-  console.log('Attempting to get the recording link: ', recordingLink);
+// Get Key
+const BOT_API_KEY = process.env.BOT_API_KEY;
+const MEETINGBOT_END_POINT = process.env.MEETINGBOT_END_POINT;
+
+export async function GET(req: Request) {
+  const { searchParams } = new URL(req.url);
+  const isSSE = searchParams.get('sse') === 'true';
+
+  // Construct the webhook
+  if (isSSE) {
+    const stream = new ReadableStream({
+      start(controller) {
+        const client = {
+          send: (data: string) => controller.enqueue(`data: ${data}\n\n`),
+          close: () => controller.close(),
+        };
+        clients.push(client);
+
+        // Remove client on disconnect
+        req.signal.addEventListener('abort', () => {
+          clients = clients.filter((c) => c !== client);
+        });
+      },
+    });
+
+    //Pass the Response back
+    return new Response(stream, {
+      headers: {
+        'Content-Type': 'text/event-stream',
+        'Cache-Control': 'no-cache',
+        'Connection': 'keep-alive',
+      },
+    });
+  }
+
+  // Fallback for non-SSE requests
   return NextResponse.json({ link: recordingLink }, { status: 200 });
 }
+
+// Validate Bot is finished and exists
+const validateBot = async (botId: number) => {
+
+  // Validate
+  if (!BOT_API_KEY) return NextResponse.json({ error: 'Missing required environment variable: BOT_API_KEY' }, { status: 500 });
+  if (!MEETINGBOT_END_POINT) return NextResponse.json({ error: 'Missing required environment variable: MEETINGBOT_END_POINT' }, { status: 500 });
+
+  // Ensure bot actually exists and is really done
+  const response = await fetch(`${MEETINGBOT_END_POINT}/api/bots/${botId}`, {
+    method: 'GET',
+    headers: {
+      'Content-Type': 'application/json',
+      'x-api-key': BOT_API_KEY,
+    }
+  });
+
+  // Bot Validation Failed
+  if (response.status !== 200) return false;
+
+  //Check if status is done
+  const fetchedBot = await response.json();
+  if (fetchedBot.status !== 'DONE') return false;
+
+  // Bot Validation Passed
+  return true;
+}
+
 
 export async function POST(req: Request) {
   try {
 
-    console.log('Getting...')
-    const body = await req.json();
-    const { botId } = body;
-    console.log(body)
-
-    // Get Key
-    const key = process.env.BOT_API_KEY;
-    console.log(key);
-    if (!key) throw new Error(`Missing required environment variable: BOT_API_KEY`);
-        
-    
-    // Get a list of currently valid bots
-    const endpoint = process.env.MEETINGBOT_END_POINT;
-    console.log(endpoint);
-    if (!endpoint) throw new Error(`Missing required environment variable: MEETINGBOT_END_POINT`);
-    
-
     // Validate
-    console.log(botId);
-    if (botId === null) return NextResponse.json('Malfored Body - botId is not defined', { status: 400 });
+    if (!BOT_API_KEY) return NextResponse.json({ error: 'Missing required environment variable: BOT_API_KEY' }, { status: 500 });
+    if (!MEETINGBOT_END_POINT) return NextResponse.json({ error: 'Missing required environment variable: MEETINGBOT_END_POINT' }, { status: 500 });
+
+    // Get bot id from request body telling it it's done
+    const { botId } = await req.json();
+    if (botId === null)
+      return NextResponse.json('Malfored Body - botId is not defined', { status: 400 });
+
+    // Ideally - your app would be hosted on AWS along with the bot service, or 
+    // you would have a secure way of communicating with the bot service.
+    // As this is an example app, we will just allow any request to come through.
+
+    // We will just validate that the bot is finished.
+    const validationResult = validateBot(botId);
+    if (!validationResult)
+      return NextResponse.json('Bot Validation Failed', { status: 403 });
 
     //
-    // Ensure bot actually exists and is really done
-    //
-    const response = await fetch(`${endpoint}/api/bots/${botId}`, {
+    // Send request to MeetingBot API to get the signed Recording URL from S3
+    const recordingResponse = await fetch(`${MEETINGBOT_END_POINT}/api/bots/${botId}/recording`, {
       method: 'GET',
       headers: {
         'Content-Type': 'application/json',
-        'x-api-key': key,
-      }  
+        'x-api-key': BOT_API_KEY,
+      }
     });
-    console.log(response);
 
-    if (response.status !== 200) {
-      // TODO: Uncomment this
-      // return NextResponse.json('Bot with id could not be fetched', { status: 404 });
+    //Get The Bot Recording URL
+    const { recordingUrl } = await recordingResponse.json();
 
-    }
-
-    const fetchedBot = await response.json();
-    console.log(fetchedBot);
-
-    //Check if status is done
-    if (fetchedBot.status !== 'DONE') {
-      console.log('Bot Status is not set to done');
-      // TODO: Uncomment this
-      // return NextResponse.json('Bot Status not done', { status: 404 });
-    }
-
-    //
-    // Send request to MeetingBot API to download the recording
-    //
-    const recordingResponse = await fetch(`${endpoint}/api/bots/${botId}/recording`, {
-      method: 'GET',
-      headers: {
-        'Content-Type': 'application/json',
-        'x-api-key': key,
-      }  
-    });
-    const bodyBody = await recordingResponse.json();
-    console.log(bodyBody);
-
-    const { recordingUrl } = bodyBody;
-
-    // Store Here -- which is then returned using GET
+    //Save
     recordingLink = recordingUrl;
     console.log('Set Recording link to:', recordingLink);
-    
+
+    // Notify all connected clients
+    clients.forEach((client) => client.send(JSON.stringify({ recordingLink })));
+
     // Passback
     return NextResponse.json({ message: 'OK' }, { status: 200 });
 
   } catch (error) {
-    // return NextResponse.json({ error }, { status: 500 });
     return NextResponse.json({ error: 'Internal Error' }, { status: 500 });
   }
 }

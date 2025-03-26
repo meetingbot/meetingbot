@@ -10,7 +10,7 @@ export async function POST(req: Request) {
     if (!key) throw new Error(`Missing required environment variable: BOT_API_KEY`);
     
     const endpoint = process.env.MEETINGBOT_END_POINT;
-    if (!endpoint) throw new Error(`Missing required environment variable: BOT_API_KEY`);
+    if (!endpoint) throw new Error(`Missing required environment variable: MEETINGBOT_END_POINT`);
 
     //
     // Send request to MeetingBot API to start and send a bot to a meeting

@@ -48,7 +48,7 @@ function parseTeamsMeetingLink(url: string) {
 
     return { meetingId, tenantId, organizationId };
   } catch (error) {
-    console.error("Error parsing Teams meeting link:", error);
+    // console.error("Error parsing Teams meeting link:", error);
     return null;
   }
 }
@@ -82,7 +82,7 @@ function parseZoomMeetingLink(url: string) {
 
 export default function MeetingBotCreator() {
 
-  const [response, setResponse] = useState('');
+  const [response, setResponse] = useState<any>({});
   const [link, setMeetingLink] = useState('');
   const [waitingForResponse, setWaitingForResponse] = useState(false);
   const [showFullResponse, setShowFullResponse] = useState(false);
@@ -170,7 +170,7 @@ export default function MeetingBotCreator() {
       });
 
       const data = await res.json();
-      setResponse(JSON.stringify(data, null, 2));
+      setResponse(data);
       setWaitingForResponse(false);
 
     } catch (error) {
@@ -236,7 +236,7 @@ export default function MeetingBotCreator() {
             {showFullResponse
               ?
               <div>
-                <pre className="pl-4 text-xs opacity-70 max-h-[200px] overflow-y-auto">{response}</pre>
+                <pre className="pl-4 text-xs opacity-70 max-h-[200px] overflow-y-auto">{JSON.stringify(response, null, 2)}</pre>
                 <Button variant={'ghost'} onClick={() => setShowFullResponse(false)}>Hide Full Response</Button>
               </div>
               :
@@ -247,8 +247,7 @@ export default function MeetingBotCreator() {
               </div>
             }
           </div>
-      }
-
+    }
     </div>
   );
 }
