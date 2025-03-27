@@ -18,7 +18,8 @@
     "preview": "next build && next start",
     "start": "next start",
     "typecheck": "tsc --noEmit",
-    "test": "jest"
+    "test": "jest",
+    "test:e2e": "playwright test"
   },
   "dependencies": {
     "@auth/drizzle-adapter": "^1.7.2",
@@ -73,6 +74,7 @@
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3.3.1",
+    "@playwright/test": "^1.51.1",
     "@tailwindcss/postcss": "^4.0.15",
     "@testing-library/jest-dom": "^6.6.3",
     "@testing-library/react": "^16.3.0",
@@ -81,6 +83,7 @@
     "@types/react": "^19.0.12",
     "@types/react-dom": "^19.0.0",
     "@types/swagger-ui-react": "^5.18.0",
+    "dotenv": "^16.4.7",
     "drizzle-kit": "^0.30.5",
     "eslint": "^9.23.0",
     "eslint-config-next": "^15.2.3",
@@ -91,6 +94,7 @@
     "prettier": "^3.5.3",
     "prettier-plugin-tailwindcss": "^0.6.11",
     "tailwindcss": "^4.0.15",
+    "totp-generator": "^1.0.0",
     "typescript": "^5.8.2",
     "typescript-eslint": "^8.27.0"
   },

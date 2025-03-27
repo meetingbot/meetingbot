@@ -1,6 +1,8 @@
 import { openApiDocument } from "~/lib/swagger";
 import ReactSwagger from "./react-swagger";
 
+
+
 export default async function IndexPage() {
   const spec = openApiDocument;
   return (
