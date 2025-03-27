@@ -35,11 +35,8 @@ export default function Keys() {
         errorMessage={error?.message}
       />
       <ViewLogsDialog
-        apiKeyId={selectedViewLogsKeyId}
-        open={selectedViewLogsKeyId !== null}
-        onOpenChange={(open) => {
-          if (!open) setSelectedViewLogsKeyId(null);
-        }}
+        selectedViewLogsKeyId={selectedViewLogsKeyId}
+        setSelectedViewLogsKeyId={setSelectedViewLogsKeyId}
       />
     </div>
   );
