@@ -68,7 +68,7 @@ export default function Component() {
       <footer className="border-t bg-background py-6 md:py-8">
         <div className="container flex flex-col items-center gap-4 px-4 sm:flex-row md:px-6">
           <p className="text-sm text-muted-foreground">
-            © 2024 MeetingBot. All rights reserved.
+            © 2025 MeetingBot. All rights reserved.
           </p>
           <nav className="flex gap-4 sm:ml-auto sm:gap-6">
             <Link
