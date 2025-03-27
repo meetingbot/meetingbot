@@ -15,23 +15,31 @@ import SessionButton from "./SessionButton";
 import { ExternalLink } from "lucide-react";
 import { env } from "~/env";
 
-const components: { title: string | React.ReactNode; href: string }[] = [
+const components: {
+  title: string | React.ReactNode;
+  href: string;
+  target: string;
+}[] = [
   {
     title: "Dashboard",
     href: "/",
+    target: "_self",
   },
 
   {
     title: "API Keys",
     href: "/keys",
+    target: "_self",
   },
   {
     title: "Bots",
     href: "/bots",
+    target: "_self",
   },
   {
     title: "Usage",
     href: "/usage",
+    target: "_self",
   },
   {
     title: (
@@ -40,6 +48,7 @@ const components: { title: string | React.ReactNode; href: string }[] = [
       </span>
     ),
     href: `${env.NEXT_PUBLIC_BACKEND_URL}/docs`,
+    target: "_blank",
   },
 ];
 
@@ -59,7 +68,10 @@ export default function NavigationBar() {
             {components.map((component, index) => (
               <NavigationMenuItem key={index}>
                 <Link href={component.href} legacyBehavior passHref>
-                  <NavigationMenuLink className={navigationMenuTriggerStyle()}>
+                  <NavigationMenuLink
+                    className={navigationMenuTriggerStyle()}
+                    target="_blank"
+                  >
                     {component.title}
                   </NavigationMenuLink>
                 </Link>
