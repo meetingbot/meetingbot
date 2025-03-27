@@ -70,7 +70,7 @@ export default function NavigationBar() {
                 <Link href={component.href} legacyBehavior passHref>
                   <NavigationMenuLink
                     className={navigationMenuTriggerStyle()}
-                    target="_blank"
+                    target={component.target}
                   >
                     {component.title}
                   </NavigationMenuLink>
