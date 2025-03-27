@@ -86,10 +86,15 @@ const main = async () => {
   try {
     // Run the bot
     await bot.run().catch(async (error) => {
+
       console.error("Error running bot:", error);
       await reportEvent(botId, EventCode.FATAL, {
         description: (error as Error).message,
       });
+
+      // Is this necessary?
+      // **Ensure** the bot cleans up its resources 
+      await bot.endLife();
     });
 
     // Upload recording to S3
