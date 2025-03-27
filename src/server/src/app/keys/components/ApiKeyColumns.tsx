@@ -12,14 +12,8 @@ import {
 } from "~/components/ui/dropdown-menu";
 import { MoreHorizontal, Copy } from "lucide-react";
 import dayjs from "dayjs";
-import { useState } from "react";
-import { ViewLogsDialogContent } from "./LogDialogContent";
 import { api } from "~/trpc/react";
 import { toast } from "sonner";
-import { DialogTitle } from "~/components/ui/dialog";
-import { DialogContent } from "~/components/ui/dialog";
-import { DialogHeader } from "~/components/ui/dialog";
-import { Dialog } from "~/components/ui/dialog";
 
 // Define the ApiKey type inline
 type ApiKey = {
@@ -75,7 +69,6 @@ function ActionCell({
   apiKey: ApiKey;
   setSelectedKeyId: (id: number) => void;
 }) {
-  const [showLogs, setShowLogs] = useState(false);
   const utils = api.useUtils();
 
   const revokeKey = api.apiKeys.revokeApiKey.useMutation({
@@ -126,14 +119,6 @@ function ActionCell({
           )}
         </DropdownMenuContent>
       </DropdownMenu>
-      <Dialog open={showLogs} onOpenChange={setShowLogs}>
-        <DialogContent className="max-w-4xl">
-          <DialogHeader>
-            <DialogTitle>API Key Logs</DialogTitle>
-            {showLogs && <ViewLogsDialogContent apiKeyId={apiKey.id} />}
-          </DialogHeader>
-        </DialogContent>
-      </Dialog>
     </>
   );
 }
