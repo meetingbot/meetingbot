@@ -1,48 +1,237 @@
-👋 Hello all! Welcome to our community for developing an open-source Meeting Bot API. Our goal is to empower developers and organizations with a flexible, self-hosted solution for meeting recording, transcription, and management across platforms like Google Meet, Microsoft Teams, and Zoom. Here's how we plan to make it happen:
+<a id="readme-top"></a>
 
-## Roadmap
+<!-- PROJECT LOGO -->
+<br />
+<div align="center">
+  <a href="https://github.com/meetingbot/meetingbot">
+    <img src="https://raw.githubusercontent.com/meetingbot/meetingbot/refs/heads/main/src/landing-page/public/logo.svg" alt="Logo" width="80" height="80">
+  </a>
 
-### **End of January 2025** _MVP Ready for Early Testing_
+  <h3 align="center">MeetingBot</h3>
 
-Our priority is to deliver a Minimum Viable Product (MVP) for our first community members to explore and build with:
+  <p align="center">
+    API for sending bots to video meetings while keeping data private & costs low
+    <br />
+    <a href="https://discord.gg/3q37XYUEnK">Community Discord</a>
+    &middot;
+    <a href="https://meetingbot.tech">Landing Page</a>
+    &middot;
+    <a href="https://github.com/meetingbot/meetingbot/issues/new?labels=bug&template=bug_report.md">Report Issue</a>
+  </p>
+  
+  [![Contributors][contributors-shield]][contributors-url]
+  [![Forks][forks-shield]][forks-url]
+  [![Stargazers][stars-shield]][stars-url]
+  [![Issues][issues-shield]][issues-url]
+  [![MIT License][license-shield]][license-url]
+    
+</div>
 
-🛠️ One-click deployment via Terraform for quick setup.\
-📺 Compatibility with Google Meet, Microsoft Teams, and Zoom.\
-🤖 Invite bots to meetings via an API call.\
-📤 Pull meeting recordings (audio only) programmatically using API endpoints.\
-⚙️ Basic functionality designed for prototyping and testing Proof-of-Concepts (POCs).\
-_Note: These releases are for experimental purposes and not intended for production use._
+https://github.com/user-attachments/assets/0e2f2673-a59f-4473-a5ed-e2a5e1cd1cac
 
-### **End of February 2025** _Usable and Secure Version_
 
-With MVP feedback in hand, we’ll focus on improving usability and security, making the bot ready for initial commercial applications:
 
-🔒 API Key-based authentication for secure API usage.\
-🔄 Callbacks to notify when meeting recordings are ready.\
-📅 Support for scheduling bots to join meetings automatically via calendar integration.\
-💻 Enhanced GUI for managing bots, managing integrations ect.\
-_Note: Our goal is to introduce the first release suitable for production use._
 
-### **End of March 2025** _Feature Enhancements and Community Input_
+<!-- TABLE OF CONTENTS -->
+<details>
+  <summary>Table of Contents</summary>
+  <ol>
+    <li><a href="#about-the-project">About The Project</a></li>
+    <li><a href="#built-with">Built With</a></li>
+    <li>
+      <a href="#getting-started">Getting Started</a>
+      <ul>
+        <li><a href="#prerequisites">Prerequisites</a></li>
+        <li><a href="#installation">Installation</a></li>
+      </ul>
+    </li>
+    <li><a href="#usage">Usage</a></li>
+    <li><a href="#contributors">Contributors</a></li>
+    <li><a href="#license">License</a></li>
+    <li><a href="#contact">Contact</a></li>
+    <li><a href="#acknowledgments">Acknowledgments</a></li>
+  </ol>
+</details>
 
-We're focusing on features that improve the bot's functionality and customization. We're also actively seeking community feedback and contributions!
+<!-- ABOUT THE PROJECT -->
 
-🖼️ Custom profile photos for bots during meetings.\
-🎥 Support for video recording alongside audio.\
-⏲️ Real-time audio/video/transcription.\
-🌐 Open discussions for additional feature requests from our community.\
-_Note: Our goal is to ensure this project is ready for community supports. We hope to onboard developers to contribute to the project and help shape its future._
+## About The Project
 
-## Get Started Using Meeting Bot!
+MeetingBot is an open-source Meeting Bot API.
 
-To get started, see the [terraform README](src/terraform/README.md) for instructions on how to deploy the project.
+Meetingbot provides the infrastructure for sending bots to meetings (Google Meet, Microsoft Teams, and Zoom) and recording them, so that developers can build applications that use meeting recording data in just a few lines of code.
 
-## Contributing
+All infrastructure is defined using Terraform and deployed to AWS, so that you can easily self host MeetingBot to keep your data private & costs low.
 
-We welcome contributions! Please see our [CONTRIBUTING.md](CONTRIBUTING.md) for more information.
+<p align="right">(<a href="#readme-top">back to top</a>)</p>
+
+## Built With
+
+![architecture](https://github.com/user-attachments/assets/1c5edea5-8308-4155-b6dc-e022620111a9)
+
+*   [Next.js](https://nextjs.org/) - Frontend Framework
+*   [Express](https://expressjs.com/) - Backend Framework
+*   [tRPC](https://trpc.io/) - End-to-end typesafe API layer
+*   [Drizzle ORM](https://orm.drizzle.team/) - Typesafe SQL query builder and schema definition
+*   [PostgreSQL](https://www.postgresql.org/) - Relational Database
+*   [Terraform](https://www.terraform.io/) - Infrastructure as Code
+*   [AWS](https://aws.amazon.com/) - Cloud Provider
+*   [Docker](https://www.docker.com/) - Containerization
+*   [pnpm](https://pnpm.io/) - Package Manager
+*   [GitHub Actions](https://github.com/features/actions) - CI/CD
+
+<p align="right">(<a href="#readme-top">back to top</a>)</p>
+
+<!-- GETTING STARTED -->
+
+## Getting Started
+
+To get started with MeetingBot, you'll need to set up the infrastructure and configure the different components.
+
+### Prerequisites
+
+*   [AWS Account](https://aws.amazon.com/)
+*   [Terraform](https://www.terraform.io/downloads.html)
+*   [Node.js](https://nodejs.org/) (>=18.0.0)
+*   [pnpm](https://pnpm.io/) (>=8.0.0)
+*   [Docker](https://www.docker.com/) (for building bot images)
+*   [AWS CLI](https://aws.amazon.com/cli/)
+
+### Installation
+
+1.  **Clone the repository**
+
+    ```sh
+    git clone https://github.com/meetingbot/meetingbot.git
+    cd meetingbot
+    ```
+
+2.  **Configure AWS CLI**
+
+    ```sh
+    aws configure sso --profile meetingbot
+    ```
+
+3.  **Initialize Terraform**
+
+    ```sh
+    cp src/terraform/backend.tfvars.example src/terraform/backend.tfvars
+    # Edit src/terraform/backend.tfvars with your S3 bucket details
+    cp src/terraform/terraform.tfvars.example src/terraform/terraform.tfvars
+    # Edit src/terraform/terraform.tfvars with your desired settings
+    terraform init -backend-config=src/terraform/backend.tfvars
+    ```
+
+4.  **Select a Terraform workspace (environment)**
+
+    ```sh
+    terraform workspace select dev # or create with: terraform workspace new dev
+    ```
+
+5.  **Deploy the infrastructure**
+
+    ```sh
+    terraform apply
+    ```
+
+6.  **Configure Environment Variables**
+
+    Copy `.env.example` to `.env` in the `src/frontend`, `src/backend`, and `src/bots` directories. Refer to the specific `README` in each directory for more information.
+
+7.  **Install dependencies in each directory:**
+
+    ```bash
+    cd src/frontend && pnpm install
+    cd src/backend && pnpm install
+    cd src/bots && pnpm install
+    ```
+
+<p align="right">(<a href="#readme-top">back to top</a>)</p>
+
+<!-- USAGE EXAMPLES -->
+
+## Usage
+
+1.  **Deploy the Terraform Infrastructure:** Follow the instructions in the [Terraform README](src/terraform/README.md) to deploy the necessary AWS resources.
+
+2.  **Run the Backend:** Navigate to the `src/backend` directory and start the server using `pnpm dev`. Access the API documentation at `http://localhost:{env.PORT}/docs` (or the deployed endpoint).
+
+3.  **Run the Frontend:** Navigate to the `src/frontend` directory and start the development server using `pnpm dev`. Access the application at `http://localhost:3000` (or the deployed endpoint).
+
+4.  **Create API Keys:** Use the frontend to create API keys for authenticating your applications with the MeetingBot API.
+
+5.  **Deploy Bots:** Use the API endpoints to deploy bots to your desired meeting platforms.
+
+6.  **Access Recordings:** Use the API endpoints to retrieve meeting recordings and metadata.
+
+<p align="right">(<a href="#readme-top">back to top</a>)</p>
+
+<!-- CONTRIBUTING -->
+
+## Contributors
+
+<!-- We welcome contributions! Please see our [CONTRIBUTING.md](CONTRIBUTING.md) for more information. -->
+
+<a href="https://github.com/meetingbot/meetingbot/graphs/contributors">
+  <img src="https://contrib.rocks/image?repo=meetingbot/meetingbot" alt="contrib.rocks image" />
+</a>
+
+<p align="right">(<a href="#readme-top">back to top</a>)</p>
+
+<!-- LICENSE -->
 
 ## License
 
-This project is licensed under the [GNU AFFERO GENERAL PUBLIC LICENSE](LICENSE) License. See the [LICENSE](LICENSE) file for details.
+This project is licensed under the GNU Affero General Public License - see the [LICENSE](LICENSE) file for details.
 
 In general, this means you can use this code in any way you want, commercially or not, as long as you share any modifications you make to the source code.
+
+<p align="right">(<a href="#readme-top">back to top</a>)</p>
+
+<!-- CONTACT -->
+
+## Contact
+
+Community Discord: [https://discord.gg/3q37XYUEnK](https://discord.gg/3q37XYUEnK)
+
+<p align="right">(<a href="#readme-top">back to top</a>)</p>
+
+<!-- ACKNOWLEDGMENTS -->
+
+## Acknowledgments
+
+- This README was created using [gitreadme.dev](https://gitreadme.dev) — an AI tool that looks at your entire codebase to instantly generate high-quality README files.
+
+<p align="right">(<a href="#readme-top">back to top</a>)</p>
+
+<!-- MARKDOWN LINKS & IMAGES -->
+<!-- https://www.markdownguide.org/basic-syntax/#reference-style-links -->
+
+[contributors-shield]: https://img.shields.io/github/contributors/meetingbot/meetingbot.svg?style=for-the-badge
+[contributors-url]: https://github.com/meetingbot/meetingbot/graphs/contributors
+[forks-shield]: https://img.shields.io/github/forks/meetingbot/meetingbot.svg?style=for-the-badge
+[forks-url]: https://github.com/meetingbot/meetingbot/network/members
+[stars-shield]: https://img.shields.io/github/stars/meetingbot/meetingbot.svg?style=for-the-badge
+[stars-url]: https://github.com/meetingbot/meetingbot/stargazers
+[issues-shield]: https://img.shields.io/github/issues/meetingbot/meetingbot.svg?style=for-the-badge
+[issues-url]: https://github.com/meetingbot/meetingbot/issues
+[license-shield]: https://img.shields.io/github/license/meetingbot/meetingbot.svg?style=for-the-badge
+[license-url]: https://github.com/meetingbot/meetingbot/blob/master/LICENSE
+[linkedin-shield]: https://img.shields.io/badge/-LinkedIn-black.svg?style=for-the-badge&logo=linkedin&colorB=555
+[linkedin-url]: https://www.linkedin.com/company/meetingbot/
+[Next.js]: https://img.shields.io/badge/next.js-000000?style=for-the-badge&logo=nextdotjs&logoColor=white
+[Next-url]: https://nextjs.org/
+[React.js]: https://img.shields.io/badge/React-20232A?style=for-the-badge&logo=react&logoColor=61DAFB
+[React-url]: https://reactjs.org/
+[Vue.js]: https://img.shields.io/badge/Vue.js-35495E?style=for-the-badge&logo=vuedotjs&logoColor=4FC08D
+[Vue-url]: https://vuejs.org/
+[Angular.io]: https://img.shields.io/badge/Angular-DD0031?style=for-the-badge&logo=angular&logoColor=white
+[Angular-url]: https://angular.io/
+[Svelte.dev]: https://img.shields.io/badge/Svelte-4A4A55?style=for-the-badge&logo=svelte&logoColor=FF3E00
+[Svelte-url]: https://svelte.dev/
+[Laravel.com]: https://img.shields.io/badge/Laravel-FF2D20?style=for-the-badge&logo=laravel&logoColor=white
+[Laravel-url]: https://laravel.com
+[Bootstrap.com]: https://img.shields.io/badge/Bootstrap-563D7C?style=for-the-badge&logo=bootstrap&logoColor=white
+[Bootstrap-url]: https://getbootstrap.com
+[JQuery.com]: https://img.shields.io/badge/jQuery-0769AD?style=for-the-badge&logo=jquery&logoColor=white
+[JQuery-url]: https://jquery.com
