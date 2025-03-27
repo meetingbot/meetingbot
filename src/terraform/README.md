@@ -6,12 +6,14 @@ This directory contains the Terraform configuration to deploy MeetingBot infrast
 
 ```bash
 # 1. Set up your AWS credentials
-aws configure sso  # Use profile name: meetingbot
+make sso
+# This configures the AWS SSO profile named 'meetingbot'
 
 # 2. Initialize Terraform
 cp backend.tfvars.example backend.tfvars
 cp terraform.tfvars.example terraform.tfvars
-terraform init -backend-config=backend.tfvars
+# Modify the .tfvars files with your specific configuration values
+make init
 
 # 3. Select workspace (dev or prod)
 terraform workspace select dev  # or create with: terraform workspace new dev
@@ -31,16 +33,21 @@ We use Terraform workspaces to manage different environments:
 
 The configuration deploys the following resources:
 
-- **VPC**: Private network with public, private, and database subnets
+- **VPC**: Private network with public, private, and database subnets across multiple availability zones
 - **RDS**: PostgreSQL database for persistent storage
-- **ALB**: Application Load Balancer for routing traffic
+- **ALB**: Application Load Balancer for routing HTTP/HTTPS traffic
 - **ECS**: Fargate services for running containerized applications
-- **Security Groups**: Proper access controls for all components
+- **S3 Bucket**: Storage for application data
+- **Route53**: DNS configuration for domain management
+- **Security Groups**: Fine-grained access controls for all components
+- **IAM Roles**: Permissions for service execution
 
 ## Common Commands
 
 ```bash
 # Log in to AWS
+make sso
+# or directly:
 aws sso login --profile meetingbot
 
 # Switch environments
@@ -57,14 +64,27 @@ terraform destroy
 
 # Show current workspace
 terraform workspace show
+
+# Update provider plugins
+make upgrade
+
+# Reconfigure backend
+make reconfigure
 ```
 
 ## Configuration Files
 
-- `main.tf` - Provider configuration
+- `main.tf` - Provider configuration and global settings
 - `vpc.tf` - Network infrastructure
 - `rds.tf` - Database configuration
 - `alb.tf` - Load balancer setup
 - `ecs.tf` - Container services
+- `s3.tf` - Object storage bucket
+- `dns.tf` - Route53 DNS configuration
 - `variables.tf` - Input variables
 - `terraform.tfvars` - Variable values (copy example file to customize)
+- `backend.tfvars` - Backend configuration for state storage
+
+## State Management
+
+Terraform state is stored in an S3 bucket with DynamoDB locking as defined in `backend.tfvars`. This enables team collaboration and state versioning.
