@@ -41,6 +41,21 @@ FROM mcr.microsoft.com/playwright:v1.51.0-jammy AS runtime
 # Set the working directory inside the container
 WORKDIR /app
 
+# Change ownership of all files after installation
+RUN useradd -ms /bin/bash meetbot && chown -R meetbot:meetbot /app
+
+# install xvfb, pulseaudio, and xephyr in a single step
+RUN apt-get update && apt-get install -y --no-install-recommends \
+xvfb \
+pulseaudio \
+pulseaudio-utils \
+xserver-xephyr \
+&& rm -rf /var/lib/apt/lists/*
+
+#Install pnpm globally
+RUN npm install -g pnpm
+RUN corepack enable && corepack prepare pnpm@latest --activate
+
 # Copy node_modules and package.json from the base stage
 COPY --from=base /app/node_modules /app/node_modules
 COPY --from=base /app/package.json /app/package.json
@@ -50,26 +65,21 @@ COPY --from=base /app/meet/package.json /app/meet/package.json
 COPY --from=base /app/meet/pnpm-lock.yaml /app/meet/pnpm-lock.yaml
 COPY --from=base /root/ms-playwright /root/ms-playwright
 COPY /meet/entrypoint.sh /app/entrypoint.sh
+   
+# Make all files available to the meetbot user
+RUN chown -R meetbot:meetbot /app
+RUN chown -R meetbot:meetbot /root/ms-playwright
 
-# install xvfb, pulseaudio, and xephyr in a single step
-RUN apt-get update && apt-get install -y --no-install-recommends \
-    xvfb \
-    pulseaudio \
-    pulseaudio-utils \
-    xserver-xephyr \
-    && rm -rf /var/lib/apt/lists/*
-    
-# Copy files into the container
+# Copy working files into the container
 COPY src ./src
 COPY meet/src ./meet/src
-
-#Install pnpm globally
-RUN npm install -g pnpm
-RUN corepack enable && corepack prepare pnpm@latest --activate
+RUN chown -R meetbot:meetbot ./src
+RUN chown -R meetbot:meetbot ./meet/src
 
 # Expose display port
 ENV DISPLAY=:99
 
 # # Run Command
+USER meetbot
 RUN chmod +x /app/entrypoint.sh
 CMD ["/app/entrypoint.sh"]
