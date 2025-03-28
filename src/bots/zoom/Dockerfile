@@ -15,13 +15,11 @@ USER root
 RUN npm install -g pnpm
 
 # Set working directory
-WORKDIR /home/pptruser
+WORKDIR /app
 
 # Copy files
 COPY pnpm-workspace.yaml package.json pnpm-lock.yaml ./
 COPY zoom/package.json zoom/pnpm-lock.yaml ./zoom/
-COPY src ./src
-COPY zoom/src ./zoom/src
 
 # Install dependencies as root
 RUN pnpm install --filter "@bots/zoom" --filter "bots"
@@ -29,8 +27,12 @@ RUN pnpm install --filter "@bots/zoom" --filter "bots"
 # Install browser
 RUN pnpm dlx puppeteer browsers install chrome
 
+# Copy the rest of the application files last
+COPY src ./src
+COPY zoom/src ./zoom/src
+
 # Change ownership of all files after installation
-RUN chown -R pptruser:pptruser /home/pptruser
+RUN chown -R pptruser:pptruser /app
 
 # Switch to pptruser for running the application
 USER pptruser
