@@ -1,11 +1,15 @@
 import fs from "fs";
 import puppeteer from "puppeteer";
 import { launch, getStream, wss } from "puppeteer-stream";
-import { S3Client, PutObjectCommand } from "@aws-sdk/client-s3";
-import crypto from "crypto";
 import { BotConfig, EventCode } from "../../src/types";
 import { Bot } from "../../src/bot";
 import path from "path";
+
+// Constant Selectors
+const muteButton = 'button[aria-label="Mute"]';
+const stopVideoButton = 'button[aria-label="Stop Video"]';
+const joinButton = 'button.zm-btn.preview-join-button';
+const leaveButton = 'button[aria-label="Leave"]';
 
 export class ZoomBot extends Bot {
   recordingPath: string;
@@ -26,7 +30,6 @@ export class ZoomBot extends Bot {
     const file = fs.createWriteStream(this.recordingPath);
 
     // Launch a browser and open the meeting
-
     const browser = await launch({
       executablePath: puppeteer.executablePath(),
       headless: "new",
@@ -41,11 +44,15 @@ export class ZoomBot extends Bot {
     // Create a URL object from the url
     const urlObj = new URL(this.url);
 
+    // Get the default browser context
     const context = browser.defaultBrowserContext();
+
+    // Clear permission overrides and set our own to camera and microphone
+    // This is to avoid the allow microphone and camera prompts
     context.clearPermissionOverrides();
     context.overridePermissions(urlObj.origin, ["camera", "microphone"]);
 
-    // Opens a new page
+    // Opens a new browser tab
     const page = await browser.newPage();
 
     // Navigates to the url
@@ -56,19 +63,19 @@ export class ZoomBot extends Bot {
     const frame = await iframe?.contentFrame();
 
     if (frame) {
-      // Wait for things to load
+      // Wait for things to load (can be removed later in place of a check for a button to be clickable)
       await new Promise((resolve) => setTimeout(resolve, 1500));
 
       // Waits for mute button to be clickable and clicks it
       await new Promise((resolve) => setTimeout(resolve, 700)); // TODO: remove this line later
-      await frame.waitForSelector('button[aria-label="Mute"]');
-      await frame.click('button[aria-label="Mute"]');
+      await frame.waitForSelector(muteButton);
+      await frame.click(muteButton);
       console.log("Muted");
 
       // Waits for the stop video button to be clickable and clicks it
       await new Promise((resolve) => setTimeout(resolve, 700)); // TODO: remove this line later
-      await frame.waitForSelector('button[aria-label="Stop Video"]');
-      await frame.click('button[aria-label="Stop Video"]');
+      await frame.waitForSelector(stopVideoButton);
+      await frame.click(stopVideoButton);
       console.log("Stopped video");
 
       // Waits for the input field and types the name from the config
@@ -77,13 +84,13 @@ export class ZoomBot extends Bot {
       console.log("Typed name");
 
       // Clicks the join button
-      await frame.waitForSelector("button.zm-btn.preview-join-button");
-      await frame.click("button.zm-btn.preview-join-button");
+      await frame.waitForSelector(joinButton);
+      await frame.click(joinButton);
       console.log("Joined the meeting");
 
       // Wait for the leave button to appear and be properly labeled before starting recording
       await new Promise((resolve) => setTimeout(resolve, 1400)); // Needed to wait for the aria-label to be properly attached
-      await frame.waitForSelector('button[aria-label="Leave"]');
+      await frame.waitForSelector(leaveButton);
       console.log("Leave button found and labeled, ready to start recording");
     }
 
@@ -123,10 +130,12 @@ export class ZoomBot extends Bot {
     await checkMeetingEnd();
   }
 
+  // Get the path to the recording file
   getRecordingPath(): string {
     return this.recordingPath;
   }
 
+  // Get the content type of the recording file
   getContentType(): string {
     return this.contentType;
   }
