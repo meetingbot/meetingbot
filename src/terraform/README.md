@@ -2,6 +2,13 @@
 
 This directory contains the Terraform configuration to deploy MeetingBot infrastructure on AWS.
 
+## Prerequisites
+- A domain name in Route 53
+- An S3 bucket to store Terraform state
+- (Optional) A DynamoDB table to lock Terraform state
+- A Github App to use for dashboard authentication
+    - (Optional) Scope the app to your organization to restrict access
+
 ## Quick Start
 
 ```bash
