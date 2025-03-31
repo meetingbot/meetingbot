@@ -41,13 +41,9 @@ const components: {
     target: "_self",
   },
   {
-    title: (
-      <span className="flex items-center">
-        Docs <ExternalLink className="h-4" />
-      </span>
-    ),
+    title: "Docs",
     href: "/docs",
-    target: "_blank",
+    target: "_self",
   },
 ];
 

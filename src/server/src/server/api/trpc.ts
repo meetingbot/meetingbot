@@ -14,6 +14,11 @@ import { ZodError } from "zod";
 import { auth } from "~/server/auth";
 import { db } from "~/server/db";
 
+import type { OpenApiMeta } from "trpc-to-openapi";
+import { eq, and, gt } from "drizzle-orm";
+import { apiKeys, apiRequestLogs, users } from "../db/schema";
+import type { Session } from "next-auth";
+
 /**
  * 1. CONTEXT
  *
@@ -43,19 +48,22 @@ export const createTRPCContext = async (opts: { headers: Headers }) => {
  * ZodErrors so that you get typesafety on the frontend if your procedure fails due to validation
  * errors on the backend.
  */
-const t = initTRPC.context<typeof createTRPCContext>().create({
-  transformer: superjson,
-  errorFormatter({ shape, error }) {
-    return {
-      ...shape,
-      data: {
-        ...shape.data,
-        zodError:
-          error.cause instanceof ZodError ? error.cause.flatten() : null,
-      },
-    };
-  },
-});
+const t = initTRPC
+  .meta<OpenApiMeta>()
+  .context<typeof createTRPCContext>()
+  .create({
+    transformer: superjson,
+    errorFormatter({ shape, error }) {
+      return {
+        ...shape,
+        data: {
+          ...shape.data,
+          zodError:
+            error.cause instanceof ZodError ? error.cause.flatten() : null,
+        },
+      };
+    },
+  });
 
 /**
  * Create a server-side caller.
@@ -118,16 +126,123 @@ export const publicProcedure = t.procedure.use(timingMiddleware);
  *
  * @see https://trpc.io/docs/procedures
  */
+const getStatusCode = (e: unknown) => {
+  return e instanceof TRPCError
+    ? ({
+        BAD_REQUEST: 400,
+        PARSE_ERROR: 400,
+        UNAUTHORIZED: 401,
+        FORBIDDEN: 403,
+        NOT_FOUND: 404,
+        METHOD_NOT_SUPPORTED: 405,
+        TIMEOUT: 408,
+        CONFLICT: 409,
+        PRECONDITION_FAILED: 412,
+        PAYLOAD_TOO_LARGE: 413,
+        UNPROCESSABLE_CONTENT: 422,
+        TOO_MANY_REQUESTS: 429,
+        CLIENT_CLOSED_REQUEST: 499,
+        INTERNAL_SERVER_ERROR: 500,
+        NOT_IMPLEMENTED: 501,
+        BAD_GATEWAY: 502,
+        SERVICE_UNAVAILABLE: 503,
+        GATEWAY_TIMEOUT: 504,
+        UNSUPPORTED_MEDIA_TYPE: 415,
+      }[e.code] ?? 500)
+    : 500;
+};
+
 export const protectedProcedure = t.procedure
   .use(timingMiddleware)
-  .use(({ ctx, next }) => {
-    if (!ctx.session?.user) {
-      throw new TRPCError({ code: "UNAUTHORIZED" });
+  .use(async ({ ctx, next, path, type }) => {
+    // try to authenticate using nextauth
+    if (ctx.session?.user) {
+      console.log("authenticated using nextauth");
+      return next({
+        ctx: {
+          // infers the `session` as non-nullable
+          session: { ...ctx.session, user: ctx.session.user },
+        },
+      });
     }
-    return next({
-      ctx: {
-        // infers the `session` as non-nullable
-        session: { ...ctx.session, user: ctx.session.user },
-      },
-    });
+
+    // try to authenticate using api key
+    const apiKey = ctx.headers.get("x-api-key");
+    if (apiKey) {
+      console.log("authenticated using api key ", apiKey);
+      let error = null;
+      let statusCode = 200;
+      const startTime = Date.now();
+
+      const apiKeyResult = await ctx.db
+        .select()
+        .from(apiKeys)
+        .where(
+          and(
+            eq(apiKeys.key, apiKey),
+            eq(apiKeys.isRevoked, false),
+            gt(apiKeys.expiresAt, new Date()),
+          ),
+        );
+
+      if (apiKeyResult[0]) {
+        const apiKey = apiKeyResult[0];
+
+        try {
+          await ctx.db
+            .update(apiKeys)
+            .set({ lastUsedAt: new Date() })
+            .where(eq(apiKeys.id, apiKey.id));
+
+          const dbUser = await ctx.db
+            .select()
+            .from(users)
+            .where(eq(users.id, apiKey.userId));
+
+          if (!dbUser[0]) {
+            throw new TRPCError({ code: "UNAUTHORIZED" });
+          }
+
+          const session: Session = {
+            user: {
+              id: dbUser[0].id,
+              name: dbUser[0].name,
+              email: dbUser[0].email,
+            },
+            expires: apiKey.expiresAt
+              ? apiKey.expiresAt.toISOString()
+              : new Date(Date.now() + 1000 * 60 * 60 * 24 * 30).toISOString(),
+          };
+
+          return next({
+            ctx: {
+              ...ctx,
+              session,
+            },
+          });
+        } catch (e) {
+          error = e instanceof Error ? e.message : "Unknown error";
+          statusCode = getStatusCode(e);
+          throw e;
+        } finally {
+          if (apiKey) {
+            const duration = Date.now() - startTime;
+
+            await ctx.db.insert(apiRequestLogs).values({
+              apiKeyId: apiKey.id,
+              userId: apiKey.userId,
+              method: type,
+              path,
+              statusCode,
+              requestBody: null,
+              responseBody: null, // We don't log response bodies for privacy/security
+              error,
+              duration,
+            });
+          }
+        }
+      }
+    }
+
+    throw new TRPCError({ code: "UNAUTHORIZED" });
   });

@@ -88,7 +88,7 @@ export default function Dashboard() {
             content="To learn more about how to create bots, pull meeting recordings, pull transcriptions and more, view our Documentation!"
             icon={<File className="text-slate-500" />}
             link={{
-              type: "EXTERNAL",
+              type: "INTERNAL",
               url: "/docs",
               text: "View Documentation",
             }}

@@ -5,13 +5,18 @@ import { env } from "~/env";
 class S3ClientSingleton {
   private static instance: S3Client | null = null;
 
+  private static credentials =
+    env.AWS_ACCESS_KEY_ID && env.AWS_SECRET_ACCESS_KEY
+      ? {
+          accessKeyId: env.AWS_ACCESS_KEY_ID,
+          secretAccessKey: env.AWS_SECRET_ACCESS_KEY,
+        }
+      : undefined;
+
   public static getInstance(): S3Client {
     S3ClientSingleton.instance ??= new S3Client({
       region: env.AWS_REGION,
-      credentials: {
-        accessKeyId: env.AWS_ACCESS_KEY_ID,
-        secretAccessKey: env.AWS_SECRET_ACCESS_KEY,
-      },
+      credentials: this.credentials,
     });
 
     return S3ClientSingleton.instance;

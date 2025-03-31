@@ -25,3 +25,9 @@ variable "auth_github_secret" {
   description = "The GitHub secret for authentication"
   sensitive   = true
 }
+
+variable "github_token" {
+  type        = string
+  description = "GitHub token for API access"
+  sensitive   = true
+}

@@ -63,7 +63,9 @@
     "server-only": "^0.0.1",
     "sonner": "^2.0.1",
     "superjson": "^2.2.1",
+    "swagger-ui-react": "^5.20.2",
     "tailwind-merge": "^3.0.2",
+    "trpc-to-openapi": "^2.1.3",
     "tw-animate-css": "^1.2.4",
     "zod": "^3.24.2"
   },
@@ -73,6 +75,7 @@
     "@types/node": "^20.14.10",
     "@types/react": "^19.0.0",
     "@types/react-dom": "^19.0.0",
+    "@types/swagger-ui-react": "^5.18.0",
     "drizzle-kit": "^0.30.5",
     "eslint": "^9.23.0",
     "eslint-config-next": "^15.2.3",

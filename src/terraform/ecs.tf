@@ -45,8 +45,8 @@ resource "aws_iam_role_policy_attachment" "ecs_task_execution_role_policy" {
   policy_arn = "arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy"
 }
 
-resource "aws_iam_role" "backend_role" {
-  name = "${local.name}-backend-role"
+resource "aws_iam_role" "server_role" {
+  name = "${local.name}-server-role"
 
   assume_role_policy = jsonencode({
     Version = "2012-10-17"
@@ -63,14 +63,14 @@ resource "aws_iam_role" "backend_role" {
 }
 
 # Attach S3 access policy to backend role
-resource "aws_iam_role_policy_attachment" "backend_s3_policy" {
-  role       = aws_iam_role.backend_role.name
+resource "aws_iam_role_policy_attachment" "server_s3_policy" {
+  role       = aws_iam_role.server_role.name
   policy_arn = "arn:aws:iam::aws:policy/AmazonS3FullAccess"
 }
 
 # Attach ECS access policy to backend role
-resource "aws_iam_role_policy_attachment" "backend_ecs_policy" {
-  role       = aws_iam_role.backend_role.name
+resource "aws_iam_role_policy_attachment" "server_ecs_policy" {
+  role       = aws_iam_role.server_role.name
   policy_arn = "arn:aws:iam::aws:policy/AmazonECS_FullAccess"
 }
 
@@ -101,8 +101,7 @@ resource "aws_iam_role_policy_attachment" "bot_s3_policy" {
 # Common Configuration
 # ---------------------------------------------------------------------------------------------------------------------
 locals {
-  frontend_port = 3000
-  backend_port  = 3001
+  server_port = 3000
 }
 
 resource "random_password" "auth_secret" {
@@ -113,104 +112,38 @@ resource "random_password" "auth_secret" {
 # ---------------------------------------------------------------------------------------------------------------------
 # CloudWatch Log Groups
 # ---------------------------------------------------------------------------------------------------------------------
-resource "aws_cloudwatch_log_group" "frontend" {
-  name              = "/ecs/${local.name}/frontend"
+resource "aws_cloudwatch_log_group" "server" {
+  name              = "/ecs/${local.name}/server"
   retention_in_days = 14
 }
-
-resource "aws_cloudwatch_log_group" "backend" {
-  name              = "/ecs/${local.name}/backend"
-  retention_in_days = 14
-}
-
 # ---------------------------------------------------------------------------------------------------------------------
-# Frontend Service
+# Server Service
 # ---------------------------------------------------------------------------------------------------------------------
-resource "aws_ecs_task_definition" "frontend" {
-  family                   = "${local.name}-frontend"
+resource "aws_ecs_task_definition" "server" {
+  family                   = "${local.name}-server"
   requires_compatibilities = ["FARGATE"]
   network_mode             = "awsvpc"
   cpu                      = 256
   memory                   = 512
   execution_role_arn       = aws_iam_role.ecs_task_execution_role.arn
+  task_role_arn            = aws_iam_role.server_role.arn
 
   container_definitions = jsonencode([
     {
-      name      = "frontend"
-      image     = "ghcr.io/meetingbot/frontend:sha-${local.current_commit_sha_short}"
+      name      = "server"
+      image     = "ghcr.io/meetingbot/server:sha-${local.current_commit_sha_short}"
       essential = true
       portMappings = [
         {
-          containerPort = local.frontend_port
-          hostPort      = local.frontend_port
-          protocol      = "tcp"
-        }
-      ]
-
-      logConfiguration = {
-        logDriver = "awslogs"
-        options = {
-          "awslogs-group"         = aws_cloudwatch_log_group.frontend.name
-          "awslogs-region"        = var.aws_region
-          "awslogs-stream-prefix" = "frontend"
-        }
-      }
-    }
-  ])
-}
-
-resource "aws_ecs_service" "frontend" {
-  name            = "${local.name}-frontend"
-  cluster         = aws_ecs_cluster.this.id
-  task_definition = aws_ecs_task_definition.frontend.arn
-  desired_count   = 1
-  launch_type     = "FARGATE"
-
-  network_configuration {
-    subnets          = aws_subnet.private[*].id
-    security_groups  = [aws_security_group.ecs_tasks.id]
-    assign_public_ip = false
-  }
-
-  load_balancer {
-    target_group_arn = aws_lb_target_group.frontend.arn
-    container_name   = "frontend"
-    container_port   = local.frontend_port
-  }
-}
-
-# ---------------------------------------------------------------------------------------------------------------------
-# Backend Service
-# ---------------------------------------------------------------------------------------------------------------------
-resource "aws_ecs_task_definition" "backend" {
-  family                   = "${local.name}-backend"
-  requires_compatibilities = ["FARGATE"]
-  network_mode             = "awsvpc"
-  cpu                      = 256
-  memory                   = 512
-  execution_role_arn       = aws_iam_role.ecs_task_execution_role.arn
-  task_role_arn            = aws_iam_role.backend_role.arn
-
-  container_definitions = jsonencode([
-    {
-      name      = "backend"
-      image     = "ghcr.io/meetingbot/backend:sha-${local.current_commit_sha_short}"
-      essential = true
-      portMappings = [
-        {
-          containerPort = local.backend_port
-          hostPort      = local.backend_port
+          containerPort = local.server_port
+          hostPort      = local.server_port
           protocol      = "tcp"
         }
       ]
       environment = [
         {
           name  = "PORT"
-          value = tostring(local.backend_port)
-        },
-        {
-          name  = "DATABASE_URL"
-          value = "postgres://${aws_db_instance.this.username}:${random_password.db_password.result}@${aws_db_instance.this.endpoint}/${aws_db_instance.this.db_name}"
+          value = tostring(local.server_port)
         },
         {
           name  = "AUTH_TRUST_HOST"
@@ -221,16 +154,28 @@ resource "aws_ecs_task_definition" "backend" {
           value = random_password.auth_secret.result
         },
         {
-          name  = "FRONTEND_URL"
-          value = "http://${var.domain_name}"
-        },
-        {
           name  = "AUTH_GITHUB_ID"
           value = var.auth_github_id
         },
         {
           name  = "AUTH_GITHUB_SECRET"
           value = var.auth_github_secret
+        },
+        {
+          name  = "DATABASE_URL"
+          value = "postgresql://${aws_db_instance.this.username}:${random_password.db_password.result}@${aws_db_instance.this.endpoint}/${aws_db_instance.this.db_name}"
+        },
+        {
+          name  = "GITHUB_TOKEN"
+          value = var.github_token
+        },
+        {
+          name  = "AWS_BUCKET_NAME"
+          value = aws_s3_bucket.this.bucket
+        },
+        {
+          name  = "AWS_REGION"
+          value = var.aws_region
         },
         {
           name  = "ECS_CLUSTER_NAME"
@@ -256,28 +201,24 @@ resource "aws_ecs_task_definition" "backend" {
           name  = "ECS_SECURITY_GROUPS"
           value = join(",", [aws_security_group.ecs_tasks.id])
         },
-        {
-          name  = "AWS_BUCKET_NAME"
-          value = aws_s3_bucket.this.bucket
-        },
       ]
 
       logConfiguration = {
         logDriver = "awslogs"
         options = {
-          "awslogs-group"         = aws_cloudwatch_log_group.backend.name
+          "awslogs-group"         = aws_cloudwatch_log_group.server.name
           "awslogs-region"        = var.aws_region
-          "awslogs-stream-prefix" = "backend"
+          "awslogs-stream-prefix" = "server"
         }
       }
     }
   ])
 }
 
-resource "aws_ecs_service" "backend" {
-  name            = "${local.name}-backend"
+resource "aws_ecs_service" "server" {
+  name            = "${local.name}-server"
   cluster         = aws_ecs_cluster.this.id
-  task_definition = aws_ecs_task_definition.backend.arn
+  task_definition = aws_ecs_task_definition.server.arn
   desired_count   = 1
   launch_type     = "FARGATE"
 
@@ -288,9 +229,9 @@ resource "aws_ecs_service" "backend" {
   }
 
   load_balancer {
-    target_group_arn = aws_lb_target_group.backend.arn
-    container_name   = "backend"
-    container_port   = local.backend_port
+    target_group_arn = aws_lb_target_group.server.arn
+    container_name   = "server"
+    container_port   = local.server_port
   }
 }
 
@@ -307,15 +248,15 @@ resource "aws_security_group" "ecs_tasks" {
   }
 }
 
-# Allow inbound access from the Frontend ALB
-resource "aws_security_group_rule" "ecs_inbound_from_frontend_alb" {
+# Allow inbound access from the ALB
+resource "aws_security_group_rule" "ecs_inbound_from_alb" {
   type                     = "ingress"
   from_port                = 0
   to_port                  = 65535
   protocol                 = "tcp"
-  source_security_group_id = aws_security_group.frontend_alb.id
+  source_security_group_id = aws_security_group.alb.id
   security_group_id        = aws_security_group.ecs_tasks.id
-  description              = "Allow inbound traffic from Frontend ALB"
+  description              = "Allow inbound traffic from ALB"
 }
 
 # Allow all outbound traffic
@@ -363,9 +304,9 @@ resource "aws_ecs_task_definition" "meet_bot" {
       logConfiguration = {
         logDriver = "awslogs"
         options = {
-          "awslogs-group"         = aws_cloudwatch_log_group.backend.name
+          "awslogs-group"         = aws_cloudwatch_log_group.server.name
           "awslogs-region"        = var.aws_region
-          "awslogs-stream-prefix" = "backend"
+          "awslogs-stream-prefix" = "meet-bot"
         }
       }
     }
@@ -405,9 +346,9 @@ resource "aws_ecs_task_definition" "zoom_bot" {
       logConfiguration = {
         logDriver = "awslogs"
         options = {
-          "awslogs-group"         = aws_cloudwatch_log_group.backend.name
+          "awslogs-group"         = aws_cloudwatch_log_group.server.name
           "awslogs-region"        = var.aws_region
-          "awslogs-stream-prefix" = "backend"
+          "awslogs-stream-prefix" = "zoom-bot"
         }
       }
     }
@@ -447,9 +388,9 @@ resource "aws_ecs_task_definition" "teams_bot" {
       logConfiguration = {
         logDriver = "awslogs"
         options = {
-          "awslogs-group"         = aws_cloudwatch_log_group.backend.name
+          "awslogs-group"         = aws_cloudwatch_log_group.server.name
           "awslogs-region"        = var.aws_region
-          "awslogs-stream-prefix" = "backend"
+          "awslogs-stream-prefix" = "teams-bot"
         }
       }
     }

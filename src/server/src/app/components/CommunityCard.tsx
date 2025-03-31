@@ -66,7 +66,7 @@ export default function CommunityCard({ className }: CommunityUpdate) {
               <ErrorAlert errorMessage={error.message} />
             ) : (
               <div className="flex flex-col gap-4">
-                {communityUpdates.map((update, index) => (
+                {communityUpdates?.map((update, index) => (
                   <div key={index} className="flex flex-col gap-2">
                     <div className="flex items-center gap-2">
                       <Avatar className="h-6 w-6">

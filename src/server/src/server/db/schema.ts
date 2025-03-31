@@ -154,7 +154,10 @@ export const insertApiRequestLogSchema = createInsertSchema(
   createdAt: true,
 });
 
-export const selectApiRequestLogSchema = createSelectSchema(apiRequestLogs);
+export const selectApiRequestLogSchema = createSelectSchema(apiRequestLogs, {
+  requestBody: z.any(),
+  responseBody: z.any(),
+});
 
 /** BOT CONFIG */
 const automaticLeaveSchema = z.object({
@@ -270,7 +273,10 @@ export const insertBotSchema = z.object({
 });
 export type InsertBotType = z.infer<typeof insertBotSchema>;
 
-export const selectBotSchema = createSelectSchema(bots);
+export const selectBotSchema = createSelectSchema(bots, {
+  meetingInfo: meetingInfoSchema,
+  automaticLeave: automaticLeaveSchema,
+});
 export type SelectBotType = z.infer<typeof selectBotSchema>;
 
 export const botConfigSchema = z.object({

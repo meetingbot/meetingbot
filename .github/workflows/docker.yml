@@ -10,7 +10,7 @@ env:
   DOCKER_METADATA_PR_HEAD_SHA: true
 
 jobs:
-  backend:
+  server:
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -27,11 +27,11 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Extract backend metadata for Docker
+      - name: Extract server metadata for Docker
         id: meta
         uses: docker/metadata-action@v4
         with:
-          images: ${{ env.REGISTRY }}/meetingbot/backend
+          images: ${{ env.REGISTRY }}/meetingbot/server
           tags: |
             type=schedule
             type=ref,event=branch
@@ -39,48 +39,10 @@ jobs:
             type=ref,event=pr
             type=sha
 
-      - name: Build and push backend Docker image
+      - name: Build and push server Docker image
         uses: docker/build-push-action@v4
         with:
-          context: src/backend
-          push: true
-          tags: ${{ steps.meta.outputs.tags }}
-          labels: ${{ steps.meta.outputs.labels }}
-
-  frontend:
-    runs-on: ubuntu-latest
-    permissions:
-      contents: read
-      packages: write
-
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v3
-
-      - name: Log in to the Container registry
-        uses: docker/login-action@v2
-        with:
-          registry: ${{ env.REGISTRY }}
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Extract frontend metadata for Docker
-        id: meta
-        uses: docker/metadata-action@v4
-        with:
-          images: ${{ env.REGISTRY }}/meetingbot/frontend
-          tags: |
-            type=schedule
-            type=ref,event=branch
-            type=ref,event=tag
-            type=ref,event=pr
-            type=sha
-
-      - name: Build and push frontend Docker image
-        uses: docker/build-push-action@v4
-        with:
-          context: src
-          file: src/frontend.Dockerfile
+          context: src/server
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}

@@ -51,7 +51,7 @@ export function UsageChart() {
   }, []);
 
   // Load the Data
-  const { data, isLoading, error } =
+  const { data, isLoading } =
     timeframe === "week"
       ? api.usage.getWeekDailyUsage.useQuery({})
       : api.usage.getMonthDailyUsage.useQuery({});
