@@ -11,17 +11,38 @@ export const env = createEnv({
       process.env.NODE_ENV === "production"
         ? z.string()
         : z.string().optional(),
-    AUTH_GITHUB_ID: z.string(),
-    AUTH_GITHUB_SECRET: z.string(),
-    DATABASE_URL: z.string().url().startsWith("postgresql://"),
+    AUTH_GITHUB_ID:
+      process.env.NODE_ENV === "test"
+        ? z.preprocess(() => "fake_github_id", z.string())
+        : z.string(),
+    AUTH_GITHUB_SECRET:
+      process.env.NODE_ENV === "test"
+        ? z.preprocess(() => "fake_github_secret", z.string())
+        : z.string(),
+    DATABASE_URL:
+      process.env.NODE_ENV === "test"
+        ? z.preprocess(
+            () => "postgresql://fake_user:fake_password@localhost:5432/fake_db",
+            z.string(),
+          )
+        : z.string().url().startsWith("postgresql://"),
     NODE_ENV: z
       .enum(["development", "test", "production"])
       .default("development"),
-    GITHUB_TOKEN: z.string(),
+    GITHUB_TOKEN:
+      process.env.NODE_ENV === "test"
+        ? z.preprocess(() => "fake_github_token", z.string())
+        : z.string(),
     AWS_ACCESS_KEY_ID: z.string().optional(),
     AWS_SECRET_ACCESS_KEY: z.string().optional(),
-    AWS_BUCKET_NAME: z.string(),
-    AWS_REGION: z.string(),
+    AWS_BUCKET_NAME:
+      process.env.NODE_ENV === "test"
+        ? z.preprocess(() => "fake_aws_bucket_name", z.string())
+        : z.string(),
+    AWS_REGION:
+      process.env.NODE_ENV === "test"
+        ? z.preprocess(() => "fake_aws_region", z.string())
+        : z.string(),
     ECS_TASK_DEFINITION_MEET:
       process.env.NODE_ENV === "production"
         ? z.string()
