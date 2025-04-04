@@ -421,13 +421,13 @@ export class MeetsBot extends Bot {
       const screenshot = await this.page.screenshot({
         type: "png",
       });
-
+      
       // Save the screenshot to a file
       const screenshotPath = path.resolve(`/tmp/${fName}`);
       fs.writeFileSync(screenshotPath, screenshot);
       console.log(`Screenshot saved to ${screenshotPath}`);
-    } catch (e) {
-      console.log('Error taking screenshot:', e);
+    } catch (error) {
+      console.log('Error taking screenshot:', error);
     }
   }
 

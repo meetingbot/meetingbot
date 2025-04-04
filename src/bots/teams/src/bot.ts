@@ -48,6 +48,7 @@ export class TeamsBot extends Bot {
 
       const screenshot = await this.page.screenshot({
         type: "png",
+        encoding: "binary",
       });
 
       // Save the screenshot to a file

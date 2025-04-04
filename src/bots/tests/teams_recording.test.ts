@@ -22,8 +22,10 @@ jest.unmock('puppeteer-stream');
 // since we only ever send one .stream() request per bot.
 //
 
+// Load the test.env file (overrides variables from .env if they overlap)
+dotenv.config({ path: 'test.env' });
+
 // Create Mock Configs
-dotenv.config();
 const mockTeamsConfig = {
     id: 0,
     meetingInfo: JSON.parse(process.env.TEAMS_TEST_MEETING_INFO || '{}'),

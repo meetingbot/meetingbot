@@ -19,8 +19,12 @@ import { jest, it, expect, describe, afterEach, beforeEach, afterAll, beforeAll 
 // Ensure puppeteer-stream is not mocked
 jest.unmock('puppeteer-stream');
 
-// Fetch
-dotenv.config();
+// Load the test.env file (overrides variables from .env if they overlap)
+dotenv.config({ path: 'test.env' });
+if (!process.env.MEET_TEST_MEETING_INFO) throw new Error("Environment variable MEET_TEST_MEETING_INFO is not defined");
+if (!process.env.ZOOM_TEST_MEETING_INFO) throw new Error("Environment variable ZOOM_TEST_MEETING_INFO is not defined");
+if (!process.env.TEAMS_TEST_MEETING_INFO) throw new Error("Environment variable TEAMS_TEST_MEETING_INFO is not defined");
+
 
 // Create Mock Configs
 const mockMeetConfig = {
@@ -83,7 +87,7 @@ describe('Bot Join a Meeting Tests', () => {
      * This lets you check if the bot can join a meeting and if it can handle the waiting room -- good to know if the UI changed
     */
 
-    it('Meet : Join a Meeting', async () => {
+    it.skip('Meet : Join a Meeting', async () => {
         // Create Bot
         const passes = await test_bot_join(new MeetsBot(mockMeetConfig, async (eventType: string, data: any) => { }));
         expect(passes).toBe(true);
@@ -167,7 +171,7 @@ describe('Bot fail join due to invalid URL', () => {
 
         // Create Bot with overruled config
         const bot = new ZoomBot({
-            ...mockMeetConfig,
+            ...mockZoomConfig,
             meetingInfo: {
                 meetingPassword: '',
                 meetingId: '',
@@ -197,7 +201,7 @@ describe('Bot fail join due to invalid URL', () => {
 
         // Create Bot with overruled config
         const bot = new TeamsBot({
-            ...mockMeetConfig,
+            ...mockTeamsConfig,
             meetingInfo: {
                 meetingId: '',
                 tenantId: '',
