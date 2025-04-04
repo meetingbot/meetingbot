@@ -4,6 +4,12 @@ import { BotConfig } from "../src/types";
 import { ZoomBot } from "../zoom/src/bot";
 import { TeamsBot } from "../teams/src/bot";
 
+
+// 
+// Bot Creation Tests as described in Section 2.1.2.1
+// Of our System Verification and Validation Document.
+// 
+
 describe('Bot Creation from given data', () => {
 
     /**

@@ -6,10 +6,12 @@ import { ZoomBot } from "../zoom/src/bot";
 import { beforeAll, beforeEach, jest } from '@jest/globals';
 import exp from "constants";
 
-jest.mock('superjson', () => ({
-    serialize: jest.fn((data) => ({ json: JSON.stringify(data), meta: null })),
-    deserialize: jest.fn((data: any) => JSON.parse(data.json)),
-}));
+
+// 
+// Bot Exiit Tests as described in Section 2.1.2.3
+// Of our System Verification and Validation Document.
+// 
+
 
 // Create Mock Configs
 dotenv.config();

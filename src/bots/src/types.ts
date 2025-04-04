@@ -60,3 +60,10 @@ export class WaitingRoomTimeoutError extends Error {
     this.name = "WaitingRoomTimeoutError";
   }
 }
+//
+export class MeetingJoinError extends Error {
+  constructor(message: string = "Simulated Meeting Join Error") {
+    super(message);
+    this.name = "MeetingJoinError";
+  }
+}
