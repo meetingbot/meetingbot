@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "private": true,
   "dependencies": {
-    "puppeteer": "^23.9.0",
+    "puppeteer": "^24.6.0",
     "puppeteer-stream": "^3.0.19"
   }
 }

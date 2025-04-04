@@ -102,3 +102,10 @@ docker run --env-file .env meet
 docker run --env-file .env teams
 docker run --env-file .env zoom
 ```
+
+### Build Issues
+If you get an strange erorr while running (eg. Browser not found at file specified), upgrade puppeteer to the latest version in the specific platform's `node_modules` folder.
+```bash
+cd zoom
+pnpm install puppeteer@latest
+```
