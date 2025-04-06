@@ -1,7 +1,7 @@
 import { createS3Client, uploadRecordingToS3 } from '../src/s3';
 import { PutObjectCommand } from '@aws-sdk/client-s3';
 import { S3Client } from '@aws-sdk/client-s3';
-import {describe, expect, test, jest, it} from '@jest/globals';
+import { jest, it, expect, describe, afterEach, beforeEach, afterAll, beforeAll } from '@jest/globals';
 import fs from 'fs';
 import { BotConfig } from '../src/types';
 import { Bot } from '../src/bot';

@@ -1,3 +1,4 @@
+import { jest } from '@jest/globals';
 
 const superjson = {
     serialize: jest.fn((data) => ({ json: JSON.stringify(data), meta: null })),

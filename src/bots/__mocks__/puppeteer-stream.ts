@@ -1,3 +1,5 @@
+import { jest } from '@jest/globals';
+
 // Mock Puppeteer-stream (called in ../zoom/src/bot.ts)
 const launch = jest.fn(() => {
     

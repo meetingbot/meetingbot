@@ -3,7 +3,7 @@ import * as dotenv from 'dotenv';
 import { BotConfig, MeetingJoinError, WaitingRoomTimeoutError } from "../src/types";
 import { TeamsBot } from "../teams/src/bot";
 import { ZoomBot } from "../zoom/src/bot";
-import { jest } from '@jest/globals';
+import { jest, it, expect, describe, afterEach, beforeEach, afterAll, beforeAll } from '@jest/globals';
 
 // 
 // Bot Unit Nav Tests as described in Section 2.1.2.1

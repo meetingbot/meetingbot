@@ -1,3 +1,5 @@
+import { jest } from '@jest/globals';
+
 const S3Client = jest.fn(function (params) {
 	console.log('S3Client called with params:', params);
 	this.send = jest.fn((params) => {

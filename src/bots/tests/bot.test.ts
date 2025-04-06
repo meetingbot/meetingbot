@@ -3,6 +3,7 @@ import { MeetsBot } from "../meet/src/bot";
 import { BotConfig } from "../src/types";
 import { ZoomBot } from "../zoom/src/bot";
 import { TeamsBot } from "../teams/src/bot";
+import { jest, it, expect, describe, afterEach, beforeEach, afterAll, beforeAll } from '@jest/globals';
 
 
 // 
