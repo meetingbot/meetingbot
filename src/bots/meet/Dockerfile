@@ -20,7 +20,10 @@ RUN npm install -g pnpm
 
 # Copy dependency files
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
-COPY meet/package.json meet/pnpm-lock.yaml ./meet/
+COPY meet/package.json meet/pnpm-lock.yaml meet/entrypoint.sh ./meet/
+
+# Convert entrypoint.sh to use Unix line endings
+RUN sed -i 's/\r$//' ./meet/entrypoint.sh
 
 # Install dependencies
 RUN pnpm install --filter "@bots/meet" --filter "bots"
@@ -50,6 +53,8 @@ xvfb \
 pulseaudio \
 pulseaudio-utils \
 xserver-xephyr \
+x11-xserver-utils \
+pulseaudio \
 && rm -rf /var/lib/apt/lists/*
 
 #Install pnpm globally
@@ -64,8 +69,8 @@ COPY --from=base /app/meet/node_modules /app/meet/node_modules
 COPY --from=base /app/meet/package.json /app/meet/package.json
 COPY --from=base /app/meet/pnpm-lock.yaml /app/meet/pnpm-lock.yaml
 COPY --from=base /root/ms-playwright /root/ms-playwright
-COPY /meet/entrypoint.sh /app/entrypoint.sh
-   
+COPY --from=base /app/meet/entrypoint.sh /app/entrypoint.sh
+
 # Make all files available to the meetbot user
 RUN chown -R meetbot:meetbot /app
 RUN chown -R meetbot:meetbot /root/ms-playwright
@@ -73,6 +78,7 @@ RUN chown -R meetbot:meetbot /root/ms-playwright
 # Copy working files into the container
 COPY src ./src
 COPY meet/src ./meet/src
+COPY test.env ./
 RUN chown -R meetbot:meetbot ./src
 RUN chown -R meetbot:meetbot ./meet/src
 
@@ -81,5 +87,5 @@ ENV DISPLAY=:99
 
 # # Run Command
 USER meetbot
-RUN chmod +x /app/entrypoint.sh
-CMD ["/app/entrypoint.sh"]
+RUN chmod +x ./entrypoint.sh
+CMD ["./entrypoint.sh"]

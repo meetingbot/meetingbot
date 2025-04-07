@@ -30,6 +30,12 @@ const onePersonRemainingField = '//span[.//div[text()="Contributors"]]//div[text
 const muteButton = `[aria-label*="Turn off microphone"]`; // *= -> conatins
 const cameraOffButton = `[aria-label*="Turn off camera"]`;
 
+const infoPopupClick = `//button[.//span[text()="Got it"]]`;
+
+// TODO: pass this in meeting info
+const SCREEN_WIDTH = 1920;
+const SCREEN_HEIGHT = 1080;
+
 /**
  * @param amount Milliseconds
  * @returns Random Number within 10% of the amount given, mean at amount
@@ -196,7 +202,7 @@ export class MeetsBot extends Bot {
     });
 
     // Unpack Dimensions
-    const vp = { width: 1280, height: 720 };
+    const vp = { width: SCREEN_WIDTH, height: SCREEN_HEIGHT };
 
     // Create Browser Context
     const context = await this.browser.newContext({
@@ -244,10 +250,10 @@ export class MeetsBot extends Bot {
       // Override other properties
       Object.defineProperty(navigator, "hardwareConcurrency", { get: () => 4 }); // Fake number of CPU cores
       Object.defineProperty(navigator, "deviceMemory", { get: () => 8 }); // Fake memory size
-      Object.defineProperty(window, "innerWidth", { get: () => 1920 }); // Fake screen resolution
-      Object.defineProperty(window, "innerHeight", { get: () => 1080 });
-      Object.defineProperty(window, "outerWidth", { get: () => 1920 });
-      Object.defineProperty(window, "outerHeight", { get: () => 1080 });
+      Object.defineProperty(window, "innerWidth", { get: () => SCREEN_WIDTH }); // Fake screen resolution
+      Object.defineProperty(window, "innerHeight", { get: () => SCREEN_HEIGHT });
+      Object.defineProperty(window, "outerWidth", { get: () => SCREEN_WIDTH });
+      Object.defineProperty(window, "outerHeight", { get: () => SCREEN_HEIGHT });
     });
 
     //Define Bot Name
@@ -324,7 +330,8 @@ export class MeetsBot extends Bot {
   getFFmpegParams() {
 
     // For Testing (pnpm test) -- no docker x11 server running.
-    if (!fs.existsSync('/tmp/.X11-unix/X0')) {
+    if (!fs.existsSync('/tmp/.X11-unix')) {
+      console.log('Using test ffmpeg params')
       return [
         '-y',
         '-f', 'lavfi',
@@ -337,18 +344,35 @@ export class MeetsBot extends Bot {
       ]
     }
 
-    // Dockerized Environment
+    // Creait to @martinezpl for these ffmpeg params.
+    console.log('Loading Dockerized FFMPEG Params ...')
+
+    const videoInputFormat = "x11grab";
+    const audioInputFormat = "pulse";
+    const videoSource = ":99.0";
+    const audioSource = "default";
+    const audioBitrate = "128k";
+    const fps = "25";
+
     return [
-      '-y',
-      '-f', 'x11grab',
-      '-video_size', '1280x720',
-      '-i', ':99.0',
-      '-f', 'pulse',
-      '-i', 'default',
-      '-c:v', 'libx264',
-      '-preset', 'ultrafast',
-      '-c:a', 'aac',
-      this.getRecordingPath()
+      '-v', 'verbose', // Verbose logging for debugging
+      "-thread_queue_size", "512", // Increase thread queue size to handle input buffering
+      "-video_size", `${SCREEN_WIDTH}x${SCREEN_HEIGHT}`, //full screen resolution
+      "-framerate", fps, // Lower frame rate to reduce CPU usage
+      "-f", videoInputFormat,
+      "-i", videoSource,
+      "-thread_queue_size", "512",
+      "-f", audioInputFormat,
+      "-i", audioSource,
+      "-c:v", "libx264", // H.264 codec for browser compatibility
+      "-pix_fmt", "yuv420p", // Ensures compatibility with most browsers
+      "-preset", "veryfast", // Use a faster preset to reduce CPU usage
+      "-crf", "28", // Increase CRF for reduced CPU usage
+      "-c:a", "aac", // AAC codec for audio compatibility
+      "-b:a", audioBitrate, // Lower audio bitrate for reduced CPU usage
+      "-vsync", "2", // Synchronize video and audio
+      "-vf", "scale=1280:720", // Ensure the video is scaled to 720p
+      "-y", this.getRecordingPath(), // Output file path
     ];
   }
 
@@ -373,12 +397,23 @@ export class MeetsBot extends Bot {
     this.ffmpegProcess.stderr.on('data', (data) => {
       // console.error(`ffmpeg: ${data}`);
 
-      // Just a simple quick log.
+      // Log that we got data, and the recording started.
       if (!this.startedRecording) {
         console.log('Recording Started.');
         this.startedRecording = true;
       }
     });
+
+    // Log Output of stderr
+    // Log to console if the env var is set
+    // Turn it on if ffmpeg gives a weird error code.
+    const logFfmpeg = process.env.MEET_FFMPEG_STDERR_ECHO === 'true'
+    if (logFfmpeg ?? false) {
+      this.ffmpegProcess.stderr.on('data', (data) => {
+        const text = data.toString();
+        console.error(`ffmpeg stderr: ${text}`);
+      });
+    }
 
     // Report when the process exits
     this.ffmpegProcess.on('exit', (code) => {
@@ -402,15 +437,42 @@ export class MeetsBot extends Bot {
 
     console.log('Attempting to stop the recording ...');
 
-    if (!this.ffmpegProcess) {
-      console.log('No recording in progress, cannot end recording.');
-      return 1;
-    }
+    // Await encoding result
+    const promiseResult = await new Promise((resolve) => {
 
-    this.ffmpegProcess.kill('SIGINT'); // Graceful stop
-    this.ffmpegProcess = null;
+      // No recording
+      if (!this.ffmpegProcess) {
+        console.log('No recording in progress, cannot end recording.');
+        resolve(1);
+        return; // exit early
+      }
 
-    return 0;
+      // Graceful stop
+      console.log('Killing ffmpeg process gracefully ...');
+      this.ffmpegProcess.kill('SIGINT'); 
+      console.log('Waiting for ffmpeg to finish encoding ...');
+
+      // Modify the exit handler to resolve the promise.
+      // This will be called when the video is done encoding
+      this.ffmpegProcess.on('exit', (code, signal) => {
+        if (code === 0) {
+          console.log('Recording stopped and file finalized.');
+          resolve(0);
+        } else {
+          console.error(`FFmpeg exited with code ${code}${signal ? ` and signal ${signal}` : ''}`);
+          resolve(1);
+        }
+      });
+  
+      // Modify the error handler to resolve the promise.
+      this.ffmpegProcess.on('error', (err) => {
+        console.error('Error while stopping ffmpeg:', err);
+        resolve(1);
+      });
+    });
+
+    // Continue
+    return promiseResult;
   }
 
   async screenshot(fName: string = 'screenshot.png') {
@@ -474,19 +536,34 @@ export class MeetsBot extends Bot {
    */
   async meetingActions() {
 
-    // Meeting Join Actions
-    console.log("Clicking People Button...");
-    await this.page.waitForSelector(peopleButton);
-    await this.page.click(peopleButton);
-
-    // Wait for the people panel to be visible
-    await this.page.waitForSelector('[aria-label="Participants"]', {
-      state: "visible",
-    });
-
     // Start Recording, Yes by default
     console.log("Starting Recording");
     this.startRecording();
+
+    // Check if a popup appeared
+    try {
+      console.log("Waiting for the 'Others might see you differently' popup...");
+      await this.page.waitForSelector(infoPopupClick, { timeout: 5000 });
+      console.log("Clicking the popup...");
+      await this.page.click(infoPopupClick, { timeout: 500 });
+    } catch (e) {
+      console.log("No Popup Found, continuing.");
+    }
+
+    // Meeting Join Actions
+    try {
+      console.log("Finding People Button...");
+      await this.page.waitForSelector(peopleButton, { timeout: 5000});
+      console.log("Clicking People Button...");
+      await this.page.click(peopleButton, { timeout: 500 });
+        
+      // Wait for the people panel to be visible
+      await this.page.waitForSelector('[aria-label="Participants"]', {
+        state: "visible",
+      });
+    } catch {
+      console.log('Could not click People button. Continuing anyways.')
+    }
 
     // Set up participant monitoring
 
@@ -621,7 +698,7 @@ export class MeetsBot extends Bot {
       await this.leaveMeeting();
       return 0;
     } catch (e) {
-      this.endLife();
+      await this.endLife();
       return 1;
     }
   }
@@ -662,7 +739,7 @@ export class MeetsBot extends Bot {
     }
 
     console.log('Ending Life ...');
-    this.endLife();
+    await this.endLife();
     return 0;
   }
 }
