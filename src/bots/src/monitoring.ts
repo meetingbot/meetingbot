@@ -1,6 +1,10 @@
 import { EventCode, Status } from "./types";
 import { trpc } from "./trpc";
 import { setTimeout } from "timers/promises";
+import dotenv from "dotenv";
+
+// Load the test.env file (overrides variables from .env if they overlap)
+dotenv.config({ path: 'test.env' });
 
 // Start heartbeat loop in the background
 export const startHeartbeat = async (
