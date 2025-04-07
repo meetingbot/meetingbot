@@ -13,6 +13,7 @@ This directory contains the Terraform configuration to deploy MeetingBot infrast
 
 ```bash
 # 1. Set up your AWS credentials
+# either login with AWS or run this make command
 make sso
 # This configures the AWS SSO profile named 'meetingbot'
 

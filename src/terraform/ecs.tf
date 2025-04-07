@@ -154,6 +154,10 @@ resource "aws_ecs_task_definition" "server" {
           value = random_password.auth_secret.result
         },
         {
+          name  = "AUTH_URL"
+          value = "https://${var.domain_name}"
+        },
+        {
           name  = "AUTH_GITHUB_ID"
           value = var.auth_github_id
         },
@@ -213,6 +217,14 @@ resource "aws_ecs_task_definition" "server" {
       }
     }
   ])
+
+  provisioner "local-exec" {
+    environment = {
+      DATABASE_URL = "postgresql://${aws_db_instance.this.username}:${random_password.db_password.result}@${aws_db_instance.this.endpoint}/${aws_db_instance.this.db_name}?sslmode=require"
+    }
+
+    command = "cd ../server && pnpm i && pnpm db:migrate"
+  }
 }
 
 resource "aws_ecs_service" "server" {

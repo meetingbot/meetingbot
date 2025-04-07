@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { createTRPCRouter, protectedProcedure } from "~/server/api/trpc";
+import { createTRPCRouter, protectedProcedure, publicProcedure } from "~/server/api/trpc";
 import {
   bots,
   events,
@@ -146,7 +146,7 @@ export const botsRouter = createTRPCRouter({
       return result[0];
     }),
 
-  updateBotStatus: protectedProcedure
+  updateBotStatus: publicProcedure
     .meta({
       openapi: {
         method: "PATCH",
@@ -278,7 +278,7 @@ export const botsRouter = createTRPCRouter({
       return { recordingUrl: signedUrl };
     }),
 
-  heartbeat: protectedProcedure
+  heartbeat: publicProcedure
     .meta({
       openapi: {
         method: "POST",
@@ -305,7 +305,7 @@ export const botsRouter = createTRPCRouter({
       return { success: true };
     }),
 
-  reportEvent: protectedProcedure
+  reportEvent: publicProcedure
     .meta({
       openapi: {
         method: "POST",
