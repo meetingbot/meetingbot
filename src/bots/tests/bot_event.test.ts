@@ -63,7 +63,7 @@ describe('Meet Event Tests', () => {
 
 
         // Launch a browser, don't go to any page 
-        await bot.launchBrowser();
+        await bot.launchBrowser(true); //headless mode
 
         // Replace implementation of page functions (we don't care about navigation)
         jest.spyOn(bot.page, 'waitForSelector').mockImplementation(async (selector: string) => {

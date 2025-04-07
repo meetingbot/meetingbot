@@ -28,7 +28,7 @@ jobs:
           cd src/server
           pnpm install
 
-      - name: Run tests
+      - name: Run server tests
         run: |
           cd src/server
           pnpm test

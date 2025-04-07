@@ -187,11 +187,11 @@ export class MeetsBot extends Bot {
   /**
    * Launches the browser and opens a blank page.
    */
-  async launchBrowser() {
+  async launchBrowser(headless: boolean = false) {
 
     // Launch Browser
     this.browser = await chromium.launch({
-      headless: false,
+      headless,
       args: this.browserArgs,
     });
 

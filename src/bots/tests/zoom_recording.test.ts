@@ -3,7 +3,7 @@ import * as dotenv from 'dotenv';
 import { BotConfig } from "../src/types";
 import { TeamsBot } from "../teams/src/bot";
 import { ZoomBot } from "../zoom/src/bot";
-import { beforeAll, beforeEach, afterEach, afterAll, jest, describe, expect, it } from '@jest/globals';
+import { beforeAll, beforeEach, afterEach, afterAll, jest, describe, expect, it, test } from '@jest/globals';
 import exp from "constants";
 
 const fs = require('fs');
@@ -37,22 +37,23 @@ const mockZoomConfig = {
 
 describe('Zoom Bot Recording Test', () => {
 
+    let ffmpegExists = false;
+    try {
+        execSync('ffmpeg -version', { stdio: 'ignore' });
+        ffmpegExists = true;
+    } catch (error) {
+        console.warn('Skipping test: ffmpeg is not available.');
+    }
+
     // Cleanup
     afterEach(() => {
         jest.clearAllMocks();
     });
 
 
-    it('Recording Dimension Test', async function () {
+    const conditionalTest = ffmpegExists ? it : it.skip;
+    conditionalTest('Recording Dimension Test', async function () {
 
-        // Check if ffmpeg is available
-        try {
-            execSync('ffmpeg -version', { stdio: 'ignore' });
-        } catch (error) {
-            console.warn('Skipping test: ffmpeg is not available.');
-            this.skip();
-            return;
-        }
 
         const bot = new ZoomBot(mockZoomConfig, async (eventType: string, data: any) => { });
         let recordingPath: string | null = null;

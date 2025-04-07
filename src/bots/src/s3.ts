@@ -1,6 +1,7 @@
 import { PutObjectCommand, S3Client } from "@aws-sdk/client-s3";
 import { readFileSync, promises as fsPromises } from "fs";
 import { Bot } from "./bot";
+import { randomUUID } from "crypto";
 
 /**
  * Creates an S3 Connection to the bucket.
@@ -85,7 +86,7 @@ export async function uploadRecordingToS3(s3Client: S3Client, bot: Bot): Promise
     }
 
     // Create UUID and initialize key
-    const uuid = crypto.randomUUID();
+    const uuid = randomUUID();
     const contentType = bot.getContentType();
     const key = `recordings/${uuid}-${bot.settings.meetingInfo.platform
         }-recording.${contentType.split("/")[1]}`;

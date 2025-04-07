@@ -3,7 +3,7 @@ import * as dotenv from 'dotenv';
 import { BotConfig } from "../src/types";
 import { TeamsBot } from "../teams/src/bot";
 import { ZoomBot } from "../zoom/src/bot";
-import { beforeAll, beforeEach, afterEach, afterAll, jest, describe, expect, it } from '@jest/globals';
+import { beforeAll, beforeEach, afterEach, afterAll, jest, describe, expect, it, test } from '@jest/globals';
 
 import exp from "constants";
 const fs = require('fs');
@@ -36,6 +36,16 @@ describe('Meet Bot Record Tests', () => {
 
     let bot: MeetsBot;
     let recordingPath: null | string;
+    let ffmpegExists = false;
+
+    // Check if ffmpeg is available
+    try {
+        execSync('ffmpeg -version', { stdio: 'ignore' });
+        ffmpegExists = true;
+    } catch (error) {
+        console.warn('Skipping tests: ffmpeg is not available.');
+    }
+
 
     // Create the bot for each
     beforeEach(() => {
@@ -56,7 +66,8 @@ describe('Meet Bot Record Tests', () => {
      * Create a meet and join a predefined meeting (set in MEET_MEETING_INFO, above. When testing, you need to make sure this a valid meeting link).
      * This lets you check if the bot can join a meeting and if it can handle the waiting room -- good to know if the UI changed
     */
-    it.skip('Recording file Exists', async function () {
+    const conditionalTest = (ffmpegExists) ? it : it.skip;
+    conditionalTest('Recording file Exists', async function () {
 
         /**
          *  Skipped because of ffmpeg requirments which aren't availabe locally wihtout tremendous effort. 
@@ -72,16 +83,6 @@ describe('Meet Bot Record Tests', () => {
          * Which would run only meet specific test cases.
          *
          */
-
-        
-        // Check if ffmpeg is available
-        try {
-            execSync('ffmpeg -version', { stdio: 'ignore' });
-        } catch (error) {
-            console.warn('Skipping test: ffmpeg is not available.');
-            this.skip();
-            return;
-        }
 
         // Launch a broser
         await bot.launchBrowser();
@@ -104,7 +105,7 @@ describe('Meet Bot Record Tests', () => {
         //End
         await bot.endLife();
 
-        
+
         // Assertions
         expect(recordingPath).toBeDefined();
         const fileExists = fs.existsSync(recordingPath);
@@ -113,12 +114,12 @@ describe('Meet Bot Record Tests', () => {
         // Check dimensions using ffprobe
         const ffprobeOutput = execSync(`ffprobe -v error -select_streams v:0 -show_entries stream=width,height -of json "${recordingPath}"`);
         const dimensions = JSON.parse(ffprobeOutput);
-        
+
         // Delete the temp file once we have read in dimensions
         if (recordingPath && fs.existsSync(recordingPath)) {
             fs.unlinkSync(recordingPath);
         }
-        
+
         // TODO: Use an input to determine the expected dimension, pass that to the bot when recording start.
         // No implementation for that yet.
         expect(dimensions.streams[0].width).toBeGreaterThan(0);

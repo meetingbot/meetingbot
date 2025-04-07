@@ -3,7 +3,7 @@ import * as dotenv from 'dotenv';
 import { BotConfig, MeetingJoinError, WaitingRoomTimeoutError } from "../src/types";
 import { TeamsBot } from "../teams/src/bot";
 import { ZoomBot } from "../zoom/src/bot";
-import { jest, it, expect, describe, afterEach, beforeEach, afterAll, beforeAll } from '@jest/globals';
+import { jest, it, expect, describe, afterEach, beforeEach, afterAll, beforeAll, test } from '@jest/globals';
 
 // 
 // Bot Unit Nav Tests as described in Section 2.1.2.1
@@ -87,7 +87,8 @@ describe('Bot Join a Meeting Tests', () => {
      * This lets you check if the bot can join a meeting and if it can handle the waiting room -- good to know if the UI changed
     */
 
-    it.skip('Meet : Join a Meeting', async () => {
+    const conditionalTest = process.env.CI ? it.skip : it; // Skip test if running in CI/CD pipeline
+    conditionalTest('Meet : Join a Meeting', async function () {
         // Create Bot
         const passes = await test_bot_join(new MeetsBot(mockMeetConfig, async (eventType: string, data: any) => { }));
         expect(passes).toBe(true);
@@ -99,7 +100,7 @@ describe('Bot Join a Meeting Tests', () => {
      * When testing, you need to make sure this a valid meeting link).
      * This lets you check if the bot can join a meeting and if it can handle the waiting room -- good to know if the UI changed
      */
-    it('Zoom : Join a Meeting', async () => {
+    conditionalTest('Zoom : Join a Meeting', async function () {
 
         // Create Bot
         const passes = await test_bot_join(new ZoomBot(mockZoomConfig, async (eventType: string, data: any) => { }));
@@ -113,7 +114,7 @@ describe('Bot Join a Meeting Tests', () => {
      * Create a Teams Bot and join a predefined meeting (set in TEAMS_MEETING_INFO, above. When testing, you need to make sure this a valid meeting link).
    * This lets you check if the bot can join a meeting and if it can handle the waiting room -- good to know if the UI changed  
     */
-    it('Team : Join a Meeting', async () => {
+    conditionalTest('Team : Join a Meeting', async function () {
 
         // Create Bot
         const passes = await test_bot_join(new TeamsBot(mockTeamsConfig, async (eventType: string, data: any) => { }));
