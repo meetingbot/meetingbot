@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import ReactPlayer from "react-player";
-import { useQuery } from 'react-query';
+import TranscriptSummary from './TranscriptSummary';
 
 export default function RecordingPlayer() {
   
@@ -27,20 +27,33 @@ export default function RecordingPlayer() {
   }, []);
 
   return (
-    <div style={{ width: '50%', minWidth: '300px', padding: '20px' }}>
-      {
-        recordingLink
-          ?
-          (<>
+    <div className="space-y-6">
+      <div className="w-full max-w-3xl mx-auto">
+        {recordingLink ? (
+          <>
             <ReactPlayer
               url={recordingLink}
               controls
+              width="100%"
+              height="auto"
+              className="mb-2"
             />
-            <h3><a href={recordingLink}>Follow</a></h3>
-          </>)
-          :
-          (<h1>Waiting for recording to become available ... </h1>)
-      }
+            <div className="text-sm text-muted-foreground mb-6">
+              <a href={recordingLink} target="_blank" rel="noopener noreferrer" className="hover:underline">
+                Open recording in new tab
+              </a>
+            </div>
+          </>
+        ) : (
+          <div className="p-6 text-center text-muted-foreground border rounded-lg">
+            Waiting for recording to become available...
+          </div>
+        )}
+      </div>
+      
+      <div className="w-full max-w-3xl mx-auto mt-6">
+        <TranscriptSummary recordingUrl={recordingLink} />
+      </div>
     </div>
   );
 }
