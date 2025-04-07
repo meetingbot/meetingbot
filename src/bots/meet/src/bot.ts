@@ -114,8 +114,8 @@ export class MeetsBot extends Bot {
   private recordBuffer: Buffer[] = [];
   private startedRecording: boolean = false;
 
-  private participantCount: number = 0;
   private timeAloneStarted: number = Infinity;
+  participantCount: number = 0;
 
   private ffmpegProcess: ChildProcessWithoutNullStreams | null;
 
