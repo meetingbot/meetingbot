@@ -9,7 +9,8 @@ dotenv.config({ path: 'test.env' });
 // Start heartbeat loop in the background
 export const startHeartbeat = async (
   botId: number,
-  abortSignal: AbortSignal
+  abortSignal: AbortSignal,
+  intervalMs: number = 5000
 ) => {
   while (!abortSignal.aborted) {
     try {
@@ -21,7 +22,7 @@ export const startHeartbeat = async (
       if ((process.env?.HEARTBEAT_DEBUG ?? 'true') !== 'false')
         console.error("Failed to send heartbeat:", error);
     }
-    await setTimeout(5000); // Send heartbeat every 5 seconds
+    await setTimeout(intervalMs); // Send heartbeat every 5 seconds
   }
 };
 

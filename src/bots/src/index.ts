@@ -43,7 +43,8 @@ export const main = async () => {
 
   // Start heartbeat in the background
   console.log("Starting heartbeat");
-  startHeartbeat(botId, heartbeatController.signal); 
+  const heartbeatInterval = botData.heartbeatInterval ?? 5000; // Default to 5 seconds if not set
+  startHeartbeat(botId, heartbeatController.signal, heartbeatInterval); 
 
   // Report READY_TO_DEPLOY event
   await reportEvent(botId, EventCode.READY_TO_DEPLOY);
