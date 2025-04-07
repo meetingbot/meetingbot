@@ -138,7 +138,12 @@ describe("CreateApiKeyForm", () => {
     // ASSERT
 
     // Get the options that were passed to the mutation (first argument)
-    const mutationOptions = mockMutation?.mock?.calls?.[0]?.[0];
+    const mutationOptions = (
+      mockMutation?.mock?.calls?.[0] as (
+        | Record<string, (...args: unknown[]) => unknown>
+        | undefined
+      )[]
+    )?.[0];
 
     // If an onSuccess callback was passed, trigger it
     if (mutationOptions && typeof mutationOptions.onSuccess === "function") {
@@ -197,14 +202,19 @@ describe("CreateApiKeyForm", () => {
     // ASSERT
 
     // Get the options that were passed to the mutation (first argument)
-    const mutationOptions = mockMutation?.mock?.calls?.[0]?.[0];
+    const mutationOptions = (
+      mockMutation?.mock?.calls?.[0] as (
+        | Record<string, (...args: unknown[]) => unknown>
+        | undefined
+      )[]
+    )?.[0];
 
     // If an onError callback was passed, trigger it
     if (mutationOptions && typeof mutationOptions.onError === "function") {
       await mutationOptions.onError(
         {
           message: "Test error",
-        } as unknown as Parameters<typeof mutationOptions.onError>[0],
+        },
         {
           name: "fake_name",
           expiresAt: new Date(),
