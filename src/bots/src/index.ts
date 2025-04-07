@@ -92,4 +92,7 @@ export const main = async () => {
   process.exit(hasErrorOccurred ? 1 : 0);
 };
 
-main();
+// Only run automatically if not in a test
+if (require.main === module) {
+  main();
+}
