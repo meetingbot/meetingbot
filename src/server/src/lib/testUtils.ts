@@ -29,7 +29,6 @@ const createTrpcApiMock = (): TrpcApiMock => {
         if (
           prop === "useQuery" ||
           prop === "useMutation" ||
-          prop === "invalidate" ||
           prop === "useUtils"
         ) {
           target[prop] = jest.fn();
