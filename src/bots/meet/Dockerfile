@@ -41,6 +41,9 @@ RUN mkdir -p /root/ms-playwright && chmod -R 777 /root/ms-playwright
 # Runtime stage
 FROM mcr.microsoft.com/playwright:v1.51.0-jammy AS runtime
 
+# Get meeting platform this file is built for
+ENV DOCKER_MEETING_PLATFORM=meet
+
 # Set the working directory inside the container
 WORKDIR /app
 

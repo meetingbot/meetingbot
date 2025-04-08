@@ -5,7 +5,9 @@ ENV \
     # Configure default locale (important for chrome-headless-shell).
     LANG=en_US.UTF-8 \
     # UID of the non-root user 'pptruser'
-    PPTRUSER_UID=10042
+    PPTRUSER_UID=10042 \
+    # Get meeting platform this file is built for
+    DOCKER_MEETING_PLATFORM=zoom
     
 # Stay as root for all installation steps
 USER root
