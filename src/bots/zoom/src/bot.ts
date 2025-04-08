@@ -36,18 +36,21 @@ export class ZoomBot extends Bot {
 
 
   async screenshot(fName: string = "screenshot.png") {
-    if (!this.browser) throw new Error("Browser not initialized");
-    if (!this.page) throw new Error("Page not initialized");
+    try {
+      if (!this.page) throw new Error("Page not initialized");
+      if (!this.browser) throw new Error("Browser not initialized");
 
-    const screenshot = await this.page.screenshot({
-      type: "png",
-      encoding: "binary",
-    });
+      const screenshot = await this.page.screenshot({
+        type: "png",
+      });
 
-    // Save the screenshot to a file
-    const screenshotPath = path.resolve(`/tmp/${fName}`);
-    fs.writeFileSync(screenshotPath, screenshot);
-    console.log(`Screenshot saved to ${screenshotPath}`);
+      // Save the screenshot to a file
+      const screenshotPath = path.resolve(`/tmp/${fName}`);
+      fs.writeFileSync(screenshotPath, screenshot);
+      console.log(`Screenshot saved to ${screenshotPath}`);
+    } catch (e) {
+      console.log('Error taking screenshot:', e);
+    }
   }
 
   async checkKicked(): Promise<boolean> {
@@ -104,7 +107,7 @@ export class ZoomBot extends Bot {
     // Create a URL object from the url
     const page = this.page;
     const urlObj = new URL(this.url);
-    
+
     // Navigates to the url
     console.log("Atempting to open link");
     await page.goto(urlObj.href);
@@ -167,7 +170,7 @@ export class ZoomBot extends Bot {
 
     // Create the Stream
     this.stream = await getStream(this.page as any, { audio: true, video: true });
-  
+
     // Create and Write the recording to a file, pipe the stream to a fileWriteStream
     this.file = fs.createWriteStream(this.recordingPath);
     this.stream.pipe(this.file);
@@ -179,9 +182,9 @@ export class ZoomBot extends Bot {
    */
   async stopRecording() {
 
-      // End the recording and close the file
-      if (this.stream)
-        this.stream.destroy();
+    // End the recording and close the file
+    if (this.stream)
+      this.stream.destroy();
 
   }
 

@@ -42,20 +42,20 @@ export class TeamsBot extends Bot {
   }
 
   async screenshot(fName: string = "screenshot.png") {
-    if (!this.page) throw new Error("Page not initialized");
-
     try {
+      if (!this.page) throw new Error("Page not initialized");
+      if (!this.browser) throw new Error("Browser not initialized");
+
       const screenshot = await this.page.screenshot({
         type: "png",
-        encoding: "binary",
       });
 
       // Save the screenshot to a file
       const screenshotPath = path.resolve(`/tmp/${fName}`);
       fs.writeFileSync(screenshotPath, screenshot);
       console.log(`Screenshot saved to ${screenshotPath}`);
-    } catch (error) {
-      console.log("Error taking screenshot:", error);
+    } catch (e) {
+      console.log('Error taking screenshot:', e);
     }
   }
 

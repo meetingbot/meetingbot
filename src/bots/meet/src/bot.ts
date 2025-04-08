@@ -414,8 +414,10 @@ export class MeetsBot extends Bot {
   }
 
   async screenshot(fName: string = 'screenshot.png') {
-    if (!this.page) throw new Error("Page not initialized");
     try {
+      if (!this.page) throw new Error("Page not initialized");
+      if (!this.browser) throw new Error("Browser not initialized");
+
       const screenshot = await this.page.screenshot({
         type: "png",
       });
