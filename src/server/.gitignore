@@ -52,3 +52,5 @@ node_modules/
 /blob-report/
 /playwright/.cache/
 /playwright/.auth/
+# test
+.test.env

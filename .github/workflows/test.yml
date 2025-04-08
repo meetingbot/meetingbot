@@ -45,6 +45,7 @@ jobs:
           TEST_AUTH_SECRET: ${{ secrets.TEST_AUTH_SECRET }}
           TEST_EMAIL: ${{ secrets.TEST_EMAIL }}
           TEST_PASSWORD: ${{ secrets.TEST_PASSWORD }}
+          TEST_DATABASE_URL: ${{ secrets.TEST_DATABASE_URL }}
 
       - name: Build
         run: |
