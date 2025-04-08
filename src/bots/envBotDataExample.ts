@@ -1,3 +1,9 @@
+import { BotConfig } from "./src/types";
+// @ts-ignore
+import fs from "fs";
+// @ts-ignore
+import path from "path";
+
 /* THIS SCRIPT IS USED TO CREATE THE BOT_DATA ENV VARIABLE FOR THE TEAMS BOT WHEN TESTING LOCALLY */
 
 //HOW TO USE:
@@ -5,10 +11,6 @@
 // 2. Fill in the <...> with the actual values
 // 3. Ensure the .env file is in this directory with *no* BOT_DATA variable
 // 4. Run the script via `pnpm tsx envBotData.ts` (this will modify your .env file)
-
-import { BotConfig } from "./src/types";
-import fs from "fs";
-import path from "path";
 
 // Paste in your meeting URL here
 const url = '<MEETING_URL>';
@@ -81,7 +83,7 @@ function parseTeamsMeetingLink(url: string) {
 
     return { meetingId, tenantId, organizationId };
   } catch (error) {
-    console.error("Error parsing Teams meeting link:", error);
+    // console.error("Error parsing Teams meeting link:", error); //uncomment to see and expand functionality if they change the URL format
     return null;
   }
 }
@@ -176,6 +178,8 @@ const defineMeetingInfo = (link: string) => {
       tenantId
     }
   }
+
+
   return undefined;
 }
 
@@ -186,12 +190,17 @@ const defineMeetingInfo = (link: string) => {
 */
 
 // Append the botData object to the .env file as a BOT_DATA json variable
-const envFilePath = path.join(__dirname, ".env");
-const envFileContent = fs.readFileSync(envFilePath, "utf8");
-const updatedEnvFileContent = `${envFileContent}\nBOT_DATA=${JSON.stringify(
-  { ...botData, meetingInfo: defineMeetingInfo(url) }
-)}`;
-fs.writeFileSync(envFilePath, updatedEnvFileContent);
 
-// Log "success"
-console.log("BOT_DATA variable appended to .env file");
+//@ts-ignore
+const envFilePath = path.join(__dirname, ".env");
+let envFileContent = fs.readFileSync(envFilePath, "utf8");
+
+// Delete the existing BOT_DATA line
+envFileContent = envFileContent.replace(/BOT_DATA=.*\n?/, "");
+
+const meetingInfo = defineMeetingInfo(decodeURI(url));
+const updatedEnvFileContent = `${envFileContent}\nBOT_DATA=${JSON.stringify({ ...botData, meetingInfo})}`;
+
+if (meetingInfo) fs.writeFileSync(envFilePath, updatedEnvFileContent);
+
+console.log("BOT_DATA variable updated in .env file");

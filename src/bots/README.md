@@ -1,50 +1,71 @@
+# Bot Scripts
+
+This directory serves as the central hub for the bot implementations, which are designed to automate the process of joining and recording virtual meetings across various platforms.
+
+Each bot is responsible for executing the following key tasks:
+
+- **Launching a Browser**: Initiating a browser instance to interact with the meeting platform.
+- **Navigating to the Meeting**: Accessing the meeting URL or ID provided in the configuration.
+- **Authenticating and Setting Identity**: Entering the required credentials and setting the bot's display name.
+- **Joining the Meeting**: Successfully connecting to the meeting session.
+- **Recording the Meeting**: Capturing the meeting's audio and/or video content.
+- **Uploading the Recording**: Transferring the recorded content to a designated storage location upon completion.
+- **Notifying the Backend**: Sending updates to the backend system to reflect the recording status and other relevant details.
+
+These bots are integral to the MeetingBot application, ensuring seamless and automated meeting recording functionality across supported platforms.
+
 ## File Structure
 
 ```
 src/bots/
-├─ package.json _global dependencies_
-├─ pnpm-workspace.yaml _specifies sub-workspaces_
-├─ tsconfig.json _global ts configurations_
-├─ src/
-│ ├─ index.ts _main script_
-| ├─ bot.ts _bot class definition_
-| ├─ monitoring.ts _monitoring methods used by main script_
-| ├─ trpc.ts _trpc client_
-├─ team|zoom|meet/
-│ ├─ Dockerfile _bot-specific docker file_
-│ ├─ package.json _bot-specific dependencies_
-│ ├─ pnpm-lock.yaml
-| ├─ tsconfig.json _bot-specific ts configurations_
-│ ├─ src/
-│ │ ├─ bot.ts _platform-specific bot class_
+├── .env.example            # Example environment template file
+├── package.json            # Global dependencies
+├── pnpm-workspace.yaml     # Specifies sub-workspaces
+├── tsconfig.json           # Global ts configurations
+├── jest.config.js          # Jest configuration for tests
+
+├── src/
+│   ├── index.ts          ! # Main script -- You'll want to look here first!!
+│   ├── bot.ts              # Bot related classes and functions
+│   ├── monitoring.ts       # Monitoring methods used by main script
+│   ├── trpc.ts             # trpc client
+
+├── team|zoom|meet/
+│   ├── Dockerfile          # Bot-specific docker file
+│   ├── package.json        # Bot-specific dependencies
+│   ├── pnpm-lock.yaml
+│   ├── tsconfig.json       # Bot-specific ts configurations
+│   ├── src/
+│   │   ├── bot.ts          # Platform-specific bot class
+
+├── __mocks__/              # Mock implementations for classes
+├── tests/                  # Jest test files
 ```
 
 ## Environment
+Refer to the `.env.example` file for the required environment variables. Duplicate this file and rename it to `.env`. This `.env` file will be utilized by the application during execution.
 
-Please refer to the `.env.example` file for the environment variables.
+### Using `envBotDataExample.ts`
 
-`envBotDataExample.ts` is a script used to create the `BOT_DATA` environment variable for the bot when testing locally.
-
-_Why use `envBotDataExample.ts`?_
-
-- visually easier to fill in the values
-- type saftey when filling in the values
-
-### How to use `envBotDataExample.ts`
+`envBotDataExample.ts` is a script used to create the `BOT_DATA` environment variable for the bot when testing locally. This is a visually easier way to fill in the values than doing it manually. Create a duplicate of this file to
 
 1. Copy the script into `envBotData.ts` (this will be ignored by git)
 2. Fill in the `<...>` with the actual values
 3. Ensure the `.env` file is in this directory with _no_ `BOT_DATA` variable
-4. Run the script via `pnpm tsx envBotData.ts` (this will modify your `.env` file)
+4. Run the script using the following command (this will modify your `.env` file)
 
+```bash
+cd src/bots
+pnpm tsx envBotData.ts
+```
 
+### Environment Setup
 
-## Required Meeting Info per platform
+See `.env.example` for an understanding of the file structure. Look at `envBotDataExample.ts` for the structure of the variable `BOT_DATA`.
 
-The `meeting_info` object in the `.env` file is used to store the meeting information for the bot to join the meeting. However, this information is platform dependant -
-Each platform requires the use of different keys in the `meeting_info` object.
+The `meeting_info` object in the `.env` file is used to store the meeting information for the bot to join the meeting. However, this information is platform dependant- Each platform requires the use of different keys in the `meeting_info` object.
 
-###Zoom
+### Zoom
 ```json
 {
   "meeting_info": {
@@ -55,7 +76,7 @@ Each platform requires the use of different keys in the `meeting_info` object.
 }
 ```
 
-###Google Meet
+### Google Meet
 ```json
 {
   "meeting_info": {
@@ -66,7 +87,7 @@ Each platform requires the use of different keys in the `meeting_info` object.
 ```
 Where Meeting Link is the full URL to the meeting.
 
-###Microsoft Teams
+### Microsoft Teams
 ```json
 {
   "meeting_info": {
@@ -78,7 +99,10 @@ Where Meeting Link is the full URL to the meeting.
 }
 ```
 
-## Local Development
+
+## Local Testing
+
+The following code is used to run the bots locally in your own environment. Bot code should work as intended on your environment, but we make no guarentees about this. Instead, you should aim to test and develop your code in the docker environment.
 
 ```bash
 cd src/bots
@@ -88,6 +112,12 @@ pnpm run dev
 
 ## Building
 
+This section provides instructions for building the Docker images required for the MeetingBot application. 
+The code below outlines the necessary steps and configurations to create containerized environments 
+for deploying the bot services. 
+
+Ensure that [Docker](https://www.docker.com/) is installed and properly configured on your system before proceeding with the build process.
+
 ```bash
 cd src/bots
 docker build -f meet/Dockerfile -t meet .
@@ -95,13 +125,18 @@ docker build -f teams/Dockerfile -t teams .
 docker build -f zoom/Dockerfile -t zoom .
 ```
 
-## Running
+The above commands will build the three docker images of the bots.
+
+# Running
+
+To run your docker file, ensure you have created your `.env` file as described in an earlier section.
+Ensure that the `.env` file and docker image you are running are configured for the same platform (either `meet | teams | zoom`).
 
 ```bash
-docker run --env-file .env meet
-docker run --env-file .env teams
-docker run --env-file .env zoom
+docker run --env-file .env <PLATFORM>
 ```
+
+Where `<PLATFORM>` is one of either `meet | teams | zoom`.
 
 ### Build Issues
 If you get an strange erorr while running (eg. Browser not found at file specified), upgrade puppeteer to the latest version in the specific platform's `node_modules` folder.
