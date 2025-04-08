@@ -182,7 +182,7 @@ To get started with MeetingBot, you'll need to set up the infrastructure and con
 
 ## License
 
-This project is licensed under the GNU Affero General Public License - see the [LICENSE](LICENSE) file for details.
+This project is licensed under the GNU Lesser General Public License - see the [LICENSE](LICENSE) file for details.
 
 In general, this means you can use this code in any way you want, commercially or not, as long as you share any modifications you make to the source code.
 
