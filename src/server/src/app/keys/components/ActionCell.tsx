@@ -11,12 +11,12 @@ import {
 import { MoreHorizontal, Copy } from "lucide-react";
 
 export default function ActionCell({
-  key,
+  apiKey,
   id,
   isRevoked,
   setSelectedKeyId,
 }: {
-  key: string;
+  apiKey: string;
   id: number;
   isRevoked: boolean;
   setSelectedKeyId: (id: number) => void;
@@ -48,7 +48,7 @@ export default function ActionCell({
           <DropdownMenuLabel>Actions</DropdownMenuLabel>
           <DropdownMenuItem
             onClick={() => {
-              toast.promise(navigator.clipboard.writeText(key), {
+              toast.promise(navigator.clipboard.writeText(apiKey), {
                 loading: "Copying key...",
                 success: "Key copied",
                 error: "Failed to copy key",

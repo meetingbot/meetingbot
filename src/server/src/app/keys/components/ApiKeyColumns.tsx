@@ -48,7 +48,7 @@ export const columns = (
       const apiKey = row.original;
       return (
         <ActionCell
-          key={apiKey.key}
+          apiKey={apiKey.key}
           id={apiKey.id}
           isRevoked={apiKey.isRevoked ?? false}
           setSelectedKeyId={setSelectedKeyId}
