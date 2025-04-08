@@ -1,4 +1,4 @@
-# Example application
+# Example Application
 
 This is an example application with the intention of helping you understand how the project can intergrate into your own code bases.
 Thus, this application is a skeleton project with its own standalone front and backend, created using Next.JS.
@@ -9,31 +9,34 @@ After the meeting, the recording will be available in the interface, and there i
 
 ## Running
 
-Ensure the backend and frontend are both running. 
+Ensure the backend and frontend are both running before you start the example app.
+Alternativley, you can modify your example application to point to a hosted backend.
 
-Install dependencies:
-
+### Install dependencies
 ```bash
+cd src/example-app
 pnpm install
 ```
 
-Run the development server:
-
+### Setup environment variables
+Copy the environment variables from the example file.
 ```bash
+cd src/example-app
+cp .env.example .env
+```
+Fill in the necessary values.
+
+### Run the development server:
+```bash
+cd src/example-app
 pnpm run dev
 ```
 
 It will run on port 3002.
 
-Host port 3002 using ngrok or similar.
+Important: if using an external backend, make sure you host and forward port 3002 using an application like ngrok.
+This will allow the MeetingBot application to communicate with this application. 
 
 ```bash
 ngrok http 3002
 ```
-
-Ensure `.env` is set up correctly.
-
-```bash
-cp .env.example .env
-```
-

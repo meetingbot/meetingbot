@@ -185,6 +185,8 @@ See more information in the [Terraform README](src/terraform/README.md).
 
 6.  **Access Recordings:** Use the API endpoints to retrieve meeting recordings and metadata.
 
+See each subdirectory for an additional README with more information.
+
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
 <!-- CONTRIBUTING -->
