@@ -78,7 +78,7 @@ export async function deployBot({
 
   try {
     // Get the absolute path to the bots directory (parent directory)
-    const botsDir = path.resolve(__dirname, "../../../bots");
+    const botsDir = path.resolve(__dirname, "../../../../../bots");
 
     // Merge default config with user provided config
 
