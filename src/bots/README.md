@@ -44,7 +44,7 @@ _Why use `envBotDataExample.ts`?_
 The `meeting_info` object in the `.env` file is used to store the meeting information for the bot to join the meeting. However, this information is platform dependant -
 Each platform requires the use of different keys in the `meeting_info` object.
 
-###Zoom
+### Zoom
 ```json
 {
   "meeting_info": {
@@ -55,7 +55,7 @@ Each platform requires the use of different keys in the `meeting_info` object.
 }
 ```
 
-###Google Meet
+### Google Meet
 ```json
 {
   "meeting_info": {
@@ -66,7 +66,7 @@ Each platform requires the use of different keys in the `meeting_info` object.
 ```
 Where Meeting Link is the full URL to the meeting.
 
-###Microsoft Teams
+### Microsoft Teams
 ```json
 {
   "meeting_info": {

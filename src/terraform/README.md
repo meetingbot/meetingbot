@@ -11,22 +11,36 @@ This directory contains the Terraform configuration to deploy MeetingBot infrast
 
 ## Quick Start
 
+Set up your AWS credentials:
+
 ```bash
-# 1. Set up your AWS credentials
 # either login with AWS or run this make command
 make sso
 # This configures the AWS SSO profile named 'meetingbot'
+```
 
-# 2. Initialize Terraform
+Initialize Terraform:
+
+```bash
 cp backend.tfvars.example backend.tfvars
+```
+```bash
 cp terraform.tfvars.example terraform.tfvars
+```
+```bash
 # Modify the .tfvars files with your specific configuration values
 make init
+```
 
-# 3. Select workspace (dev or prod)
+Select workspace (dev or prod):
+
+```bash
 terraform workspace select dev  # or create with: terraform workspace new dev
+```
 
-# 4. Deploy infrastructure
+Deploy infrastructure:
+
+```bash
 terraform apply
 ```
 

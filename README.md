@@ -29,9 +29,6 @@
 
 https://github.com/user-attachments/assets/0e2f2673-a59f-4473-a5ed-e2a5e1cd1cac
 
-
-
-
 <!-- TABLE OF CONTENTS -->
 <details>
   <summary>Table of Contents</summary>
@@ -69,16 +66,16 @@ All infrastructure is defined using Terraform and deployed to AWS, so that you c
 
 ![architecture](https://github.com/user-attachments/assets/1c5edea5-8308-4155-b6dc-e022620111a9)
 
-*   [Next.js](https://nextjs.org/) - Frontend Framework
-*   [Express](https://expressjs.com/) - Backend Framework
-*   [tRPC](https://trpc.io/) - End-to-end typesafe API layer
-*   [Drizzle ORM](https://orm.drizzle.team/) - Typesafe SQL query builder and schema definition
-*   [PostgreSQL](https://www.postgresql.org/) - Relational Database
-*   [Terraform](https://www.terraform.io/) - Infrastructure as Code
-*   [AWS](https://aws.amazon.com/) - Cloud Provider
-*   [Docker](https://www.docker.com/) - Containerization
-*   [pnpm](https://pnpm.io/) - Package Manager
-*   [GitHub Actions](https://github.com/features/actions) - CI/CD
+- [Next.js](https://nextjs.org/) - Frontend Framework
+- [Express](https://expressjs.com/) - Backend Framework
+- [tRPC](https://trpc.io/) - End-to-end typesafe API layer
+- [Drizzle ORM](https://orm.drizzle.team/) - Typesafe SQL query builder and schema definition
+- [PostgreSQL](https://www.postgresql.org/) - Relational Database
+- [Terraform](https://www.terraform.io/) - Infrastructure as Code
+- [AWS](https://aws.amazon.com/) - Cloud Provider
+- [Docker](https://www.docker.com/) - Containerization
+- [pnpm](https://pnpm.io/) - Package Manager
+- [GitHub Actions](https://github.com/features/actions) - CI/CD
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
@@ -86,18 +83,35 @@ All infrastructure is defined using Terraform and deployed to AWS, so that you c
 
 ## Getting Started
 
+<div align="center">
+  <a href="https://x.com/owengretzinger/status/1909450692999209465">
+    <img src="https://github.com/user-attachments/assets/b14affae-b567-48cc-ac1d-0cdc610b1a3d" alt="Project Demo">
+    <p>Self Hosting Guide</p>
+  </a>
+</div>
+
 To get started with MeetingBot, you'll need to set up the infrastructure and configure the different components.
 
 ### Prerequisites
 
-*   [AWS Account](https://aws.amazon.com/)
-*   [Terraform](https://www.terraform.io/downloads.html)
-*   [Node.js](https://nodejs.org/) (>=18.0.0)
-*   [pnpm](https://pnpm.io/) (>=8.0.0)
-*   [Docker](https://www.docker.com/) (for building bot images)
-*   [AWS CLI](https://aws.amazon.com/cli/)
+- [AWS Account](https://aws.amazon.com/)
+- [Terraform](https://www.terraform.io/downloads.html)
+- [Node.js](https://nodejs.org/) (>=18.0.0)
+- [pnpm](https://pnpm.io/) (>=8.0.0)
+- [Docker](https://www.docker.com/) (for building bot images)
+- [AWS CLI](https://aws.amazon.com/cli/)
+
+Important:
+
+- A domain name in Route 53
+- An S3 bucket to store Terraform state
+- (Optional) A DynamoDB table to lock Terraform state
+- A Github App to use for dashboard authentication
+  - (Optional) Scope the app to your organization to restrict access
 
 ### Installation
+
+See more information in the [Terraform README](src/terraform/README.md).
 
 1.  **Clone the repository**
 
@@ -106,20 +120,27 @@ To get started with MeetingBot, you'll need to set up the infrastructure and con
     cd meetingbot
     ```
 
-2.  **Configure AWS CLI**
+2.  **Set up AWS credentials**
 
     ```sh
-    aws configure sso --profile meetingbot
+    # either login with AWS or run this make command
+    make sso
+    # This configures the AWS SSO profile named 'meetingbot'
     ```
 
 3.  **Initialize Terraform**
 
     ```sh
-    cp src/terraform/backend.tfvars.example src/terraform/backend.tfvars
-    # Edit src/terraform/backend.tfvars with your S3 bucket details
-    cp src/terraform/terraform.tfvars.example src/terraform/terraform.tfvars
-    # Edit src/terraform/terraform.tfvars with your desired settings
-    terraform init -backend-config=src/terraform/backend.tfvars
+    cp backend.tfvars.example backend.tfvars
+    ```
+
+    ```sh
+    cp terraform.tfvars.example terraform.tfvars
+    ```
+
+    ```sh
+    # Modify the .tfvars files with your specific configuration values
+    make init
     ```
 
 4.  **Select a Terraform workspace (environment)**
@@ -182,9 +203,9 @@ To get started with MeetingBot, you'll need to set up the infrastructure and con
 
 ## License
 
-This project is licensed under the GNU Affero General Public License - see the [LICENSE](LICENSE) file for details.
+This project is licensed under the GNU Lesser General Public License - see the [LICENSE](LICENSE) file for details.
 
-In general, this means you can use this code in any way you want, commercially or not, as long as you share any modifications you make to the source code.
+In general, this means you can use this code in any way you want, commercially or not, as long as any modifications/forks remain public.
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 

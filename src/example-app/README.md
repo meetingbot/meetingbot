@@ -3,36 +3,37 @@
 This is an example application with the intention of helping you understand how the project can intergrate into your own code bases.
 Thus, this application is a skeleton project with its own standalone front and backend, created using Next.JS.
 
+It allows you to enter a meeting link. A meeting bot will be summoned to the meeting and will start recording.
+
+After the meeting, the recording will be available in the interface, and there is a button to transcribe & summarize the meeting using AI.
+
 ## Running
 
 Ensure the backend and frontend are both running. 
 
+Install dependencies:
+
 ```bash
-cd meetinbot/src/backend/
+pnpm install
+```
+
+Run the development server:
+
+```bash
 pnpm run dev
 ```
 
-```bash
-cd meetingbot/src/frontend/
-pnpm run dev
-```
+It will run on port 3002.
 
-Follow any running instructions found in their respective `README.md` files.
-
-Copy the `.env.example` file and rename it `.env`. Then, fill in the environment variables with your own values, produced using the frontend / backend.
-
-First, run the development server:
+Host port 3002 using ngrok or similar.
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+ngrok http 3002
 ```
 
-Open [http://localhost:3000](http://localhost:3000) (or, if both frontend/backend are open, [http://localhost:3002](http://localhost:3002)) with your browser to see the result.
+Ensure `.env` is set up correctly.
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+```bash
+cp .env.example .env
+```
+
