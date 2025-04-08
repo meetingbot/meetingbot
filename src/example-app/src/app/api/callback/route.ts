@@ -1,8 +1,9 @@
 // app/api/bots/route.ts
-import { writeFileSync } from 'fs';
+
 import { NextResponse } from 'next/server';
 
 let recordingLink = '';
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 let clients: any[] = []; // Store connected clients
 
 // Get Key
@@ -117,6 +118,7 @@ export async function POST(req: Request) {
     return NextResponse.json({ message: 'OK' }, { status: 200 });
 
   } catch (error) {
+    console.error('Error in POST:', error);
     return NextResponse.json({ error: 'Internal Error' }, { status: 500 });
   }
 }

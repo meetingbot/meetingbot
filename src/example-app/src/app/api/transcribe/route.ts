@@ -18,7 +18,7 @@ export async function POST(req: Request) {
     const audioBuffer = await response.arrayBuffer();
     const audioBlob = new Blob([audioBuffer]);
     
-    // Transcribe with Whisper
+    // Transcribe with Whisper (not our own model)
     const transcriptionResponse = await openai.audio.transcriptions.create({
       file: new File([audioBlob], 'recording.mp4'),
       model: 'whisper-1',
@@ -26,7 +26,7 @@ export async function POST(req: Request) {
     
     const transcription = transcriptionResponse.text;
     
-    // Generate summary with GPT-4o
+    // Generate summary with GPT-4o (not our own model)
     const summaryResponse = await openai.chat.completions.create({
       model: 'gpt-4o',
       messages: [

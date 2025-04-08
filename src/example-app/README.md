@@ -5,7 +5,7 @@ Thus, this application is a skeleton project with its own standalone front and b
 
 It allows you to enter a meeting link. A meeting bot will be summoned to the meeting and will start recording.
 
-After the meeting, the recording will be available in the interface, and there is a button to transcribe & summarize the meeting using AI.
+After the meeting, the recording will be available in the interface, and there is a button to transcribe & summarize the meeting using AI. (Uses OpenAI Whisper and GPT-4o.)
 
 ## Running
 

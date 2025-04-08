@@ -1,6 +1,4 @@
 'use client';
-import { MeetingType } from '~/types/MeetingType';
-import { Button } from './button';
 
 interface AppSectionProps {
     header: string;

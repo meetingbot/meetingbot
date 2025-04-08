@@ -1,10 +1,7 @@
 'use client';
-import { useEffect, useState } from 'react';
-import ReactPlayer from "react-player";
-import { useQuery } from 'react-query';
+import { useState } from 'react';
 import { Button } from './button';
 import { MeetingType } from '~/types/MeetingType';
-import { platform } from 'os';
 
 //Meeting Check Functions
 const checkMeetBotLink = (link: string) => {
@@ -48,7 +45,7 @@ function parseTeamsMeetingLink(url: string) {
 
     return { meetingId, tenantId, organizationId };
   } catch (error) {
-    // console.error("Error parsing Teams meeting link:", error);
+    console.error("Error parsing Teams meeting link:", error);
     return null;
   }
 }
@@ -82,6 +79,7 @@ function parseZoomMeetingLink(url: string) {
 
 export default function MeetingBotCreator() {
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const [response, setResponse] = useState<any>({});
   const [link, setMeetingLink] = useState('');
   const [waitingForResponse, setWaitingForResponse] = useState(false);
@@ -174,9 +172,8 @@ export default function MeetingBotCreator() {
       setWaitingForResponse(false);
 
     } catch (error) {
-      setResponse('Failed to create bot');
+      setResponse(`Failed to create bot: ${error instanceof Error ? error.message : 'Unknown error'}`);
       setWaitingForResponse(false);
-      
     }
   };
 
