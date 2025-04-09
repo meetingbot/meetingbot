@@ -1,30 +1,28 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import ReactPlayer from "react-player";
 import TranscriptSummary from './TranscriptSummary';
+import { Button } from './button';
 
 export default function RecordingPlayer() {
-  
   const [recordingLink, setRecordingLink] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
 
-  useEffect(() => {
-    const eventSource = new EventSource('/api/callback?sse=true');
-
-    eventSource.onmessage = (event) => {
-      const data = JSON.parse(event.data);
-      setRecordingLink(data.recordingLink);
-    };
-
-    eventSource.onerror = () => {
-      console.error('Error with SSE connection');
-      eventSource.close();
-    };
-
-    return () => {
-      eventSource.close();
-    };
-  }, []);
+  const fetchRecording = async () => {
+    try {
+      setLoading(true);
+      const response = await fetch('/api/callback');
+      const data = await response.json();
+      if (data.link) {
+        setRecordingLink(data.link);
+      }
+    } catch (error) {
+      console.error('Error fetching recording:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
     <div className="space-y-6">
@@ -46,7 +44,14 @@ export default function RecordingPlayer() {
           </>
         ) : (
           <div className="p-6 text-center text-muted-foreground border rounded-lg">
-            Waiting for recording to become available...
+            <p className="mb-4">No recording available yet</p>
+            <Button 
+              onClick={fetchRecording} 
+              disabled={loading}
+              variant="outline"
+            >
+              {loading ? 'Checking...' : 'Check for Recording'}
+            </Button>
           </div>
         )}
       </div>
