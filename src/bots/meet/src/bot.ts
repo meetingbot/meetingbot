@@ -520,6 +520,19 @@ export class MeetsBot extends Bot {
     return false;
   }
 
+  /**
+   * Check if a pop-up appeared. If so, close it.
+   */
+  async handleInfoPopup() {
+    try {
+      console.log("Waiting for the 'Others might see you differently' popup...");
+      await this.page.waitForSelector(infoPopupClick, { timeout: 1000 });
+      console.log("Clicking the popup...");
+      await this.page.click(infoPopupClick, { timeout: 500 });
+    } catch (e) {
+      console.log("No Popup Found, continuing.");
+    }
+  }
 
   /**
    * 
@@ -540,15 +553,7 @@ export class MeetsBot extends Bot {
     console.log("Starting Recording");
     this.startRecording();
 
-    // Check if a popup appeared
-    try {
-      console.log("Waiting for the 'Others might see you differently' popup...");
-      await this.page.waitForSelector(infoPopupClick, { timeout: 5000 });
-      console.log("Clicking the popup...");
-      await this.page.click(infoPopupClick, { timeout: 500 });
-    } catch (e) {
-      console.log("No Popup Found, continuing.");
-    }
+    await this.handleInfoPopup();
 
     // Meeting Join Actions
     try {
@@ -660,7 +665,7 @@ export class MeetsBot extends Bot {
     // Loop -- check for end meeting conditions every second
     console.log("Waiting until a leave condition is fulfilled..");
     while (true) {
-
+      
       // Check if it's only me in the meeting
       console.log('Checking if 1 Person Remaining ...', this.participantCount);
       if (this.participantCount === 1) {
@@ -684,6 +689,8 @@ export class MeetsBot extends Bot {
         break; //exit loop
 
       }
+
+      await this.handleInfoPopup();
 
       // Reset Loop
       console.log('Waiting 5 seconds.')
