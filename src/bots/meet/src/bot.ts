@@ -23,6 +23,7 @@ const userAgent =
 // Constant Selectors
 const enterNameField = 'input[type="text"][aria-label="Your name"]';
 const askToJoinButton = '//button[.//span[text()="Ask to join"]]';
+const joinNowButton = '//button[.//span[text()="Join now"]]';
 const gotKickedDetector = '//button[.//span[text()="Return to home screen"]]';
 const leaveButton = `//button[@aria-label="Leave call"]`;
 const peopleButton = `//button[@aria-label="People"]`;
@@ -297,10 +298,13 @@ export class MeetsBot extends Bot {
       console.log('Could not turn off Camera -- probably already off.');
     }
 
-    // Click the "Ask to join" button
-    console.log('Waiting for the "Ask to join" button...');
-    await this.page.waitForSelector(askToJoinButton, { timeout: 60000 });
-    await this.page.click(askToJoinButton);
+    console.log('Waiting for either the "Join now" or "Ask to join" button to appear...');
+    const entryButton = await Promise.race([
+      this.page.waitForSelector(joinNowButton, { timeout: 60000 }).then(() => joinNowButton),
+      this.page.waitForSelector(askToJoinButton, { timeout: 60000 }).then(() => askToJoinButton),
+    ]);
+
+    await this.page.click(entryButton);
 
     //Should Exit after 1 Minute
     console.log("Awaiting Entry ....");
@@ -665,7 +669,7 @@ export class MeetsBot extends Bot {
     // Loop -- check for end meeting conditions every second
     console.log("Waiting until a leave condition is fulfilled..");
     while (true) {
-      
+
       // Check if it's only me in the meeting
       console.log('Checking if 1 Person Remaining ...', this.participantCount);
       if (this.participantCount === 1) {
