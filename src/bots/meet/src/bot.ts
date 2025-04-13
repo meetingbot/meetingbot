@@ -529,13 +529,12 @@ export class MeetsBot extends Bot {
    */
   async handleInfoPopup() {
     try {
-      console.log("Waiting for the 'Others might see you differently' popup...");
       await this.page.waitForSelector(infoPopupClick, { timeout: 1000 });
-      console.log("Clicking the popup...");
-      await this.page.click(infoPopupClick, { timeout: 500 });
     } catch (e) {
-      console.log("No Popup Found, continuing.");
+      return;
     }
+    console.log("Clicking the popup...");
+    await this.page.click(infoPopupClick);
   }
 
   /**
@@ -557,6 +556,7 @@ export class MeetsBot extends Bot {
     console.log("Starting Recording");
     this.startRecording();
 
+    console.log("Waiting for the 'Others might see you differently' popup...");
     await this.handleInfoPopup();
 
     // Meeting Join Actions
