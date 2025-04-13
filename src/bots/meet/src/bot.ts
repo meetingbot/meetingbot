@@ -527,9 +527,9 @@ export class MeetsBot extends Bot {
   /**
    * Check if a pop-up appeared. If so, close it.
    */
-  async handleInfoPopup() {
+  async handleInfoPopup(timeout = 5000) {
     try {
-      await this.page.waitForSelector(infoPopupClick, { timeout: 1000 });
+      await this.page.waitForSelector(infoPopupClick, { timeout });
     } catch (e) {
       return;
     }
@@ -694,7 +694,7 @@ export class MeetsBot extends Bot {
 
       }
 
-      await this.handleInfoPopup();
+      await this.handleInfoPopup(1000);
 
       // Reset Loop
       console.log('Waiting 5 seconds.')
