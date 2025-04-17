@@ -12,12 +12,13 @@ resource "aws_ecs_cluster" "this" {
 
 resource "aws_ecs_cluster_capacity_providers" "this" {
   cluster_name       = aws_ecs_cluster.this.name
-  capacity_providers = ["FARGATE"]
+  capacity_providers = ["EC2", "FARGATE"]
 
   default_capacity_provider_strategy {
-    capacity_provider = "FARGATE"
-    weight            = 1
+    capacity_provider = "EC2"
   }
+
+  depends_on = [aws_ecs_capacity_provider.ec2]
 }
 
 # ---------------------------------------------------------------------------------------------------------------------
@@ -121,8 +122,8 @@ resource "aws_cloudwatch_log_group" "server" {
 # ---------------------------------------------------------------------------------------------------------------------
 resource "aws_ecs_task_definition" "server" {
   family                   = "${local.name}-server"
-  requires_compatibilities = ["FARGATE"]
-  network_mode             = "awsvpc"
+  requires_compatibilities = ["EC2"]
+  network_mode             = "bridge"
   cpu                      = 256
   memory                   = 512
   execution_role_arn       = aws_iam_role.ecs_task_execution_role.arn
@@ -205,6 +206,14 @@ resource "aws_ecs_task_definition" "server" {
           name  = "ECS_SECURITY_GROUPS"
           value = join(",", [aws_security_group.ecs_tasks.id])
         },
+        {
+          name  = "ECS_LAUNCH_TYPE"
+          value = "FARGATE"
+        },
+        {
+          name  = "ECS_NETWORK_CONFIG_ASSIGN_PUBLIC_IP"
+          value = "true"
+        }
       ]
 
       logConfiguration = {
@@ -233,12 +242,10 @@ resource "aws_ecs_service" "server" {
   cluster         = aws_ecs_cluster.this.id
   task_definition = aws_ecs_task_definition.server.arn
   desired_count   = 1
-  launch_type     = "FARGATE"
 
-  network_configuration {
-    subnets          = aws_subnet.public[*].id
-    security_groups  = [aws_security_group.ecs_tasks.id]
-    assign_public_ip = true
+  capacity_provider_strategy {
+    capacity_provider = "EC2"
+    weight            = 100
   }
 
   load_balancer {
@@ -247,6 +254,8 @@ resource "aws_ecs_service" "server" {
     container_port   = local.server_port
   }
   propagate_tags = "TASK_DEFINITION"
+
+  depends_on = [aws_lb_target_group.server]
 }
 
 # ---------------------------------------------------------------------------------------------------------------------
@@ -311,7 +320,7 @@ resource "aws_ecs_task_definition" "meet_bot" {
         {
           name  = "AWS_REGION"
           value = var.aws_region
-        },
+        }
       ]
       readonlyRootFilesystem = false
 
@@ -353,7 +362,7 @@ resource "aws_ecs_task_definition" "zoom_bot" {
         {
           name  = "AWS_REGION"
           value = var.aws_region
-        },
+        }
       ]
       readonlyRootFilesystem = false
 
@@ -395,7 +404,7 @@ resource "aws_ecs_task_definition" "teams_bot" {
         {
           name  = "AWS_REGION"
           value = var.aws_region
-        },
+        }
       ]
       readonlyRootFilesystem = false
 

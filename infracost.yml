@@ -1,13 +1,11 @@
 version: 0.1
 
 projects:
-  - path: .
-    name: main
-    terraform_var_files:
-      - terraform.tfvars
-      - backend.tfvars
+  - path: src/terraform
+    name: src-terraform
     skip_autodetect: true
     dependency_paths:
-      - "**"
-      - backend.tfvars
-      - terraform.tfvars
+      - src/terraform/**
+      - src/terraform/backend.tfvars
+      - src/terraform/terraform.tfvars
+    usage_file: src/terraform/infracost-usage.yml

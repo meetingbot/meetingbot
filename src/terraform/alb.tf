@@ -58,11 +58,11 @@ resource "aws_lb" "this" {
 
 // Server Target Group
 resource "aws_lb_target_group" "server" {
-  name        = "${local.name}-server"
+  name        = "${local.name}-server-instance"
   port        = local.server_port
   protocol    = "HTTP"
   vpc_id      = aws_vpc.this.id
-  target_type = "ip"
+  target_type = "instance"
 
   deregistration_delay = 5
 
@@ -79,6 +79,10 @@ resource "aws_lb_target_group" "server" {
   }
 
   load_balancing_cross_zone_enabled = true
+
+  lifecycle {
+    create_before_destroy = true
+  }
 
   tags = {
     Name = "${local.name}-server"
