@@ -3,10 +3,8 @@ provider "aws" {
   profile = var.aws_profile
   default_tags {
     tags = {
-      app-id      = "meetingbot"
-      app-purpose = "Self-hosted meeting bot API"
-      environment = terraform.workspace
-      pii         = "yes"
+      Service     = "MeetingBot"
+      Environment = terraform.workspace == "prod" ? "Prod" : (terraform.workspace == "stage" ? "Stage" : "Dev")
     }
   }
 }

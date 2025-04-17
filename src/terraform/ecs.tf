@@ -167,7 +167,7 @@ resource "aws_ecs_task_definition" "server" {
         },
         {
           name  = "DATABASE_URL"
-          value = "postgresql://${aws_db_instance.this.username}:${random_password.db_password.result}@${aws_db_instance.this.endpoint}/${aws_db_instance.this.db_name}"
+          value = "postgresql://${aws_db_instance.this.username}:${random_password.db_password.result}@${aws_db_instance.this.endpoint}/${aws_db_instance.this.db_name}?sslmode=require"
         },
         {
           name  = "GITHUB_TOKEN"
@@ -199,7 +199,7 @@ resource "aws_ecs_task_definition" "server" {
         },
         {
           name  = "ECS_SUBNETS"
-          value = join(",", aws_subnet.private[*].id)
+          value = join(",", aws_subnet.public[*].id)
         },
         {
           name  = "ECS_SECURITY_GROUPS"
@@ -220,10 +220,11 @@ resource "aws_ecs_task_definition" "server" {
 
   provisioner "local-exec" {
     environment = {
-      DATABASE_URL = "postgresql://${aws_db_instance.this.username}:${random_password.db_password.result}@${aws_db_instance.this.endpoint}/${aws_db_instance.this.db_name}?sslmode=require"
+      NODE_TLS_REJECT_UNAUTHORIZED = "0"
+      DATABASE_URL                 = "postgresql://${aws_db_instance.this.username}:${random_password.db_password.result}@${aws_db_instance.this.endpoint}/${aws_db_instance.this.db_name}?sslmode=require"
     }
 
-    command = "cd ../server && pnpm i && pnpm db:migrate"
+    command = "cd ../server && pnpm i && pnpm db:migrate && echo 'Database migrations completed successfully'"
   }
 }
 
@@ -235,9 +236,9 @@ resource "aws_ecs_service" "server" {
   launch_type     = "FARGATE"
 
   network_configuration {
-    subnets          = aws_subnet.private[*].id
+    subnets          = aws_subnet.public[*].id
     security_groups  = [aws_security_group.ecs_tasks.id]
-    assign_public_ip = false
+    assign_public_ip = true
   }
 
   load_balancer {
@@ -245,6 +246,7 @@ resource "aws_ecs_service" "server" {
     container_name   = "server"
     container_port   = local.server_port
   }
+  propagate_tags = "TASK_DEFINITION"
 }
 
 # ---------------------------------------------------------------------------------------------------------------------

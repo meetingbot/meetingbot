@@ -1,0 +1,13 @@
+version: 0.1
+
+projects:
+  - path: .
+    name: main
+    terraform_var_files:
+      - terraform.tfvars
+      - backend.tfvars
+    skip_autodetect: true
+    dependency_paths:
+      - "**"
+      - backend.tfvars
+      - terraform.tfvars

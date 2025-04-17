@@ -1,5 +1,4 @@
 .DS_Store
-infracost.yml
 .pytest_cache
 venv
 __pycache__

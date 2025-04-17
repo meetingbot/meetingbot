@@ -65,29 +65,6 @@ resource "aws_db_subnet_group" "this" {
   }
 }
 
-// NAT Gateway Elastic IP
-resource "aws_eip" "nat" {
-  count  = local.prod ? length(local.azs) : 1
-  domain = "vpc"
-
-  tags = {
-    Name = "${local.name}-nat-eip-${count.index}"
-  }
-}
-
-// NAT Gateway
-resource "aws_nat_gateway" "this" {
-  count         = local.prod ? length(local.azs) : 1
-  allocation_id = aws_eip.nat[count.index].id
-  subnet_id     = aws_subnet.public[count.index].id
-
-  tags = {
-    Name = "${local.name}-nat-${count.index}"
-  }
-
-  depends_on = [aws_internet_gateway.this]
-}
-
 // Public Route Table
 resource "aws_route_table" "public" {
   vpc_id = aws_vpc.this.id
@@ -121,12 +98,14 @@ resource "aws_route_table" "private" {
   }
 }
 
-// Private Routes
-resource "aws_route" "private_nat_gateway" {
+// Private Routes using Internet Gateway instead of NAT Gateway
+// NOTE: This configuration bypasses NAT gateways and uses the Internet Gateway directly
+// which saves on NAT gateway costs. All containers must use public subnets with public IPs.
+resource "aws_route" "private_internet_gateway" {
   count                  = local.prod ? length(local.azs) : 1
   route_table_id         = aws_route_table.private[count.index].id
   destination_cidr_block = "0.0.0.0/0"
-  nat_gateway_id         = aws_nat_gateway.this[count.index].id
+  gateway_id             = aws_internet_gateway.this.id
 }
 
 // Private Route Table Associations
