@@ -1,5 +1,5 @@
 # If you ever do `pnpm install puppeteer@latest` in the future, make sure to update this line as well.
-FROM --platform=linux/amd64 ghcr.io/puppeteer/puppeteer:24.6.0
+FROM --platform=linux/amd64 ghcr.io/puppeteer/puppeteer:24.7.2
 
 ENV \
     # Configure default locale (important for chrome-headless-shell).
