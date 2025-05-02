@@ -28,6 +28,7 @@ const fakeBotData: SelectBotType = {
   startTime: new Date(startTimeString),
   endTime: new Date(endTimeString),
   recording: "https://example.com/recording.mp4",
+  speakerTimeframes: [],
   lastHeartbeat: new Date(),
   deploymentError: null,
   heartbeatInterval: 1000,
@@ -36,6 +37,7 @@ const fakeBotData: SelectBotType = {
     waitingRoomTimeout: 1000,
     noOneJoinedTimeout: 1000,
     everyoneLeftTimeout: 1000,
+    inactivityTimeout: 1000,
   },
 };
 
