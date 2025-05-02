@@ -164,6 +164,7 @@ const automaticLeaveSchema = z.object({
   waitingRoomTimeout: z.number(), // the milliseconds before the bot leaves the meeting if it is in the waiting room
   noOneJoinedTimeout: z.number(), // the milliseconds before the bot leaves the meeting if no one has joined
   everyoneLeftTimeout: z.number(), // the milliseconds before the bot leaves the meeting if everyone has left
+  inactivityTimeout: z.number(), // the milliseconds before the bot leaves the meeting if there has been no activity
 });
 export type AutomaticLeave = z.infer<typeof automaticLeaveSchema>;
 export const meetingInfoSchema = z.object({
@@ -241,6 +242,9 @@ export const bots = pgTable("bots", {
   endTime: timestamp("end_time").notNull(),
   // recording stuff
   recording: varchar("recording", { length: 255 }),
+  speakerTimeframes: json('speaker_timeframes')
+    .$type<Record<string, any>[]>()
+    .default([]),
   lastHeartbeat: timestamp("last_heartbeat"),
   // status stuff
   status: varchar("status", { length: 255 })

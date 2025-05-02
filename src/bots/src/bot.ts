@@ -1,5 +1,5 @@
 import { reportEvent } from "./monitoring";
-import { type BotConfig, type EventCode } from "./types";
+import { type BotConfig, type EventCode, type SpeakerTimeframe } from "./types";
 
 export interface BotInterface {
   readonly settings: BotConfig;
@@ -77,6 +77,10 @@ export class Bot implements BotInterface {
    * @returns {string} contentType
    */
   getContentType(): string {
+    throw new Error("Method not implemented.");
+  }
+
+  getSpeakerTimeframes(): SpeakerTimeframe[] {
     throw new Error("Method not implemented.");
   }
 

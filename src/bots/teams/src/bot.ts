@@ -1,8 +1,7 @@
 import fs from "fs";
 import puppeteer, { Browser, Page } from "puppeteer";
 import { launch, getStream, wss } from "puppeteer-stream";
-import crypto from "crypto";
-import { BotConfig, EventCode, WaitingRoomTimeoutError } from "../../src/types";
+import { BotConfig, EventCode, SpeakerTimeframe, WaitingRoomTimeoutError } from "../../src/types";
 import { Bot } from "../../src/bot";
 import path from "path";
 import { Transform } from "stream";
@@ -35,6 +34,11 @@ export class TeamsBot extends Bot {
 
   getRecordingPath(): string {
     return this.recordingPath;
+  }
+
+  getSpeakerTimeframes(): SpeakerTimeframe[] {
+    // TODO: Implement this
+    return []
   }
 
   getContentType(): string {

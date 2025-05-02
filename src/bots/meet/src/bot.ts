@@ -4,7 +4,7 @@ import { saveVideo, PageVideoCapture } from "playwright-video";
 import { CaptureOptions } from "playwright-video/build/PageVideoCapture";
 import StealthPlugin from "puppeteer-extra-plugin-stealth";
 import { setTimeout } from "timers/promises";
-import { BotConfig, EventCode, WaitingRoomTimeoutError } from "../../src/types";
+import { BotConfig, EventCode, SpeakerTimeframe, WaitingRoomTimeoutError } from "../../src/types";
 import { Bot } from "../../src/bot";
 import * as fs from 'fs';
 import path from "path";
@@ -37,6 +37,11 @@ const infoPopupClick = `//button[.//span[text()="Got it"]]`;
 const SCREEN_WIDTH = 1920;
 const SCREEN_HEIGHT = 1080;
 
+type Participant = {
+  id: string;
+  name: string;
+};
+
 /**
  * @param amount Milliseconds
  * @returns Random Number within 10% of the amount given, mean at amount
@@ -53,8 +58,12 @@ declare global {
     saveChunk: (chunk: number[]) => void;
     stopRecording: () => void;
 
-    setParticipantCount: (count: number) => void;
-    addParticipantCount: (count: number) => void;
+    addParticipant: (participant: Participant) => void;
+    updateParticipants: (participants: Participant[]) => void;
+    onParticipantJoin: (participant: Participant) => void;
+    onParticipantLeave: (participant: Participant) => void;
+    registerParticipantSpeaking: (participant: Participant) => void;
+    observeSpeech: (node: any, participant: Participant) => void;
 
     recorder: MediaRecorder | undefined;
   }
@@ -118,11 +127,16 @@ export class MeetsBot extends Bot {
   kicked: boolean = false;
   recordingPath: string;
 
-  private recordBuffer: Buffer[] = [];
+  private participants: Participant[] = [];
+  private speakerTimeframes: {
+    [participantName: string]: [number];
+  } = {};
   private startedRecording: boolean = false;
 
   private timeAloneStarted: number = Infinity;
-  participantCount: number = 0;
+  private lastActivity: number | undefined = undefined;
+  private recordingStartedAt: number = 0;
+  private maxDuration: number = 1000 * 60 * 180;
 
   private ffmpegProcess: ChildProcessWithoutNullStreams | null;
 
@@ -181,6 +195,43 @@ export class MeetsBot extends Bot {
 
     // Give Back the path
     return this.recordingPath;
+  }
+
+  /**
+   * Gets the speaker timeframes.
+   * @returns {Array} - Returns an array of objects containing speaker names and their respective start and end times.
+   */
+  getSpeakerTimeframes(): SpeakerTimeframe[] {
+    const processedTimeframes: {
+      speakerName: string;
+      start: number;
+      end: number;
+    }[] = [];
+
+    const threshold = 3000;
+    for (const [speakerName, timeframesArray] of Object.entries(
+      this.speakerTimeframes
+    )) {
+      let start = timeframesArray[0];
+      let end = timeframesArray[0];
+
+      for (let i = 1; i < timeframesArray.length; i++) {
+        const currentTimeframe = timeframesArray[i]!;
+        if (currentTimeframe - end < threshold) {
+          end = currentTimeframe;
+        } else {
+          if (end - start > 500) {
+            processedTimeframes.push({ speakerName, start, end });
+          }
+          start = currentTimeframe;
+          end = currentTimeframe;
+        }
+      }
+      processedTimeframes.push({ speakerName, start, end });
+    }
+    processedTimeframes.sort((a, b) => a.start - b.start || a.end - b.end);
+
+    return processedTimeframes;
   }
 
   /**
@@ -592,54 +643,108 @@ export class MeetsBot extends Bot {
     }
 
     // Set up participant monitoring
+    await this.page.exposeFunction(
+      "addParticipant",
+      async (participant: Participant) => {
+        this.participants.push(participant);
+      }
+    );
 
-    // Monitor for participants joining
+    await this.page.exposeFunction(
+      "updateParticipants",
+      async (participants: Participant[]) => {
+        participants.forEach(async (p) => {
+          if (!this.participants.find((x) => x.id === p.id)) {
+            this.participants.push(p);
+            await this.onEvent(EventCode.PARTICIPANT_JOIN, p);
+          } else if (this.participants.find((x) => x.id === p.id)) {
+            await this.onEvent(EventCode.PARTICIPANT_LEAVE, p);
+            this.participants = this.participants.filter((p) => p.id !== p.id);
+            this.timeAloneStarted =
+              this.participants.length === 1 ? Date.now() : Infinity;
+          }
+        });
+      }
+    );
+
     await this.page.exposeFunction(
       "onParticipantJoin",
-      async (participantId: string) => {
-        await this.onEvent(EventCode.PARTICIPANT_JOIN, { participantId });
+      async (participant: Participant) => {
+        this.participants.push(participant);
+        await this.onEvent(EventCode.PARTICIPANT_JOIN, participant);
       }
     );
 
-    // Monitor for participants leaving
     await this.page.exposeFunction(
       "onParticipantLeave",
-      async (participantId: string) => {
-        await this.onEvent(EventCode.PARTICIPANT_LEAVE, { participantId });
+      async (participant: Participant) => {
+        await this.onEvent(EventCode.PARTICIPANT_LEAVE, participant);
+        this.participants = this.participants.filter(
+          (p) => p.id !== participant.id
+        );
+        this.timeAloneStarted =
+          this.participants.length === 1 ? Date.now() : Infinity;
       }
     );
 
+    await this.page.exposeFunction(
+      "registerParticipantSpeaking",
+      (participant: Participant) => {
+        this.lastActivity = Date.now();
+        const relativeTimestamp = Date.now() - this.recordingStartedAt;
+        console.log(
+          `Participant ${participant.name} is speaking at ${relativeTimestamp}ms`
+        );
 
-    // Expose function to update participant count
-    await this.page.exposeFunction("addParticipantCount", (count: number) => {
-      this.participantCount += count;
-      console.log("Updated Participant Count:", this.participantCount);
-
-      if (this.participantCount == 1) {
-        this.timeAloneStarted = Date.now();
-      } else {
-        this.timeAloneStarted = Infinity;
+        if (!this.speakerTimeframes[participant.name]) {
+          this.speakerTimeframes[participant.name] = [relativeTimestamp];
+        } else {
+          this.speakerTimeframes[participant.name]!.push(relativeTimestamp);
+        }
       }
-    });
+    );
 
     // Add mutation observer for participant list
     // Use in the browser context to monitor for participants joining and leaving
     await this.page.evaluate(() => {
-
       const peopleList = document.querySelector('[aria-label="Participants"]');
       if (!peopleList) {
         console.error("Could not find participants list element");
         return;
       }
 
-      // Initialize participant count
-      const initialParticipants = peopleList.querySelectorAll('[data-participant-id]').length;
-      window.addParticipantCount(initialParticipants); // initially 0
-      console.log(`Initial participant count: ${initialParticipants}`);
+      const initialParticipants = peopleList.childNodes;
 
-      // Set up mutation observer
+      window.observeSpeech = (node, participant) => {
+        console.debug("Observing speech for participant:", participant.name);
+        const activityObserver = new MutationObserver((mutations) => {
+          mutations.forEach(() => {
+            console.debug(
+              "Participant speaking inside callback:",
+              participant.name
+            );
+            window.registerParticipantSpeaking(participant);
+          });
+        });
+        activityObserver.observe(node, {
+          attributes: true,
+          subtree: true,
+          childList: true,
+          attributeFilter: ["class"],
+        });
+      };
+
+      initialParticipants.forEach((node: any) => {
+        const participant = {
+          id: node.getAttribute("data-participant-id"),
+          name: node.getAttribute("aria-label"),
+        };
+        window.addParticipant(participant);
+        window.observeSpeech(node, participant);
+      });
+
       console.log("Setting up mutation observer on participants list");
-      const observer = new MutationObserver((mutations) => {
+      const peopleObserver = new MutationObserver((mutations) => {
         mutations.forEach((mutation) => {
           if (mutation.type === "childList") {
             mutation.addedNodes.forEach((node: any) => {
@@ -649,35 +754,48 @@ export class MeetsBot extends Bot {
               ) {
                 console.log(
                   "Participant joined:",
-                  node.getAttribute("data-participant-id")
+                  node.getAttribute("aria-label")
                 );
-                // @ts-ignore
-                window.onParticipantJoin(
-                  node.getAttribute("data-participant-id")
-                );
-                window.addParticipantCount(1);
+                const participant = {
+                  id: node.getAttribute("data-participant-id"),
+                  name: node.getAttribute("aria-label"),
+                };
+                window.onParticipantJoin(participant);
+                window.observeSpeech(node, participant);
               }
             });
             mutation.removedNodes.forEach((node: any) => {
               if (
+                node.nodeType === Node.ELEMENT_NODE &&
                 node.getAttribute &&
                 node.getAttribute("data-participant-id")
               ) {
                 console.log(
                   "Participant left:",
-                  node.getAttribute("data-participant-id")
+                  node.getAttribute("aria-label")
                 );
-                // @ts-ignore
-                window.onParticipantLeave(
-                  node.getAttribute("data-participant-id")
-                );
-                window.addParticipantCount(-1);
+                window.onParticipantLeave({
+                  id: node.getAttribute("data-participant-id"),
+                  name: node.getAttribute("aria-label"),
+                });
+              } else {
+                const newParticipantList: any = [];
+                document
+                  .querySelector('[aria-label="Participants"]')
+                  ?.childNodes.forEach((node: any) => {
+                    const participant = {
+                      id: node.getAttribute("data-participant-id"),
+                      name: node.getAttribute("aria-label"),
+                    };
+                    newParticipantList.push(participant);
+                  });
+                window.updateParticipants(newParticipantList);
               }
             });
           }
         });
       });
-      observer.observe(peopleList, { childList: true, subtree: true });
+      peopleObserver.observe(peopleList, { childList: true, subtree: true });
     });
 
     //
@@ -688,8 +806,7 @@ export class MeetsBot extends Bot {
     while (true) {
 
       // Check if it's only me in the meeting
-      console.log('Checking if 1 Person Remaining ...', this.participantCount);
-      if (this.participantCount === 1) {
+      if (this.participants.length === 1) {
 
         const leaveMs = this.settings?.automaticLeave?.everyoneLeftTimeout ?? 30000; // Default to 30 seconds if not set
         const msDiff = Date.now() - this.timeAloneStarted;
@@ -709,6 +826,16 @@ export class MeetsBot extends Bot {
         this.kicked = true; //store
         break; //exit loop
 
+      }
+
+      // Check if there has been no activity, case for when only bots stay in the meeting
+      if (
+        this.participants.length > 1 &&
+        this.lastActivity &&
+        Date.now() - this.lastActivity > this.settings.automaticLeave.inactivityTimeout
+      ) {
+        console.log("No Activity for 5 minutes");
+        break;
       }
 
       await this.handleInfoPopup(1000);

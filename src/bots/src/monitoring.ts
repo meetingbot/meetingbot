@@ -61,6 +61,7 @@ export const reportEvent = async (
           id: botId,
           status: eventType as unknown as Status,
           recording: eventData.recording,
+          speakerTimeframes: eventData.speakerTimeframes,
         });
       } else {
         await trpc.bots.updateBotStatus.mutate({

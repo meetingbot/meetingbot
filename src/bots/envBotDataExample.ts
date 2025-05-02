@@ -29,6 +29,7 @@ const botData: BotConfig = {
     waitingRoomTimeout: 3600000,
     noOneJoinedTimeout: 3600000,
     everyoneLeftTimeout: 3600000,
+    inactivityTimeout: 3600000,
   },
   callbackUrl: "<CALLBACK_URL>",
 };
