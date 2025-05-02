@@ -1,7 +1,6 @@
 import { chromium } from "playwright-extra";
 import { Browser, Page } from "playwright";
-import { saveVideo, PageVideoCapture } from "playwright-video";
-import { CaptureOptions } from "playwright-video/build/PageVideoCapture";
+import {  PageVideoCapture } from "playwright-video";
 import StealthPlugin from "puppeteer-extra-plugin-stealth";
 import { setTimeout } from "timers/promises";
 import { BotConfig, EventCode, SpeakerTimeframe, WaitingRoomTimeoutError } from "../../src/types";
@@ -100,6 +99,9 @@ declare global {
  * @method getRecordingPath - Retrieves the file path of the recording.
  * @returns {string} The path to the recording file.
  * 
+ * @method getSpeakerTimeframes - Retrieves the timeframes of speakers in the meeting.
+ * @returns {Array} An array of objects containing speaker names and their respective start and end times.
+ * 
  * @method getContentType - Retrieves the content type of the recording file.
  * @returns {string} The content type of the recording file.
  * 
@@ -128,7 +130,7 @@ export class MeetsBot extends Bot {
   recordingPath: string;
 
   private participants: Participant[] = [];
-  private speakerTimeframes: {
+  private registeredActivityTimestamps: {
     [participantName: string]: [number];
   } = {};
   private startedRecording: boolean = false;
@@ -136,7 +138,6 @@ export class MeetsBot extends Bot {
   private timeAloneStarted: number = Infinity;
   private lastActivity: number | undefined = undefined;
   private recordingStartedAt: number = 0;
-  private maxDuration: number = 1000 * 60 * 180;
 
   private ffmpegProcess: ChildProcessWithoutNullStreams | null;
 
@@ -208,16 +209,17 @@ export class MeetsBot extends Bot {
       end: number;
     }[] = [];
 
-    const threshold = 3000;
+    // If time between chunks is less than this, we consider it the same utterance.
+    const utteranceThresholdMs = 3000;
     for (const [speakerName, timeframesArray] of Object.entries(
-      this.speakerTimeframes
+      this.registeredActivityTimestamps
     )) {
       let start = timeframesArray[0];
       let end = timeframesArray[0];
 
       for (let i = 1; i < timeframesArray.length; i++) {
         const currentTimeframe = timeframesArray[i]!;
-        if (currentTimeframe - end < threshold) {
+        if (currentTimeframe - end < utteranceThresholdMs) {
           end = currentTimeframe;
         } else {
           if (end - start > 500) {
@@ -696,10 +698,10 @@ export class MeetsBot extends Bot {
           `Participant ${participant.name} is speaking at ${relativeTimestamp}ms`
         );
 
-        if (!this.speakerTimeframes[participant.name]) {
-          this.speakerTimeframes[participant.name] = [relativeTimestamp];
+        if (!this.registeredActivityTimestamps[participant.name]) {
+          this.registeredActivityTimestamps[participant.name] = [relativeTimestamp];
         } else {
-          this.speakerTimeframes[participant.name]!.push(relativeTimestamp);
+          this.registeredActivityTimestamps[participant.name]!.push(relativeTimestamp);
         }
       }
     );
