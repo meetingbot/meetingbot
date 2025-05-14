@@ -136,7 +136,7 @@ export class MeetsBot extends Bot {
     onEvent: (eventType: EventCode, data?: any) => Promise<void>
   ) {
     super(botSettings, onEvent);
-    this.recordingPath = path.resolve('/rec/recording.mp4');
+    this.recordingPath = path.resolve(__dirname, "recording.mp4");
 
     this.browserArgs = [
       "--incognito",
