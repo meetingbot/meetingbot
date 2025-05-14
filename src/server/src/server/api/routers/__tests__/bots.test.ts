@@ -175,6 +175,7 @@ describe("botsRouter", () => {
         waitingRoomTimeout: 300000,
         noOneJoinedTimeout: 300000, 
         everyoneLeftTimeout: 300000,
+        inactivityTimeout: 300000,
       }
     });
     
@@ -202,6 +203,7 @@ describe("botsRouter", () => {
         waitingRoomTimeout: 300000,
         noOneJoinedTimeout: 300000, 
         everyoneLeftTimeout: 300000,
+        inactivityTimeout: 300000,
       }
     });
 
@@ -318,6 +320,7 @@ describe("botsRouter", () => {
         waitingRoomTimeout: 300000,
         noOneJoinedTimeout: 300000, 
         everyoneLeftTimeout: 300000,
+        inactivityTimeout: 300000,
       }
     });
     
