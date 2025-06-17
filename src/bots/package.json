@@ -9,6 +9,8 @@
   "scripts": {
     "start": "tsx src/index.ts",
     "dev": "tsx src/index.ts",
+    "dev-local": "tsx src/scripts/dev-local.ts",
+    "set-bot-data": "tsx src/scripts/set-bot-data.ts",
     "test": "pnpm exec jest"
   },
   "dependencies": {
