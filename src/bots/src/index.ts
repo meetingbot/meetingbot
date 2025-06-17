@@ -13,6 +13,7 @@ export const main = async () => {
     "BOT_DATA",
     "AWS_BUCKET_NAME",
     "AWS_REGION",
+    "NODE_ENV",
   ] as const;
 
   // Check all required environment variables are present
@@ -42,10 +43,13 @@ export const main = async () => {
   // Create AbortController for heartbeat
   const heartbeatController = new AbortController();
 
-  // Start heartbeat in the background
-  console.log("Starting heartbeat");
-  const heartbeatInterval = botData.heartbeatInterval ?? 5000; // Default to 5 seconds if not set
-  startHeartbeat(botId, heartbeatController.signal, heartbeatInterval); 
+  // Do not start heartbeat in development
+  if (process.env.NODE_ENV !== "development") {
+    // Start heartbeat in the background
+    console.log("Starting heartbeat");
+    const heartbeatInterval = botData.heartbeatInterval ?? 5000; // Default to 5 seconds if not set
+    startHeartbeat(botId, heartbeatController.signal, heartbeatInterval);
+  }
 
   // Report READY_TO_DEPLOY event
   await reportEvent(botId, EventCode.READY_TO_DEPLOY);
