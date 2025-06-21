@@ -212,39 +212,95 @@ export class ZoomBot extends Bot {
     const frame = await iframe?.contentFrame();
 
     // Constantly check if the meeting has ended every second
-    const checkMeetingEnd = async () => {
+    const checkMeetingEnd = () => new Promise<void>((resolve, reject) => {
+      const poll = async () => {
+        try {
+          // Wait for the "Ok" button to appear which indicates the meeting is over
+          const okButton = await frame?.waitForSelector(
+              "button.zm-btn.zm-btn-legacy.zm-btn--primary.zm-btn__outline--blue",
+              { timeout: 1000 },
+          );
 
-      // TODO: Refactor this -- it won't work as expected.
-      // Check for the ok button with a short timeout, and then retry as intentned.
-      // Currently the bot will wait for the button to appear within 1 hour  (360k ms). 
-      // When it appears, then the bot will end the meeting regardless. (no need to check okButton)
-      // If the button does not appear within the hour, it throws TimeoutError, ending the meeting.
+          if (okButton) {
+            console.log("Meeting ended");
 
-      // Wait for the "Ok" button to appear which indicates the meeting is over
-      const okButton = await frame?.waitForSelector(
-        "button.zm-btn.zm-btn-legacy.zm-btn--primary.zm-btn__outline--blue",
-        { timeout: 3600000 },
-      );
+            // Click the button to leave the meeting
+            await okButton.click();
 
-      if (okButton) {
-        console.log("Meeting ended");
+            // Stop Recording
+            this.stopRecording();
 
-        // Click the button to leave the meeting
-        await okButton.click();
+            // End Life -- Close file, browser, and websocket server
+            this.endLife();
 
-        // Stop Recording
-        this.stopRecording();
+            resolve();
+            return;
+          }
 
-        // End Life -- Close file, browser, and websocket server
-        this.endLife();
+          // Schedule next iteration
+          setTimeout(poll, 1000);
+        } catch (err) {
+          // If it was a timeout
+          // @ts-ignore
+          if (err?.name === "TimeoutError") {
+            // The button wasn’t there in the last second. Running next iteration
+            setTimeout(poll, 1000);
+          } else {
+            // If it was some other error we throw it
+            reject(err);
+          }
+        }
+      };
 
-      } else {
-        setTimeout(checkMeetingEnd, 1000); // Check every second
-      }
-    };
+      poll();
+    });
 
-    // Start the meeting end check
-    await checkMeetingEnd();
+    // Constantly check if Meeting is still running, every minute
+    const checkIfMeetingRunning = () => new Promise<void>((resolve, reject) => {
+      const poll = async () => {
+        try {
+          // Checking if Leave buttons is present which indicates the meeting is still running
+          const leaveButtonEl = await frame?.waitForSelector(
+              leaveButton,
+              { timeout: 700 },
+          );
+
+          if (leaveButtonEl) {
+            console.warn('Meeting in progress');
+            setTimeout(poll, 60000);
+          } else {
+            // Leave button not found within timeout window
+            console.error("Meeting ended unexpectedly");
+
+            this.stopRecording();
+            this.endLife();
+
+            resolve();
+          }
+        } catch (err) {
+          // Only treat a timeout as “meeting ended”; rethrow anything else.
+          // @ts-ignore
+          if (err?.name === "TimeoutError") {
+            console.error("Meeting ended unexpectedly");
+
+            this.stopRecording();
+            this.endLife();
+
+            resolve();
+          } else {
+            reject(err);
+          }
+        }
+      };
+
+      poll();
+    });
+
+    // Start both meeting end checks in parallel and return once either of them finishes
+    await Promise.race([
+      checkMeetingEnd(),
+      checkIfMeetingRunning()
+    ]);
   }
 
   // Get the path to the recording file
