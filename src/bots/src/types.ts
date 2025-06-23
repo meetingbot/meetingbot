@@ -13,6 +13,7 @@ export type AutomaticLeave = {
   waitingRoomTimeout: number;
   noOneJoinedTimeout: number;
   everyoneLeftTimeout: number;
+  inactivityTimeout: number;
 };
 
 export type BotConfig = {
@@ -67,3 +68,9 @@ export class MeetingJoinError extends Error {
     this.name = "MeetingJoinError";
   }
 }
+
+export type SpeakerTimeframe = {
+  start: number;
+  end: number;
+  speakerName: string;
+};

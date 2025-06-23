@@ -90,7 +90,9 @@ export const main = async () => {
   // Only report DONE if no error occurred
   if (!hasErrorOccurred) {
     // Report final DONE event
-    await reportEvent(botId, EventCode.DONE, { recording: key });
+    const speakerTimeframes = bot.getSpeakerTimeframes();
+    console.debug("Speaker timeframes:", speakerTimeframes);
+    await reportEvent(botId, EventCode.DONE, { recording: key, speakerTimeframes });
   }
 
   // Exit with appropriate code
