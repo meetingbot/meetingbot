@@ -43,29 +43,31 @@ src/bots/
 ```
 
 ## Environment
+
 Refer to the `.env.example` file for the required environment variables. Duplicate this file and rename it to `.env`. This `.env` file will be utilized by the application during execution.
 
-### Using `envBotDataExample.ts`
+The `BOT_DATA` environment variable contains the bot configuration including meeting information. The `meeting_info` object within `BOT_DATA` is used to store the meeting information for the bot to join the meeting. This information is platform dependent, each platform requires different keys in the `meeting_info` object.
 
-`envBotDataExample.ts` is a script used to create the `BOT_DATA` environment variable for the bot when testing locally. This is a visually easier way to fill in the values than doing it manually. Create a duplicate of this file to
-
-1. Copy the script into `envBotData.ts` (this will be ignored by git)
-2. Fill in the `<...>` with the actual values
-3. Ensure the `.env` file is in this directory with _no_ `BOT_DATA` variable
-4. Run the script using the following command (this will modify your `.env` file)
+You can either use the `set-bot-data` script (recommended) or manually configure the environment as described below.
 
 ```bash
 cd src/bots
-pnpm tsx envBotData.ts
+
+# Set bot data with a Google Meet URL
+pnpm set-bot-data "https://meet.google.com/..."
+
+# Set bot data with a Zoom URL
+pnpm set-bot-data "https://zoom.us/j/..."
+
+# Set bot data with a Teams URL
+pnpm set-bot-data "https://teams.live.com/meet/..."
+
+# Set bot data with a custom callback URL
+pnpm set-bot-data "https://meet.google.com/..." "https://mycallback.com/webhook"
 ```
 
-### Environment Setup
-
-See `.env.example` for an understanding of the file structure. Look at `envBotDataExample.ts` for the structure of the variable `BOT_DATA`.
-
-The `meeting_info` object in the `.env` file is used to store the meeting information for the bot to join the meeting. However, this information is platform dependant- Each platform requires the use of different keys in the `meeting_info` object.
-
 ### Zoom
+
 ```json
 {
   "meeting_info": {
@@ -77,6 +79,7 @@ The `meeting_info` object in the `.env` file is used to store the meeting inform
 ```
 
 ### Google Meet
+
 ```json
 {
   "meeting_info": {
@@ -85,36 +88,69 @@ The `meeting_info` object in the `.env` file is used to store the meeting inform
   }
 }
 ```
+
 Where Meeting Link is the full URL to the meeting.
 
 ### Microsoft Teams
+
 ```json
 {
   "meeting_info": {
     "platform": "teams",
     "meetingId": "<MEETING_ID>",
-    "organizerId": "<ORGANIZER_ID>",
-    "tenantId": "<TENANT_ID>"
+    "meetingPassword": "<MEETING_PASSWORD>"
   }
 }
 ```
 
+### Running Bots Locally
 
-## Local Testing
+First make sure you have the appropriate browsers and ffmpeg installed
 
-The following code is used to run the bots locally in your own environment. Bot code should work as intended on your environment, but we make no guarentees about this. Instead, you should aim to test and develop your code in the docker environment.
+```bash
+# FOR TEAMS AND ZOOM: ensure that you have installed the puppeteer browsers
+cd src/bots/zoom && pnpm exec puppeteer browsers install chrome
+
+# FOR GOOGLE MEETS: ensure that you have installed the playwright browsers and ffmpeg
+cd src/bots/meet && pnpm exec playwright install
+brew install ffmpeg # learn more at https://ffmpeg.org/download.html
+```
+
+Then, you can use the `dev-local` script to run the bot with automatic configuration:
 
 ```bash
 cd src/bots
-pnpm install
-pnpm run dev
+
+# Run a bot locally with a Google Meet URL
+pnpm dev-local "https://meet.google.com/<meeting_id>"
+
+# Run a bot locally with a Zoom URL
+pnpm dev-local "https://zoom.us/j/<meeting_id>?pwd=<password>"
+
+# Run a bot locally with a Teams URL
+pnpm dev-local "https://teams.live.com/meet/<meeting_id>?p=<password>"
+
+# Run with a custom callback URL (defaults to http://localhost:3000/callback)
+pnpm dev-local "https://meet.google.com/<meeting_id>" "https://mycallback.com/webhook"
 ```
+
+Alternatively, you can first set up your `.env` file using `set-bot-data` and then run the regular `pnpm dev` command:
+
+```bash
+# First, configure the .env file
+pnpm set-bot-data "https://meet.google.com/<meeting_id>"
+
+# Then run the bot
+pnpm dev
+```
+
+Bot code should work as intended on your environment, but we make no guarentees about this. Instead, you should aim to test and develop your code in the docker environment.
 
 ## Building
 
-This section provides instructions for building the Docker images required for the MeetingBot application. 
-The code below outlines the necessary steps and configurations to create containerized environments 
-for deploying the bot services. 
+This section provides instructions for building the Docker images required for the MeetingBot application.
+The code below outlines the necessary steps and configurations to create containerized environments
+for deploying the bot services.
 
 Ensure that [Docker](https://www.docker.com/) is installed and properly configured on your system before proceeding with the build process.
 
@@ -137,10 +173,3 @@ docker run --env-file .env <PLATFORM>
 ```
 
 Where `<PLATFORM>` is one of either `meet | teams | zoom`.
-
-### Build Issues
-If you get an strange erorr while running (eg. Browser not found at file specified), upgrade puppeteer to the latest version in the specific platform's `node_modules` folder.
-```bash
-cd zoom
-pnpm install puppeteer@latest
-```
