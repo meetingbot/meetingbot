@@ -148,6 +148,7 @@ const getStatusCode = (e: unknown) => {
         SERVICE_UNAVAILABLE: 503,
         GATEWAY_TIMEOUT: 504,
         UNSUPPORTED_MEDIA_TYPE: 415,
+        PAYMENT_REQUIRED: 402,
       }[e.code] ?? 500)
     : 500;
 };
