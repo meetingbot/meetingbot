@@ -257,7 +257,7 @@ export class ZoomBot extends Bot {
         try {
           // Wait for the "Ok" button to appear which indicates the meeting is over
           const okButton = await frame?.waitForSelector(
-              "button.zm-btn.zm-btn-legacy.zm-btn--primary.zm-btn__outline--blue",
+              'div[aria-label="Meeting is end now"] button.zm-btn.zm-btn-legacy.zm-btn--primary.zm-btn__outline--blue',
               { timeout: 1000 },
           );
 
