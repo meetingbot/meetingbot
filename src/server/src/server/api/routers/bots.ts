@@ -85,6 +85,7 @@ export const botsRouter = createTRPCRouter({
             waitingRoomTimeout: 300000, // 5 minutes
             noOneJoinedTimeout: 300000, // 5 minutes
             everyoneLeftTimeout: 300000, // 5 minutes
+            inactivityTimeout: 300000, // 5 minutes
           },
           callbackUrl: input.callbackUrl, // Credit to @martinezpl for this line -- cannot merge at time of writing due to capstone requirements
         };
@@ -160,6 +161,7 @@ export const botsRouter = createTRPCRouter({
           id: z.number(),
           status: status,
           recording: z.string().optional(),
+          speakerTimeframes: z.array(z.record(z.string(), z.any())).optional()
         })
         .refine(
           (data) => {
@@ -203,18 +205,22 @@ export const botsRouter = createTRPCRouter({
         // add the recording to the bot
         await ctx.db
           .update(bots)
-          .set({ recording: input.recording })
+          .set({ recording: input.recording, speakerTimeframes: input.speakerTimeframes })
           .where(eq(bots.id, bot.id));
 
         if (bot.callbackUrl) {
           // call the callback url
-          await fetch(bot.callbackUrl, {
-            method: "POST",
-            body: JSON.stringify({
-              botId: bot.id,
-              status: input.status,
-            }),
-          });
+          try {
+            await fetch(bot.callbackUrl, {
+              method: 'POST',
+              body: JSON.stringify({
+                botId: bot.id,
+                status: input.status,
+              }),
+            })
+          } catch (error) {
+            console.error('Error calling callback URL:', error)
+          }
         }
       }
       return result[0];

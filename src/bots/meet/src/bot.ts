@@ -1,10 +1,9 @@
 import { chromium } from "playwright-extra";
 import { Browser, Page } from "playwright";
-import { saveVideo, PageVideoCapture } from "playwright-video";
-import { CaptureOptions } from "playwright-video/build/PageVideoCapture";
+import {  PageVideoCapture } from "playwright-video";
 import StealthPlugin from "puppeteer-extra-plugin-stealth";
 import { setTimeout } from "timers/promises";
-import { BotConfig, EventCode, WaitingRoomTimeoutError } from "../../src/types";
+import { BotConfig, EventCode, SpeakerTimeframe, WaitingRoomTimeoutError } from "../../src/types";
 import { Bot } from "../../src/bot";
 import * as fs from 'fs';
 import path from "path";
@@ -37,6 +36,12 @@ const infoPopupClick = `//button[.//span[text()="Got it"]]`;
 const SCREEN_WIDTH = 1920;
 const SCREEN_HEIGHT = 1080;
 
+type Participant = {
+  id: string;
+  name: string;
+  observer?: MutationObserver;
+};
+
 /**
  * @param amount Milliseconds
  * @returns Random Number within 10% of the amount given, mean at amount
@@ -53,9 +58,17 @@ declare global {
     saveChunk: (chunk: number[]) => void;
     stopRecording: () => void;
 
-    setParticipantCount: (count: number) => void;
-    addParticipantCount: (count: number) => void;
+    addParticipant: (participant: Participant) => void;
+    getParticipants: () => Participant[];
+    updateParticipants: (participants: Participant[]) => void;
+    onParticipantJoin: (participant: Participant) => void;
+    onParticipantLeave: (participant: Participant) => void;
+    registerParticipantSpeaking: (participant: Participant) => void;
+    observeSpeech: (node: any, participant: Participant) => void;
+    handleMergedAudio: () => void;
 
+    participantArray: Participant[];
+    mergedAudioParticipantArray: Participant[];
     recorder: MediaRecorder | undefined;
   }
 }
@@ -91,6 +104,9 @@ declare global {
  * @method getRecordingPath - Retrieves the file path of the recording.
  * @returns {string} The path to the recording file.
  * 
+ * @method getSpeakerTimeframes - Retrieves the timeframes of speakers in the meeting.
+ * @returns {Array} An array of objects containing speaker names and their respective start and end times.
+ * 
  * @method getContentType - Retrieves the content type of the recording file.
  * @returns {string} The content type of the recording file.
  * 
@@ -118,11 +134,15 @@ export class MeetsBot extends Bot {
   kicked: boolean = false;
   recordingPath: string;
 
-  private recordBuffer: Buffer[] = [];
+  private participants: Participant[] = [];
+  private registeredActivityTimestamps: {
+    [participantName: string]: [number];
+  } = {};
   private startedRecording: boolean = false;
 
   private timeAloneStarted: number = Infinity;
-  participantCount: number = 0;
+  private lastActivity: number | undefined = undefined;
+  private recordingStartedAt: number = 0;
 
   private ffmpegProcess: ChildProcessWithoutNullStreams | null;
 
@@ -181,6 +201,44 @@ export class MeetsBot extends Bot {
 
     // Give Back the path
     return this.recordingPath;
+  }
+
+  /**
+   * Gets the speaker timeframes.
+   * @returns {Array} - Returns an array of objects containing speaker names and their respective start and end times.
+   */
+  getSpeakerTimeframes(): SpeakerTimeframe[] {
+    const processedTimeframes: {
+      speakerName: string;
+      start: number;
+      end: number;
+    }[] = [];
+
+    // If time between chunks is less than this, we consider it the same utterance.
+    const utteranceThresholdMs = 3000;
+    for (const [speakerName, timeframesArray] of Object.entries(
+      this.registeredActivityTimestamps
+    )) {
+      let start = timeframesArray[0];
+      let end = timeframesArray[0];
+
+      for (let i = 1; i < timeframesArray.length; i++) {
+        const currentTimeframe = timeframesArray[i]!;
+        if (currentTimeframe - end < utteranceThresholdMs) {
+          end = currentTimeframe;
+        } else {
+          if (end - start > 500) {
+            processedTimeframes.push({ speakerName, start, end });
+          }
+          start = currentTimeframe;
+          end = currentTimeframe;
+        }
+      }
+      processedTimeframes.push({ speakerName, start, end });
+    }
+    processedTimeframes.sort((a, b) => a.start - b.start || a.end - b.end);
+
+    return processedTimeframes;
   }
 
   /**
@@ -575,104 +633,259 @@ export class MeetsBot extends Bot {
     }
 
     // Set up participant monitoring
+    await this.page.exposeFunction(
+      "addParticipant",
+      async (participant: Participant) => {
+        this.participants.push(participant);
+      }
+    );
 
-    // Monitor for participants joining
+    await this.page.exposeFunction("getParticipants", () => {
+      return this.participants;
+    });
+
+    await this.page.exposeFunction(
+      "updateParticipants",
+      async (participants: Participant[]) => {
+        participants.forEach(async (p) => {
+          if (!this.participants.find((x) => x.id === p.id)) {
+            this.participants.push(p);
+            await this.onEvent(EventCode.PARTICIPANT_JOIN, p);
+          } else if (this.participants.find((x) => x.id === p.id)) {
+            await this.onEvent(EventCode.PARTICIPANT_LEAVE, p);
+            this.participants = this.participants.filter((p) => p.id !== p.id);
+            this.timeAloneStarted =
+              this.participants.length === 1 ? Date.now() : Infinity;
+          }
+        });
+      }
+    );
+
     await this.page.exposeFunction(
       "onParticipantJoin",
-      async (participantId: string) => {
-        await this.onEvent(EventCode.PARTICIPANT_JOIN, { participantId });
+      async (participant: Participant) => {
+        this.participants.push(participant);
+        await this.onEvent(EventCode.PARTICIPANT_JOIN, participant);
       }
     );
 
-    // Monitor for participants leaving
     await this.page.exposeFunction(
       "onParticipantLeave",
-      async (participantId: string) => {
-        await this.onEvent(EventCode.PARTICIPANT_LEAVE, { participantId });
+      async (participant: Participant) => {
+        await this.onEvent(EventCode.PARTICIPANT_LEAVE, participant);
+        this.participants = this.participants.filter(
+          (p) => p.id !== participant.id
+        );
+        this.timeAloneStarted =
+          this.participants.length === 1 ? Date.now() : Infinity;
       }
     );
 
+    await this.page.exposeFunction(
+      "registerParticipantSpeaking",
+      (participant: Participant) => {
+        this.lastActivity = Date.now();
+        const relativeTimestamp = Date.now() - this.recordingStartedAt;
+        console.log(
+          `Participant ${participant.name} is speaking at ${relativeTimestamp}ms`
+        );
 
-    // Expose function to update participant count
-    await this.page.exposeFunction("addParticipantCount", (count: number) => {
-      this.participantCount += count;
-      console.log("Updated Participant Count:", this.participantCount);
-
-      if (this.participantCount == 1) {
-        this.timeAloneStarted = Date.now();
-      } else {
-        this.timeAloneStarted = Infinity;
+        if (!this.registeredActivityTimestamps[participant.name]) {
+          this.registeredActivityTimestamps[participant.name] = [relativeTimestamp];
+        } else {
+          this.registeredActivityTimestamps[participant.name]!.push(relativeTimestamp);
+        }
       }
-    });
+    );
 
     // Add mutation observer for participant list
     // Use in the browser context to monitor for participants joining and leaving
     await this.page.evaluate(() => {
-
       const peopleList = document.querySelector('[aria-label="Participants"]');
       if (!peopleList) {
         console.error("Could not find participants list element");
         return;
       }
 
-      // Initialize participant count
-      const initialParticipants = peopleList.querySelectorAll('[data-participant-id]').length;
-      window.addParticipantCount(initialParticipants); // initially 0
-      console.log(`Initial participant count: ${initialParticipants}`);
+      const initialParticipants = peopleList.childNodes;
+      window.participantArray = [];
+      window.mergedAudioParticipantArray = [];
 
-      // Set up mutation observer
+      window.observeSpeech = (node, participant) => {
+        console.debug("Observing speech for participant:", participant.name);
+        const activityObserver = new MutationObserver((mutations) => {
+          mutations.forEach(() => {
+            window.registerParticipantSpeaking(participant);
+          });
+        });
+        activityObserver.observe(node, {
+          attributes: true,
+          subtree: true,
+          childList: true,
+          attributeFilter: ["class"],
+        });
+        participant.observer = activityObserver;
+      };
+
+      window.handleMergedAudio = () => {
+        const mergedAudioNode = document.querySelector(
+          '[aria-label="Merged audio"]'
+        );
+        if (mergedAudioNode) {
+          const detectedParticipants: Participant[] = [];
+          
+          // Gather all participants in the merged audio node
+          mergedAudioNode.parentNode!.childNodes.forEach((childNode: any) => {
+            const participantId = childNode.getAttribute("data-participant-id");
+            if (!participantId) {
+              return;
+            }
+            detectedParticipants.push({
+              id: participantId,
+              name: childNode.getAttribute("aria-label"),
+            });
+          });
+
+          // detected new participant in the merged node
+          if (
+            detectedParticipants.length >
+            window.mergedAudioParticipantArray.length
+          ) {
+            // add them
+            const filteredParticipants = detectedParticipants.filter(
+              (participant: Participant) =>
+                !window.mergedAudioParticipantArray.find(
+                  (p: Participant) => p.id === participant.id
+                )
+            );
+            filteredParticipants.forEach((participant: Participant) => {
+              const vidBlock = document.querySelector(
+                `[data-requested-participant-id="${participant.id}"]`
+              );
+              window.mergedAudioParticipantArray.push(participant);
+              window.addParticipant(participant);
+              window.observeSpeech(vidBlock, participant);
+              window.participantArray.push(participant);
+            });
+          } else if (
+            detectedParticipants.length <
+            window.mergedAudioParticipantArray.length
+          ) {
+            // some participants no longer in the merged node
+            const filteredParticipants =
+              window.mergedAudioParticipantArray.filter(
+                (participant: Participant) =>
+                  !detectedParticipants.find(
+                    (p: Participant) => p.id === participant.id
+                  )
+              );
+            filteredParticipants.forEach((participant: Participant) => {
+              const videoRectangle = document.querySelector(
+                `[data-requested-participant-id="${participant.id}"]`
+              );
+              if (!videoRectangle) {
+                // they've left the meeting
+                window.onParticipantLeave(participant);
+                window.participantArray = window.participantArray.filter(
+                  (p: Participant) => p.id !== participant.id
+                );
+              }
+
+              // update participants under merged audio
+              window.mergedAudioParticipantArray =
+                window.mergedAudioParticipantArray.filter(
+                  (p: Participant) => p.id !== participant.id
+                );
+            });
+          }
+        }
+      };
+
+      initialParticipants.forEach((node: any) => {
+        const participant = {
+          id: node.getAttribute("data-participant-id"),
+          name: node.getAttribute("aria-label"),
+        };
+        if (!participant.id) {
+          window.handleMergedAudio();
+          return;
+        }
+        window.addParticipant(participant);
+        window.observeSpeech(node, participant);
+        window.participantArray.push(participant);
+      });
+
       console.log("Setting up mutation observer on participants list");
-      const observer = new MutationObserver((mutations) => {
+      const peopleObserver = new MutationObserver((mutations) => {
         mutations.forEach((mutation) => {
           if (mutation.type === "childList") {
-            mutation.addedNodes.forEach((node: any) => {
-              if (
-                node.getAttribute &&
-                node.getAttribute("data-participant-id")
-              ) {
-                console.log(
-                  "Participant joined:",
-                  node.getAttribute("data-participant-id")
-                );
-                // @ts-ignore
-                window.onParticipantJoin(
-                  node.getAttribute("data-participant-id")
-                );
-                window.addParticipantCount(1);
-              }
-            });
             mutation.removedNodes.forEach((node: any) => {
+              console.log("Removed Node", node);
               if (
+                node.nodeType === Node.ELEMENT_NODE &&
                 node.getAttribute &&
-                node.getAttribute("data-participant-id")
+                node.getAttribute("data-participant-id") &&
+                window.participantArray.find(
+                  (p: Participant) =>
+                    p.id === node.getAttribute("data-participant-id")
+                )
               ) {
                 console.log(
                   "Participant left:",
-                  node.getAttribute("data-participant-id")
+                  node.getAttribute("aria-label")
                 );
-                // @ts-ignore
-                window.onParticipantLeave(
-                  node.getAttribute("data-participant-id")
+                window.onParticipantLeave({
+                  id: node.getAttribute("data-participant-id"),
+                  name: node.getAttribute("aria-label"),
+                });
+                window.participantArray = window.participantArray.filter(
+                  (p: Participant) =>
+                    p.id !== node.getAttribute("data-participant-id")
                 );
-                window.addParticipantCount(-1);
+              } else if (
+                document.querySelector('[aria-label="Merged audio"]')
+              ) {
+                window.handleMergedAudio();
               }
             });
           }
+          mutation.addedNodes.forEach((node: any) => {
+            console.log("Added Node", node);
+            if (
+                node.getAttribute &&
+              node.getAttribute("data-participant-id") &&
+              !window.participantArray.find(
+                (p: Participant) =>
+                  p.id === node.getAttribute("data-participant-id")
+              )
+              ) {
+                console.log(
+                "Participant joined:",
+                  node.getAttribute("aria-label")
+                );
+                    const participant = {
+                      id: node.getAttribute("data-participant-id"),
+                      name: node.getAttribute("aria-label"),
+                    };
+              window.onParticipantJoin(participant);
+              window.observeSpeech(node, participant);
+              window.participantArray.push(participant);
+            } else if (document.querySelector('[aria-label="Merged audio"]')) {
+              window.handleMergedAudio();
+              }
+            });
         });
       });
-      observer.observe(peopleList, { childList: true, subtree: true });
+
+      peopleObserver.observe(peopleList, { childList: true, subtree: true });
     });
 
-    //
-    //
-    //
     // Loop -- check for end meeting conditions every second
     console.log("Waiting until a leave condition is fulfilled..");
     while (true) {
 
       // Check if it's only me in the meeting
-      console.log('Checking if 1 Person Remaining ...', this.participantCount);
-      if (this.participantCount === 1) {
+      if (this.participants.length === 1) {
 
         const leaveMs = this.settings?.automaticLeave?.everyoneLeftTimeout ?? 30000; // Default to 30 seconds if not set
         const msDiff = Date.now() - this.timeAloneStarted;
@@ -692,6 +905,16 @@ export class MeetsBot extends Bot {
         this.kicked = true; //store
         break; //exit loop
 
+      }
+
+      // Check if there has been no activity, case for when only bots stay in the meeting
+      if (
+        this.participants.length > 1 &&
+        this.lastActivity &&
+        Date.now() - this.lastActivity > this.settings.automaticLeave.inactivityTimeout
+      ) {
+        console.log("No Activity for 5 minutes");
+        break;
       }
 
       await this.handleInfoPopup(1000);
