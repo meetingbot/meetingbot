@@ -559,19 +559,36 @@ export class MeetsBot extends Bot {
     console.log("Waiting for the 'Others might see you differently' popup...");
     await this.handleInfoPopup();
 
-    // Meeting Join Actions
     try {
-      console.log("Finding People Button...");
-      await this.page.waitForSelector(peopleButton, { timeout: 5000});
-      console.log("Clicking People Button...");
-      await this.page.click(peopleButton, { timeout: 500 });
-        
+      // UI patch: Find new people icon and click parent button
+      const hasPeopleIcon = await this.page.evaluate(() => {
+        const peopleButtonChild = Array.from(
+          document.querySelectorAll("i")
+        ).find((el) => el.textContent?.trim() === "people");
+        if (peopleButtonChild) {
+          const newPeopleButton = peopleButtonChild.closest("button");
+          if (newPeopleButton) {
+            newPeopleButton.click();
+            return true;
+          }
+        }
+        return false;
+      });
+
+      if (hasPeopleIcon) {
+        console.log("Using new People button selector.");
+      } else {
+        console.warn("People button not found, using fallback selector.");
+        await this.page.click(peopleButton);
+      }
+
       // Wait for the people panel to be visible
       await this.page.waitForSelector('[aria-label="Participants"]', {
         state: "visible",
       });
-    } catch {
-      console.log('Could not click People button. Continuing anyways.')
+
+    } catch (error) {
+      console.warn('Could not click People button. Continuing anyways.')
     }
 
     // Set up participant monitoring
