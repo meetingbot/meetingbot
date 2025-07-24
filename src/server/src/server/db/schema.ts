@@ -159,6 +159,13 @@ export const selectApiRequestLogSchema = createSelectSchema(apiRequestLogs, {
   responseBody: z.any(),
 });
 
+export const speakerTimeframeSchema = z.object({
+  speaker: z.string(),
+  start: z.number(),
+  end: z.number(),
+});
+export type SpeakerTimeframe = z.infer<typeof speakerTimeframeSchema>;
+
 /** BOT CONFIG */
 const automaticLeaveSchema = z.object({
   waitingRoomTimeout: z.number(), // the milliseconds before the bot leaves the meeting if it is in the waiting room
@@ -243,7 +250,8 @@ export const bots = pgTable("bots", {
   // recording stuff
   recording: varchar("recording", { length: 255 }),
   speakerTimeframes: json('speaker_timeframes')
-    .$type<Record<string, any>[]>()
+    .$type<SpeakerTimeframe[]>()
+    .notNull()
     .default([]),
   lastHeartbeat: timestamp("last_heartbeat"),
   // status stuff
@@ -280,6 +288,7 @@ export type InsertBotType = z.infer<typeof insertBotSchema>;
 export const selectBotSchema = createSelectSchema(bots, {
   meetingInfo: meetingInfoSchema,
   automaticLeave: automaticLeaveSchema,
+  speakerTimeframes: z.array(speakerTimeframeSchema),
 });
 export type SelectBotType = z.infer<typeof selectBotSchema>;
 

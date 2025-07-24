@@ -7,6 +7,7 @@ import {
   selectBotSchema,
   insertEventSchema,
   status,
+  speakerTimeframeSchema,
 } from "../../db/schema";
 import { eq, sql, and, notInArray } from "drizzle-orm";
 import { deployBot, shouldDeployImmediately } from "../services/botDeployment";
@@ -161,7 +162,7 @@ export const botsRouter = createTRPCRouter({
           id: z.number(),
           status: status,
           recording: z.string().optional(),
-          speakerTimeframes: z.array(z.record(z.string(), z.any())).optional()
+          speakerTimeframes: z.array(speakerTimeframeSchema).optional()
         })
         .refine(
           (data) => {
