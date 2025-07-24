@@ -1,7 +1,7 @@
 import fs from "fs";
-import puppeteer, { Page, Frame } from "puppeteer";
+import puppeteer, { Page } from "puppeteer";
 import { launch, getStream, wss } from "puppeteer-stream";
-import { BotConfig, EventCode, WaitingRoomTimeoutError } from "../../src/types";
+import { BotConfig, EventCode, WaitingRoomTimeoutError, SpeakerTimeframe } from "../../src/types";
 import { Bot } from "../../src/bot";
 import path from "path";
 
@@ -346,6 +346,11 @@ export class ZoomBot extends Bot {
   // Get the path to the recording file
   getRecordingPath(): string {
     return this.recordingPath;
+  }
+
+  getSpeakerTimeframes(): SpeakerTimeframe[] {
+    // TODO: Implement this
+    return []
   }
 
   // Get the content type of the recording file
