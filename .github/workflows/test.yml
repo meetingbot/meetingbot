@@ -9,6 +9,21 @@ jobs:
   test:
     runs-on: ubuntu-latest
 
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: test_db
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
     steps:
       - name: Checkout repository
         uses: actions/checkout@v3
@@ -28,6 +43,13 @@ jobs:
           cd src/server
           pnpm install
 
+      - name: Initialize test database
+        run: |
+          cd src/server
+          pnpm db:init-test
+        env:
+          TEST_DATABASE_URL: postgresql://postgres:postgres@localhost:5432/test_db
+
       - name: Run server tests
         run: |
           cd src/server
@@ -45,7 +67,7 @@ jobs:
           TEST_AUTH_SECRET: ${{ secrets.TEST_AUTH_SECRET }}
           TEST_EMAIL: ${{ secrets.TEST_EMAIL }}
           TEST_PASSWORD: ${{ secrets.TEST_PASSWORD }}
-          TEST_DATABASE_URL: ${{ secrets.TEST_DATABASE_URL }}
+          TEST_DATABASE_URL: postgresql://postgres:postgres@localhost:5432/test_db
 
       - name: Build
         run: |
@@ -85,3 +107,4 @@ jobs:
           TEST_AUTH_SECRET: ${{ secrets.TEST_AUTH_SECRET }}
           TEST_EMAIL: ${{ secrets.TEST_EMAIL }}
           TEST_PASSWORD: ${{ secrets.TEST_PASSWORD }}
+          TEST_DATABASE_URL: postgresql://postgres:postgres@localhost:5432/test_db
