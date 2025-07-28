@@ -31,6 +31,5 @@ export const generateSignedUrl = async (key: string, expiresIn = 3600) => {
     Key: key,
   });
 
-  // @ts-expect-error TS2345
   return await getSignedUrl(s3Client, command, { expiresIn });
 };
