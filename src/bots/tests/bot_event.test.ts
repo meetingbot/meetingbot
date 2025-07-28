@@ -86,10 +86,11 @@ describe('Meet Event Tests', () => {
                 const peopleList = document.querySelector('[aria-label="Participants"]');
                 const participant = document.createElement("div");
                 participant.setAttribute("data-participant-id", `participant-${peopleList?.childNodes.length ?? 0}`);
+                participant.setAttribute("aria-label", `name-${peopleList?.childNodes.length ?? 0}`);
                 peopleList?.appendChild(participant);
             });
             await bot.page.waitForTimeout(30);
-        }
+    };
 
         removeParticipant = async () => {
             // Simulate a participant leaving
@@ -124,24 +125,21 @@ describe('Meet Event Tests', () => {
         await addParticipant(); // Add first participant
         
         // Verify participant count after participants join
-        expect(bot.participantCount).toBe(1);
+    expect(bot.participants.length).toBe(1);
         
         await addParticipant(); // Add next
-        expect(bot.participantCount).toBe(2);
+    expect(bot.participants.length).toBe(2);
 
         await addParticipant(); // Add next
         await addParticipant(); // Add next
         await addParticipant(); // Add next
-        expect(bot.participantCount).toBe(5);
-
+    expect(bot.participants.length).toBe(5);
     }, 60000);
-
     
     /**
      * Check if a bot can detect a person joining
      */
     it("Detect a Person Leaving", async () => {
-
         // Setup Functions. Bot will get kicked rightaway.
         await bot.meetingActions();
 
@@ -150,15 +148,14 @@ describe('Meet Event Tests', () => {
         await addParticipant(); 
         
         // Verify participant count after participants join
-        expect(bot.participantCount).toBe(3);
+    expect(bot.participants.length).toBe(3);
         
         // See if can detect removing
         await removeParticipant(); 
-        expect(bot.participantCount).toBe(2);
+    expect(bot.participants.length).toBe(2);
         
         await removeParticipant();
-        expect(bot.participantCount).toBe(1);
-
+    expect(bot.participants.length).toBe(1);
     }, 60000);
 
     it.skip('Detect a Participant Media Share Start', () => {

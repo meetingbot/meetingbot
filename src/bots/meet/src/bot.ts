@@ -58,9 +58,7 @@ declare global {
     saveChunk: (chunk: number[]) => void;
     stopRecording: () => void;
 
-    addParticipant: (participant: Participant) => void;
     getParticipants: () => Participant[];
-    updateParticipants: (participants: Participant[]) => void;
     onParticipantJoin: (participant: Participant) => void;
     onParticipantLeave: (participant: Participant) => void;
     registerParticipantSpeaking: (participant: Participant) => void;
@@ -90,7 +88,6 @@ declare global {
  * @property {string} recordingPath - The file path where the meeting recording is saved.
  * @property {Buffer[]} recordBuffer - Buffer to store video chunks during recording.
  * @property {boolean} startedRecording - Indicates if the recording has started.
- * @property {number} participantCount - The current number of participants in the meeting.
  * @property {number} timeAloneStarted - The timestamp when the bot was the only participant in the meeting.
  * @property {ChildProcessWithoutNullStreams | null} ffmpegProcess - The ffmpeg process used for recording.
  * 
@@ -133,8 +130,8 @@ export class MeetsBot extends Bot {
   recorder: PageVideoCapture | undefined;
   kicked: boolean = false;
   recordingPath: string;
+  participants: Participant[] = [];
 
-  private participants: Participant[] = [];
   private registeredActivityTimestamps: {
     [participantName: string]: [number];
   } = {};
@@ -644,39 +641,13 @@ export class MeetsBot extends Bot {
       await this.page.waitForSelector('[aria-label="Participants"]', {
         state: "visible",
       });
-
     } catch (error) {
-      console.warn('Could not click People button. Continuing anyways.')
-    }
-
-    // Set up participant monitoring
-    await this.page.exposeFunction(
-      "addParticipant",
-      async (participant: Participant) => {
-        this.participants.push(participant);
+      console.warn("Could not click People button. Continuing anyways.");
       }
-    );
 
     await this.page.exposeFunction("getParticipants", () => {
       return this.participants;
     });
-
-    await this.page.exposeFunction(
-      "updateParticipants",
-      async (participants: Participant[]) => {
-        participants.forEach(async (p) => {
-          if (!this.participants.find((x) => x.id === p.id)) {
-            this.participants.push(p);
-            await this.onEvent(EventCode.PARTICIPANT_JOIN, p);
-          } else if (this.participants.find((x) => x.id === p.id)) {
-            await this.onEvent(EventCode.PARTICIPANT_LEAVE, p);
-            this.participants = this.participants.filter((p) => p.id !== p.id);
-            this.timeAloneStarted =
-              this.participants.length === 1 ? Date.now() : Infinity;
-          }
-        });
-      }
-    );
 
     await this.page.exposeFunction(
       "onParticipantJoin",
@@ -724,7 +695,9 @@ export class MeetsBot extends Bot {
         return;
       }
 
-      const initialParticipants = peopleList.childNodes;
+      const initialParticipants = Array.from(peopleList.childNodes).filter(
+        (node) => node.nodeType === Node.ELEMENT_NODE
+      );
       window.participantArray = [];
       window.mergedAudioParticipantArray = [];
 
@@ -780,7 +753,7 @@ export class MeetsBot extends Bot {
                 `[data-requested-participant-id="${participant.id}"]`
               );
               window.mergedAudioParticipantArray.push(participant);
-              window.addParticipant(participant);
+              window.onParticipantJoin(participant);
               window.observeSpeech(vidBlock, participant);
               window.participantArray.push(participant);
             });
@@ -827,7 +800,7 @@ export class MeetsBot extends Bot {
           window.handleMergedAudio();
           return;
         }
-        window.addParticipant(participant);
+        window.onParticipantJoin(participant);
         window.observeSpeech(node, participant);
         window.participantArray.push(participant);
       });

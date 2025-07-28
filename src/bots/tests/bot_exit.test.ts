@@ -93,7 +93,7 @@ describe('Meet Bot Exit Tests', () => {
 
         // Break private value setter and set the timeAloneStarted to a value that is a long time ago
         (bot as any).timeAloneStarted = Date.now() - 1000000;
-        (bot as any).participantCount = 1; //simulate it being only me in the meeting
+        (bot as any).participants = [{id: '123', name: 'Test User'}]; //simulate it being only me in the meeting
         await bot.meetingActions();
 
         expect(bot.endLife).toHaveBeenCalled(); //includes stopRecording()
@@ -112,7 +112,13 @@ describe('Meet Bot Exit Tests', () => {
 
         // Break private value setter and set the timeAloneStarted to a value that is a long time ago
         (bot as any).timeAloneStarted = Date.now() - 1000000;
-        (bot as any).participantCount = 5; //simulate there being a lot of people in the meeting
+    (bot as any).participants = [
+      { id: "123", name: "Test User" },
+      { id: "456", name: "Another User" },
+      { id: "789", name: "Third User" },
+      { id: "101", name: "Fourth User" },
+      { id: "102", name: "Fifth User" },
+    ]; //simulate there being a lot of people in the meeting
         await bot.meetingActions();
 
         // Ensure endLife would have been called
