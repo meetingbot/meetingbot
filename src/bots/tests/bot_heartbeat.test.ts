@@ -29,6 +29,10 @@ const mockBot = {
             resolve({});
         });
     }),
+    getSpeakerTimeframes: jest.fn(() => {
+        console.log("Mock bot getSpeakerTimeframes called");
+        return [];
+    }),
     endLife: jest.fn(() => {
         console.log("Mock bot endLife called");
         return new Promise((resolve) => {
