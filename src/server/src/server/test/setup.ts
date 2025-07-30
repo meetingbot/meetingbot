@@ -45,7 +45,7 @@ export async function setupTestDb() {
   try {
     // Add a timeout to the connection to prevent hanging
     conn = postgres(process.env.TEST_DATABASE_URL, {
-      ssl: {
+      ssl: process.env.CI ? false : {
         rejectUnauthorized: false,
       },
       max: 1,
