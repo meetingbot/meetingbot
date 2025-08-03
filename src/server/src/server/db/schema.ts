@@ -160,7 +160,7 @@ export const selectApiRequestLogSchema = createSelectSchema(apiRequestLogs, {
 });
 
 export const speakerTimeframeSchema = z.object({
-  speaker: z.string(),
+  speakerName: z.string(),
   start: z.number(),
   end: z.number(),
 });
