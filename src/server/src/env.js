@@ -44,35 +44,44 @@ export const env = createEnv({
         ? z.preprocess(() => "fake_aws_region", z.string())
         : z.string(),
     ECS_TASK_DEFINITION_MEET:
-      process.env.NODE_ENV === "production"
+      process.env.DEPLOYMENT_MODE === "aws"
         ? z.string()
         : z.string().default(""),
     ECS_TASK_DEFINITION_TEAMS:
-      process.env.NODE_ENV === "production"
+      process.env.DEPLOYMENT_MODE === "aws"
         ? z.string()
         : z.string().default(""),
     ECS_TASK_DEFINITION_ZOOM:
-      process.env.NODE_ENV === "production"
+      process.env.DEPLOYMENT_MODE === "aws"
         ? z.string()
         : z.string().default(""),
     ECS_CLUSTER_NAME:
-      process.env.NODE_ENV === "production"
+      process.env.DEPLOYMENT_MODE === "aws"
         ? z.string()
         : z.string().default(""),
     ECS_SUBNETS:
-      process.env.NODE_ENV === "production"
+      process.env.DEPLOYMENT_MODE === "aws"
         ? z.preprocess(
             (val) => (typeof val === "string" ? val.split(",") : []),
             z.array(z.string()),
           )
         : z.array(z.string()).default([]),
     ECS_SECURITY_GROUPS:
-      process.env.NODE_ENV === "production"
+      process.env.DEPLOYMENT_MODE === "aws"
         ? z.preprocess(
             (val) => (typeof val === "string" ? val.split(",") : []),
             z.array(z.string()),
           )
         : z.array(z.string()).default([]),
+    // Docker Compose deployment settings
+    DEPLOYMENT_MODE: z.enum(["aws", "docker-compose"]).default("aws"),
+    DOCKER_HOST: z.string().optional(),
+    BOT_NETWORK: z.string().default("meetingbot_network"),
+    S3_ENDPOINT: z.string().optional(),
+    S3_FORCE_PATH_STYLE: z.string().optional(),
+    NEXTAUTH_URL: z.string().url().optional(),
+    AUTH_TRUST_HOST: z.string().optional(),
+    NEXTAUTH_TRUST_HOST: z.string().optional(),
   },
 
   /**
@@ -105,6 +114,14 @@ export const env = createEnv({
     ECS_CLUSTER_NAME: process.env.ECS_CLUSTER_NAME,
     ECS_SUBNETS: process.env.ECS_SUBNETS,
     ECS_SECURITY_GROUPS: process.env.ECS_SECURITY_GROUPS,
+    DEPLOYMENT_MODE: process.env.DEPLOYMENT_MODE,
+    DOCKER_HOST: process.env.DOCKER_HOST,
+    BOT_NETWORK: process.env.BOT_NETWORK,
+    S3_ENDPOINT: process.env.S3_ENDPOINT,
+    S3_FORCE_PATH_STYLE: process.env.S3_FORCE_PATH_STYLE,
+    NEXTAUTH_URL: process.env.NEXTAUTH_URL,
+    AUTH_TRUST_HOST: process.env.AUTH_TRUST_HOST,
+    NEXTAUTH_TRUST_HOST: process.env.NEXTAUTH_TRUST_HOST,
   },
   /**
    * Run `build` or `dev` with `SKIP_ENV_VALIDATION` to skip env validation. This is especially

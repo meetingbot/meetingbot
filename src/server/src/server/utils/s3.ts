@@ -14,10 +14,18 @@ class S3ClientSingleton {
       : undefined;
 
   public static getInstance(): S3Client {
-    S3ClientSingleton.instance ??= new S3Client({
-      region: env.AWS_REGION,
-      credentials: this.credentials,
-    });
+    if (!S3ClientSingleton.instance) {
+      const config = {
+        region: env.AWS_REGION,
+        credentials: this.credentials,
+        ...(env.S3_ENDPOINT && {
+          endpoint: env.S3_ENDPOINT,
+          forcePathStyle: env.S3_FORCE_PATH_STYLE === "true",
+        }),
+      };
+
+      S3ClientSingleton.instance = new S3Client(config);
+    }
 
     return S3ClientSingleton.instance;
   }
