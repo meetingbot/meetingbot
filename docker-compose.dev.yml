@@ -1,0 +1,21 @@
+# Docker Compose override for development
+services:
+  # Development server with hot reloading
+  server:
+    build:
+      context: ./src/server
+      dockerfile: Dockerfile.local
+      target: builder  # Stop at builder stage for dev
+    command: pnpm dev
+    environment:
+      NODE_ENV: development
+      DEPLOYMENT_MODE: docker-compose
+    volumes:
+      - ./src/server:/app
+      - /app/node_modules
+      - /app/.next
+    ports:
+      - "3000:3000"
+
+  # Only the core server runs in development mode
+  # Bot containers are still created dynamically

@@ -15,26 +15,28 @@ export function createS3Client(region: string | undefined, accessKeyId: string |
         if (!region)
             throw new Error("Region is required");
 
-        // Create an S3 client with credentials if they are provided
-        // Local Development requires AWS_ACCESS_KEY_ID and AWS_SECRET_ACCESS_KEY.
-        if (accessKeyId && secretKey) {
-            return new S3Client({
-                region,
-                credentials: {
-                    accessKeyId: accessKeyId,
-                    secretAccessKey: secretKey!,
-                },
-            });
+        const config: any = {
+            region,
+        };
 
-            // Production
-            // Credientials is not required on AWS, so we can use the default constructor.
-        } else {
-            return new S3Client({
-                region,
-            });
+        // Add credentials if provided
+        if (accessKeyId && secretKey) {
+            config.credentials = {
+                accessKeyId: accessKeyId,
+                secretAccessKey: secretKey,
+            };
         }
 
+        // Configure for MinIO when using Docker Compose deployment
+        if (process.env.S3_ENDPOINT) {
+            config.endpoint = process.env.S3_ENDPOINT;
+            config.forcePathStyle = process.env.S3_FORCE_PATH_STYLE === "true";
+        }
+
+        return new S3Client(config);
+
     } catch (error) {
+        console.error("Error creating S3 client:", error);
         return null;
     }
 }

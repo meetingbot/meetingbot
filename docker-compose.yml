@@ -1,0 +1,83 @@
+services:
+  # PostgreSQL Database
+  postgres:
+    image: postgres:15-alpine
+    container_name: meetingbot_postgres
+    environment:
+      POSTGRES_DB: meetingbot
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: password
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./init-db.sql:/docker-entrypoint-initdb.d/init-db.sql
+    ports:
+      - "5432:5432"
+    networks:
+      - meetingbot_network
+    restart: unless-stopped
+
+  # MinIO (S3-compatible storage)
+  minio:
+    image: minio/minio:latest
+    container_name: meetingbot_minio
+    environment:
+      MINIO_ACCESS_KEY: minioadmin
+      MINIO_SECRET_KEY: minioadmin123
+    volumes:
+      - minio_data:/data
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    command: server /data --console-address ":9001"
+    networks:
+      - meetingbot_network
+    restart: unless-stopped
+
+  # MeetingBot Server
+  server:
+    build:
+      context: ./src/server
+      dockerfile: Dockerfile.local
+    container_name: meetingbot_server
+    environment:
+      NODE_ENV: production
+      DATABASE_URL: postgresql://postgres:password@postgres:5432/meetingbot
+      AUTH_SECRET: QTD54ABfY4oiz8lvM6lZ+83BdZiouaHENqKWvcN7i+0=
+      AUTH_GITHUB_ID: ${AUTH_GITHUB_ID}
+      AUTH_GITHUB_SECRET: ${AUTH_GITHUB_SECRET}
+      GITHUB_TOKEN: ${GITHUB_TOKEN}
+      # MinIO configuration (S3-compatible)
+      AWS_ACCESS_KEY_ID: minioadmin
+      AWS_SECRET_ACCESS_KEY: minioadmin123
+      AWS_BUCKET_NAME: meetingbot-recordings
+      AWS_REGION: us-east-1
+      S3_ENDPOINT: http://minio:9000
+      S3_FORCE_PATH_STYLE: "true"
+      # Docker deployment settings
+      DEPLOYMENT_MODE: docker-compose
+      NEXTAUTH_URL: http://localhost:3000
+      NEXTAUTH_TRUST_HOST: "true"
+      DOCKER_HOST: unix:///var/run/docker.sock
+      BOT_NETWORK: meetingbot_network
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - recordings:/app/recordings
+    ports:
+      - "3000:3000"
+    depends_on:
+      - postgres
+      - minio
+    networks:
+      - meetingbot_network
+    restart: unless-stopped
+
+  # Bot containers will be created dynamically by the server
+
+volumes:
+  postgres_data:
+  minio_data:
+  recordings:
+
+networks:
+  meetingbot_network:
+    driver: bridge

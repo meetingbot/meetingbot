@@ -12,7 +12,7 @@ import {
   navigationMenuTriggerStyle,
 } from "~/components/ui/navigation-menu";
 import SessionButton from "./SessionButton";
-import { ExternalLink } from "lucide-react";
+// import { ExternalLink } from "lucide-react";
 
 const components: {
   title: string | React.ReactNode;

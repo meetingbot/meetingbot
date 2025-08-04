@@ -1,0 +1,63 @@
+# Dockerfile for local Docker Compose deployment
+FROM node:20-alpine AS deps
+
+RUN apk add --no-cache libc6-compat openssl curl ca-certificates
+WORKDIR /app
+
+# Install pnpm
+RUN npm install -g pnpm
+
+# Copy package files
+COPY package.json pnpm-lock.yaml* ./
+RUN pnpm install --frozen-lockfile
+
+# Builder stage
+FROM node:20-alpine AS builder
+WORKDIR /app
+
+# Install pnpm
+RUN npm install -g pnpm
+
+# Copy dependencies
+COPY --from=deps /app/node_modules ./node_modules
+COPY . .
+
+# Build the application
+ENV SKIP_ENV_VALIDATION=1
+RUN pnpm run build
+
+# Runner stage
+FROM node:20-alpine AS runner
+WORKDIR /app
+
+# Install Docker CLI for bot deployment and wget for MinIO client
+RUN apk add --no-cache docker-cli wget ca-certificates
+
+# Install pnpm
+RUN npm install -g pnpm
+
+ENV NODE_ENV=production
+
+# Copy built application
+COPY --from=builder /app/next.config.js ./
+COPY --from=builder /app/public ./public
+COPY --from=builder /app/package.json ./package.json
+COPY --from=builder /app/.next/standalone ./
+COPY --from=builder /app/.next/static ./.next/static
+
+# Copy database migration files
+COPY --from=builder /app/drizzle ./drizzle
+COPY --from=builder /app/drizzle.config.ts ./
+COPY --from=builder /app/node_modules ./node_modules
+
+# Install drizzle-kit using npm for migrations
+RUN npm install -g drizzle-kit
+
+# Create startup script
+COPY docker-entrypoint.sh ./
+RUN chmod +x docker-entrypoint.sh
+
+EXPOSE 3000
+ENV PORT=3000
+
+CMD ["./docker-entrypoint.sh"]

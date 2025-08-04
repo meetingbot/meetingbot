@@ -1,0 +1,102 @@
+# Dockerfile for Zoom bot - local Docker Compose deployment
+FROM mcr.microsoft.com/playwright:v1.52.0-jammy AS base
+
+# Install XVFB dependencies
+RUN apt-get update && apt-get install -y \
+    xvfb \
+    ffmpeg \
+    x11-utils \
+    pulseaudio \
+    x11-xserver-utils \
+    fluxbox \
+    netcat-openbsd \
+    && rm -rf /var/lib/apt/lists/*
+
+# Set the working directory inside the container
+WORKDIR /app
+
+# Install pnpm globally
+RUN npm install -g pnpm
+
+# Copy dependency files
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
+COPY zoom/package.json zoom/pnpm-lock.yaml ./zoom/
+
+# Install dependencies
+RUN pnpm install --filter "@bots/zoom" --filter "bots"
+
+# Install Playwright dependencies
+RUN pnpm dlx playwright@1.52.0 install-deps
+
+# Install Playwright browsers
+RUN pnpm dlx playwright@1.52.0 install --with-deps
+
+# Ensure the Playwright cache directory has the correct permissions
+RUN mkdir -p /root/ms-playwright && chmod -R 777 /root/ms-playwright
+
+# Runtime stage
+FROM mcr.microsoft.com/playwright:v1.52.0-jammy AS runtime
+
+# Set environment variable for platform identification
+ENV DOCKER_MEETING_PLATFORM=zoom
+
+# Set the working directory inside the container
+WORKDIR /app
+
+# Create user and set ownership
+RUN useradd -ms /bin/bash meetbot && chown -R meetbot:meetbot /app
+
+# Install runtime dependencies
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    xvfb \
+    pulseaudio \
+    pulseaudio-utils \
+    xserver-xephyr \
+    x11-xserver-utils \
+    netcat-openbsd \
+    && rm -rf /var/lib/apt/lists/*
+
+# Install pnpm globally
+RUN npm install -g pnpm
+RUN corepack enable && corepack prepare pnpm@latest --activate
+
+# Copy node_modules and package.json from the base stage
+COPY --from=base /app/node_modules /app/node_modules
+COPY --from=base /app/package.json /app/package.json
+COPY --from=base /app/pnpm-workspace.yaml /app/pnpm-workspace.yaml
+COPY --from=base /app/zoom/node_modules /app/zoom/node_modules
+COPY --from=base /app/zoom/package.json /app/zoom/package.json
+COPY --from=base /app/zoom/pnpm-lock.yaml /app/zoom/pnpm-lock.yaml
+COPY --from=base /root/ms-playwright /root/ms-playwright
+
+# Copy working files into the container
+COPY src ./src
+COPY zoom/src ./zoom/src
+COPY test.env ./
+
+# Make all files available to the meetbot user
+RUN chown -R meetbot:meetbot /app
+RUN chown -R meetbot:meetbot /root/ms-playwright
+
+# Expose display port
+ENV DISPLAY=:99
+
+# Create entrypoint script with executable permissions
+RUN echo '#!/bin/bash\n\
+# Start Xvfb\n\
+Xvfb :99 -screen 0 1920x1080x24 &\n\
+\n\
+# Wait a moment for Xvfb to start\n\
+sleep 2\n\
+\n\
+# Start PulseAudio\n\
+pulseaudio --start --exit-idle-time=-1\n\
+\n\
+# Run the bot\n\
+exec pnpm start\n\
+' > /app/entrypoint.sh && chmod +x /app/entrypoint.sh
+
+# Switch to meetbot user
+USER meetbot
+
+CMD ["./entrypoint.sh"]
