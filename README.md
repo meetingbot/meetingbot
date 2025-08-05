@@ -27,8 +27,15 @@
     
 </div>
 
+## Hosted Meeting Bot API
+
+If you’re looking for a hosted meeting bot API, consider checking out [Recall.ai](https://www.recall.ai), an API for meeting recording.
+
+## Demo
+
 https://github.com/user-attachments/assets/0e2f2673-a59f-4473-a5ed-e2a5e1cd1cac
 
+## Table of Contents
 <!-- TABLE OF CONTENTS -->
 <details>
   <summary>Table of Contents</summary>
@@ -54,7 +61,7 @@ https://github.com/user-attachments/assets/0e2f2673-a59f-4473-a5ed-e2a5e1cd1cac
 
 ## About The Project
 
-MeetingBot is an open-source Meeting Bot API.
+MeetingBot is an open-source meeting bot API.
 
 Meetingbot provides the infrastructure for sending bots to meetings (Google Meet, Microsoft Teams, and Zoom) and recording them, so that developers can build applications that use meeting recording data in just a few lines of code.
 
