@@ -8,6 +8,13 @@
       "when": 1744040780722,
       "tag": "0000_square_exiles",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1754528997524,
+      "tag": "0001_massive_living_tribunal",
+      "breakpoints": true
     }
   ]
 }

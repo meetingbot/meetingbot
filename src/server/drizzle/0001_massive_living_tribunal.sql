@@ -1,0 +1,1 @@
+ALTER TABLE "bots" ADD COLUMN "speaker_timeframes" json DEFAULT '[]'::json NOT NULL;
