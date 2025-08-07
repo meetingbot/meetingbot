@@ -14,9 +14,15 @@ This directory contains the Terraform configuration to deploy MeetingBot infrast
 Set up your AWS credentials:
 
 ```bash
-# either login with AWS or run this make command
+# If you're using AWS access keys:
+make login
+
+# OR
+
+# If you're using AWS' sso login flow:
 make sso
-# This configures the AWS SSO profile named 'meetingbot'
+
+# Both commands configure the AWS SSO profile named 'meetingbot'
 ```
 
 Initialize Terraform:

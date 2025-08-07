@@ -5,5 +5,7 @@ upgrade:
 reconfigure:
 	terraform init -reconfigure -backend-config=backend.tfvars
 
+login:
+	aws configure --profile meetingbot
 sso:
 	aws configure sso --profile meetingbot
