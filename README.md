@@ -67,6 +67,8 @@ Meetingbot provides the infrastructure for sending bots to meetings (Google Meet
 
 All infrastructure is defined using Terraform and deployed to AWS, so that you can easily self host MeetingBot to keep your data private & costs low.
 
+**New**: You can now also run MeetingBot completely locally using Docker Compose - no AWS account required!
+
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
 ## Built With
@@ -97,9 +99,32 @@ All infrastructure is defined using Terraform and deployed to AWS, so that you c
   </a>
 </div>
 
-To get started with MeetingBot, you'll need to set up the infrastructure and configure the different components.
+MeetingBot can be deployed in two ways:
 
-### Prerequisites
+### 🐳 Docker Compose (Recommended for Development/Small Scale)
+
+Run MeetingBot completely locally without AWS:
+
+```bash
+git clone https://github.com/meetingbot/meetingbot.git
+cd meetingbot
+./setup.sh
+make start
+```
+
+**Advantages:**
+- No AWS account required
+- Runs entirely on your hardware
+- Perfect for development and testing
+- Quick setup (5 minutes)
+
+📖 **[Full Docker Compose Setup Guide](DOCKER_COMPOSE_SETUP.md)**
+
+### ☁️ AWS Deployment (Recommended for Production)
+
+Deploy to AWS with Terraform for scalable production use:
+
+#### Prerequisites for AWS Deployment
 
 - [AWS Account](https://aws.amazon.com/)
 - [Terraform](https://www.terraform.io/downloads.html)
@@ -116,7 +141,7 @@ Important:
 - A Github App to use for dashboard authentication
   - (Optional) Scope the app to your organization to restrict access
 
-### Installation
+#### AWS Installation
 
 See more information in the [Terraform README](src/terraform/README.md).
 
@@ -178,19 +203,34 @@ See more information in the [Terraform README](src/terraform/README.md).
 
 <!-- USAGE EXAMPLES -->
 
+## Deployment Comparison
+
+| Feature | Docker Compose | AWS Deployment |
+|---------|----------------|----------------|
+| **Setup Time** | 5 minutes | 30-60 minutes |
+| **Cost** | Free (your hardware) | AWS costs apply |
+| **Scalability** | Single machine | Auto-scaling |
+| **Maintenance** | Manual updates | Managed services |
+| **Requirements** | Docker + 4GB RAM | AWS account + domain |
+| **Best For** | Development, small teams | Production, enterprise |
+
 ## Usage
 
-1.  **Deploy the Terraform Infrastructure:** Follow the instructions in the [Terraform README](src/terraform/README.md) to deploy the necessary AWS resources.
+### Docker Compose Usage
 
-2.  **Run the Backend:** Navigate to the `src/backend` directory and start the server using `pnpm dev`. Access the API documentation at `http://localhost:{env.PORT}/docs` (or the deployed endpoint).
+1. **Start the services:** `make start` or `docker-compose up -d`
+2. **Access the dashboard:** http://localhost:3000
+3. **Create API keys:** Use the web interface to create API keys
+4. **Deploy bots:** Bots run as Docker containers on your machine
+5. **Access recordings:** View recordings through the web interface or API
 
-3.  **Run the Frontend:** Navigate to the `src/frontend` directory and start the development server using `pnpm dev`. Access the application at `http://localhost:3000` (or the deployed endpoint).
+### AWS Usage
 
-4.  **Create API Keys:** Use the frontend to create API keys for authenticating your applications with the MeetingBot API.
-
-5.  **Deploy Bots:** Use the API endpoints to deploy bots to your desired meeting platforms.
-
-6.  **Access Recordings:** Use the API endpoints to retrieve meeting recordings and metadata.
+1. **Deploy the Terraform Infrastructure:** Follow the instructions in the [Terraform README](src/terraform/README.md) to deploy the necessary AWS resources.
+2. **Run the Backend:** Navigate to the `src/server` directory and start the server using `pnpm dev`.
+3. **Create API Keys:** Use the frontend to create API keys for authenticating your applications with the MeetingBot API.
+4. **Deploy Bots:** Use the API endpoints to deploy bots to your desired meeting platforms.
+5. **Access Recordings:** Use the API endpoints to retrieve meeting recordings and metadata.
 
 See each subdirectory for an additional README with more information.
 

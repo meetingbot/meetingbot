@@ -35,6 +35,7 @@ export const authConfig = {
     strategy: "database",
   },
   adapter: DrizzleAdapter(db),
+  trustHost: true,
   callbacks: {
     session: ({ session, user }) => ({
       ...session,
