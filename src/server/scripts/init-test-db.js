@@ -13,7 +13,7 @@ const __dirname = path.dirname(__filename);
 const migrationsPath = path.join(__dirname, '..', 'drizzle');
 console.log(`Looking for migrations in: ${migrationsPath}`);
 
-exec(`npx drizzle-kit push:pg`, (error, stdout, stderr) => {
+exec(`npx drizzle-kit push`, (error, stdout, stderr) => {
   if (error) {
     console.error(`Error running migrations: ${error.message}`);
     process.exit(1);
