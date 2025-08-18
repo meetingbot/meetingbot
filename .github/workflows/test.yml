@@ -1,4 +1,8 @@
+permissions:
+  contents: read
 name: Server Unit Tests
+permissions:
+  contents: read
 
 on:
   push:
